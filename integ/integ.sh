@@ -1,5 +1,4 @@
 export AWS_REGION="us-west-2"
-
 export PROJECT_ROOT="$(pwd)"
 
 test_cloudwatch() {
@@ -20,6 +19,27 @@ clean_cloudwatch() {
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml up --abort-on-container-exit
 }
 
+validate_and_clean_s3() {
+	# Validate: validates that appropirate log data is present in the s3 bucket
+	# Clean: deletes all the objects from s3 bucket that were created in the test
+	docker-compose --file ./integ/test_kinesis/docker-compose.validate-and-clean-s3.yml build
+	docker-compose --file ./integ/test_kinesis/docker-compose.validate-and-clean-s3.yml up --abort-on-container-exit
+}
+
+test_kinesis() {
+	# Generates log data which will be stored on the s3 bucket
+	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml build
+	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml up --abort-on-container-exit
+
+    export S3_ACTION="validate"
+	validate_and_clean_s3	
+}
+
+clean_s3() {
+	export S3_ACTION="clean"
+	validate_and_clean_s3
+}
+
 if [ "${1}" = "cloudwatch" ]; then
 	mkdir -p ./integ/out
 	touch ./integ/out/cloudwatch-test
@@ -36,6 +56,12 @@ if [ "${1}" = "clean-cloudwatch" ]; then
 	clean_cloudwatch
 fi
 
-if [ "${1}" = "clean" ]; then
-	clean_cloudwatch
+if [ "${1}" = "kinesis" ]; then
+	source ./integ/create_resources/create_kinesis_resources.sh
+	clean_s3 && test_kinesis
+fi
+
+if [ "${1}" = "clean-s3" ]; then
+	source ./integ/create_resources/create_kinesis_resources.sh
+	clean_s3
 fi

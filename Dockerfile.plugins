@@ -1,13 +1,24 @@
 FROM golang:1.12
+ENV GO111MODULE on
+ENV FLB_LOG_LEVEL debug
+ENV SEND_FAILURE_TIMEOUT 1m
 
-ENV GO111MODULE=on
+# Kinesis Streams
+ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
+ARG KINESIS_PLUGIN_BRANCH=master
+
+RUN git clone $KINESIS_PLUGIN_CLONE_URL /kinesis-streams
+WORKDIR /kinesis-streams
+RUN git fetch && git checkout $KINESIS_PLUGIN_BRANCH
+RUN go mod download
+RUN make release
 
 # Firehose
 ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit.git
 ARG FIREHOSE_PLUGIN_BRANCH=master
 
-RUN git clone $FIREHOSE_PLUGIN_CLONE_URL /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit
-WORKDIR /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit
+RUN git clone $FIREHOSE_PLUGIN_CLONE_URL /kinesis-firehose
+WORKDIR /kinesis-firehose
 RUN git fetch && git checkout $FIREHOSE_PLUGIN_BRANCH
 RUN go mod download
 RUN make release
@@ -16,8 +27,8 @@ RUN make release
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
 ARG CLOUDWATCH_PLUGIN_BRANCH=master
 
-RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit
-WORKDIR /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit
+RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /cloudwatch
+WORKDIR /cloudwatch
 RUN git fetch && git checkout $CLOUDWATCH_PLUGIN_BRANCH
 RUN go mod download
 RUN make release

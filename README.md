@@ -12,8 +12,8 @@ There are image tags for `latest` and the version of Fluent Bit that is built in
 
 We also provide images in Amazon ECR in each AWS Region for high availability.
 
-| Region         | Registry ID  | Full Image URI                                                          |
-|----------------|--------------|-------------------------------------------------------------------------|
+| Region         | Registry ID  | Full Image URI                                                              |
+|----------------|--------------|-----------------------------------------------------------------------------|
 | us-east-1      | 906394416424 | 906394416424.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:latest      |
 | eu-west-1      | 906394416424 | 906394416424.dkr.ecr.eu-west-1.amazonaws.com/aws-for-fluent-bit:latest      |
 | us-west-1      | 906394416424 | 906394416424.dkr.ecr.us-west-1.amazonaws.com/aws-for-fluent-bit:latest      |
@@ -41,11 +41,17 @@ We also provide images in Amazon ECR in each AWS Region for high availability.
 
 #### Releasing
 
-Use `make release` to build the image. To run the integration tests, run `make integ`.
+Use `make release` to build the image. 
+To run the integration tests, run `make integ-dev`. The `make integ-dev` command will run the integration tests for all of our plugins- 
+kinesis streams, and cloudwatch.
+
+To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis`.
 
 #### Developing Features in the AWS Plugins
 
-You can build a version of the image with code in your GitHub fork.
+You can build a version of the image with code in your GitHub fork. To do so, you must need to set the following environment variables.
+Otherwise, you will see an error message like the following one:
+`fatal: repository '/kinesis-streams' or '/cloudwatch' does not exist.`
 
 Set the following environment variables for CloudWatch:
 
@@ -54,15 +60,15 @@ export CLOUDWATCH_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
 export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
 ```
 
-Or for Firehose:
+Or for Kinesis Streams:
 ```
-export CLOUDWATCH_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
-export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
+export KINESIS_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
+export KINESIS_PLUGIN_BRANCH="Your branch on your fork"
 ```
 
-Then run `make cloudwatch-dev` or `make firehose-dev` to build the image with your changes.
-
-To run the integration tests on your code, run `make integ-cloudwatch-dev` or `make integ-firehose-dev`.
+Then run `make cloudwatch-dev` or `make kinesis-dev` to build the image with your changes.
+ 
+To run the integration tests on your code, execute `make integ-cloudwatch-dev` or `make integ-kinesis-dev`.
 
 ## License
 
