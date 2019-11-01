@@ -1,0 +1,107 @@
+Description: >
+    This template deploys a Fluent Bit Daemonset to an ECS Cluster
+Parameters:
+    EnvironmentName:
+        Description: An environment name that will be prefixed to resource names
+        Type: String
+
+    DockerImage:
+        Description: The Fluent Bit Docker image.
+        Type: String
+
+    Cluster:
+        Description: Please provide the ECS Cluster name that this service should run on
+        Type: String
+
+Resources:
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref Cluster
+            LaunchType: EC2
+            TaskDefinition: !Ref TaskDefinition
+            SchedulingStrategy: DAEMON
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: fluentd-aggregator
+            TaskRoleArn: !Ref TaskRole
+            NetworkMode: host
+            Volumes:
+                - Name: socket
+                  Host:
+                    SourcePath: /var/run
+            ContainerDefinitions:
+                - Name: fluentd-daemon
+                  Essential: true
+                  Environment:
+                      - Name: FLB_LOG_LEVEL
+                        Value: DEBUG
+                  Image: !Ref DockerImage
+                  MountPoints:
+                      - ContainerPath: /var/run
+                        SourceVolume: socket
+                  MemoryReservation: 50
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Ref AWS::StackName
+                        awslogs-region: !Ref AWS::Region
+                        awslogs-stream-prefix: !Ref EnvironmentName
+
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Ref AWS::StackName
+            RetentionInDays: 14
+
+    # This IAM Role grants the task access to firehose and CloudWatch Logs
+    TaskRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ecs-task-${AWS::StackName}
+            Path: /
+            AssumeRolePolicyDocument: |
+                {
+                    "Statement": [{
+                        "Sid": "",
+                        "Effect": "Allow",
+                        "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                        "Action": "sts:AssumeRole"
+                    }]
+                }
+            Policies:
+                - PolicyName: !Sub ecs-task-${AWS::StackName}
+                  PolicyDocument:
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "firehose:PutRecordBatch"
+                                ],
+                                "Resource": "*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": "logs:PutLogEvents",
+                                "Resource": "arn:aws:logs:*:*:log-group:*:*:*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "logs:CreateLogStream",
+                                    "logs:DescribeLogStreams",
+                                    "logs:PutLogEvents"
+                                ],
+                                "Resource": "arn:aws:logs:*:*:log-group:*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": "logs:CreateLogGroup",
+                                "Resource": "*"
+                            }
+                        ]
+                    }

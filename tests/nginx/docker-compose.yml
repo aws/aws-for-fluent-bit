@@ -1,0 +1,10 @@
+version: '2'
+services:
+  apache:
+    image: nginx
+    mem_limit: 100m
+    logging:
+      driver: fluentd
+      options:
+        tag: logs-from-nginx
+        fluentd-address: unix:///var/run/fluent.sock

@@ -1,0 +1,10 @@
+version: '2'
+services:
+  apache:
+    image: 144718711470.dkr.ecr.us-east-2.amazonaws.com/fake-apache-stdout-logs:latest
+    mem_limit: 25m
+    logging:
+      driver: fluentd
+      options:
+        tag: long-running-test
+        fluentd-address: unix:///var/run/fluent.sock

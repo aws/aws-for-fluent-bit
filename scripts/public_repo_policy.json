@@ -1,0 +1,18 @@
+{
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Sid": "Public",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:DescribeImages",
+        "ecr:DescribeRepositories",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:ListImages"
+      ]
+    }
+  ]
+}
