@@ -1,4 +1,14 @@
-## AWS for Fluent Bit Docker Image
+## AWS for Fluent Bit Container Image
+
+A Fluent Bit container image with AWS Plugins. Currently, we support [CloudWatch Logs](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit), and [Kinesis Firehose](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit). [Kinesis Streams](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit) support will be included in this image soon.
+
+### Triaging
+
+Please use this repository to report bugs or request features which are specific to the container image and do not fit in the AWS plugin repositories. It would be appropriate to request a new plugin, or report a bug in a non-AWS plugin in this repository. If you have a request or a problem with one of the plugins, please submit an issue in one of the following repositories:
+
+* https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit
+* https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit
+* https://github.com/aws/amazon-kinesis-streams-for-fluent-bit
 
 ### Public Images
 
@@ -32,8 +42,8 @@ We also provide images in Amazon ECR in each AWS Region for high availability.
 | ap-northeast-3 | 906394416424 | 906394416424.dkr.ecr.ap-northeast-3.amazonaws.com/aws-for-fluent-bit:latest |
 | eu-north-1     | 906394416424 | 906394416424.dkr.ecr.eu-north-1.amazonaws.com/aws-for-fluent-bit:latest     |
 | ap-east-1      | 449074385750 | 449074385750.dkr.ecr.ap-east-1.amazonaws.com/aws-for-fluent-bit:latest      |
-| cn-north-1     | 128054284489 | 128054284489.dkr.ecr.cn-north-1.amazonaws.com/aws-for-fluent-bit:latest     |
-| cn-northwest-1 | 128054284489 | 128054284489.dkr.ecr.cn-northwest-1.amazonaws.com/aws-for-fluent-bit:latest |
+| cn-north-1     | 128054284489 | 128054284489.dkr.ecr.cn-north-1.amazonaws.com.cn/aws-for-fluent-bit:latest     |
+| cn-northwest-1 | 128054284489 | 128054284489.dkr.ecr.cn-northwest-1.amazonaws.com.cn/aws-for-fluent-bit:latest |
 | us-gov-east-1  | 161423150738 | 161423150738.dkr.ecr.us-gov-east-1.amazonaws.com/aws-for-fluent-bit:latest  |
 | us-gov-west-1  | 161423150738 | 161423150738.dkr.ecr.us-gov-west-1.amazonaws.com/aws-for-fluent-bit:latest  |
 
@@ -56,8 +66,8 @@ export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
 
 Or for Firehose:
 ```
-export CLOUDWATCH_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
-export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
+export FIREHOSE_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
+export FIREHOSE_PLUGIN_BRANCH="Your branch on your fork"
 ```
 
 Then run `make cloudwatch-dev` or `make firehose-dev` to build the image with your changes.
