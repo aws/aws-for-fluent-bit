@@ -10,3 +10,5 @@ services:
             - "TAG=${TAG}"
             - "AWS_REGION=${AWS_REGION}"
             - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
+        volumes:
+            - ${PROJECT_ROOT}/integ/out:/out
