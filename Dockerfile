@@ -89,6 +89,7 @@ COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/bin/cloudwatch.so /fluent-
 RUN mkdir -p /fluent-bit/licenses/fluent-bit
 RUN mkdir -p /fluent-bit/licenses/firehose
 RUN mkdir -p /fluent-bit/licenses/cloudwatch
+RUN mkdir -p /fluent-bit/licenses/kinesis
 COPY THIRD-PARTY /fluent-bit/licenses/fluent-bit/
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/THIRD-PARTY \
     /kinesis-firehose/LICENSE \
@@ -96,6 +97,9 @@ COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/THIRD-PARTY \
 COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
     /cloudwatch/LICENSE \
     /fluent-bit/licenses/cloudwatch/
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
+    /kinesis-streams/LICENSE \
+    /fluent-bit/licenses/firehose/
 
 # Optional Metrics endpoint
 EXPOSE 2020
