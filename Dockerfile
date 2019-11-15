@@ -99,7 +99,7 @@ COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
     /fluent-bit/licenses/cloudwatch/
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
     /kinesis-streams/LICENSE \
-    /fluent-bit/licenses/firehose/
+    /fluent-bit/licenses/kinesis/
 
 # Optional Metrics endpoint
 EXPOSE 2020
