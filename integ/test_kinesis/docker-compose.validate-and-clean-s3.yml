@@ -10,3 +10,5 @@ services:
             - "AWS_REGION=${AWS_REGION}"
             - "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
             - "S3_ACTION=${S3_ACTION}"
+        volumes:
+            - ${PROJECT_ROOT}/integ/out:/out

@@ -9,6 +9,6 @@ do
     echo $i
 done
 
-sleep 120
+sleep 20
 
 exit 0

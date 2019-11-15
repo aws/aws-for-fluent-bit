@@ -19,9 +19,10 @@ clean_cloudwatch() {
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml up --abort-on-container-exit
 }
 
-validate_and_clean_s3() {
+validate_or_clean_s3() {
 	# Validate: validates that appropirate log data is present in the s3 bucket
 	# Clean: deletes all the objects from s3 bucket that were created in the test
+	export S3_ACTION="${1}"
 	docker-compose --file ./integ/test_kinesis/docker-compose.validate-and-clean-s3.yml build
 	docker-compose --file ./integ/test_kinesis/docker-compose.validate-and-clean-s3.yml up --abort-on-container-exit
 }
@@ -31,13 +32,22 @@ test_kinesis() {
 	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml build
 	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml up --abort-on-container-exit
 
-    export S3_ACTION="validate"
-	validate_and_clean_s3	
+	sleep 120
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/kinesis-test
+
+	validate_or_clean_s3 validate
+
+	if [ -f ./integ/out/kinesis-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for kinesis stream."
+		exit 1
+	fi
 }
 
 clean_s3() {
-	export S3_ACTION="clean"
-	validate_and_clean_s3
+	validate_or_clean_s3 clean
 }
 
 if [ "${1}" = "cloudwatch" ]; then
@@ -57,11 +67,22 @@ if [ "${1}" = "clean-cloudwatch" ]; then
 fi
 
 if [ "${1}" = "kinesis" ]; then
-	source ./integ/create_resources/create_kinesis_resources.sh
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
 	clean_s3 && test_kinesis
 fi
 
 if [ "${1}" = "clean-s3" ]; then
-	source ./integ/create_resources/create_kinesis_resources.sh
+	source ./integ/resources/setup_test_environment.sh
 	clean_s3
+fi
+
+if [ "${1}" = "cicd" ]; then
+	source ./integ/resources/setup_test_environment.sh
+	test_cloudwatch && test_kinesis
+fi
+
+if [ "${1}" = "delete" ]; then
+	source ./integ/resources/delete_test_resources.sh
 fi

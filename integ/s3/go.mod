@@ -1,4 +1,4 @@
-module github.com/aws/amazon-kinesis-streams-for-fluent-bit
+module kinesis-integ-test
 
 go 1.12
 

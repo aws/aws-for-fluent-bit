@@ -66,5 +66,15 @@ integ-kinesis-dev: kinesis-dev
 integ-clean-s3:
 	./integ/integ.sh clean-s3
 
+.PHONY: integ-dev
+integ-dev: release 
+	./integ/integ.sh kinesis
+	./integ/integ.sh cloudwatch
+
 .PHONY: integ
-integ: release integ-cloudwatch integ-kinesis
+integ: 
+	./integ/integ.sh cicd
+
+.PHONY: delete-resources
+delete-resources: 
+	./integ/integ.sh delete

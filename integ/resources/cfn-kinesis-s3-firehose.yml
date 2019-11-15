@@ -24,12 +24,9 @@ Resources:
   kinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      ShardCount: 10
+      ShardCount: 5
   s3Bucket:
     Type: AWS::S3::Bucket
-    Properties:
-      VersioningConfiguration:
-        Status: Enabled
   deliveryStreamRole:
     Type: AWS::IAM::Role
     Properties:
@@ -82,7 +79,7 @@ Resources:
             Resource:
               - !GetAtt kinesisStream.Arn
       Roles:
-        - !Ref deliveryStreamRole
+        - !Ref deliveryStreamRole        
 Outputs: 
   kinesisStream:
     Description: The name of the kinesis data stream

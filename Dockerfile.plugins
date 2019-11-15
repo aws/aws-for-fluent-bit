@@ -1,7 +1,5 @@
 FROM golang:1.12
 ENV GO111MODULE on
-ENV FLB_LOG_LEVEL debug
-ENV SEND_FAILURE_TIMEOUT 1m
 
 # Kinesis Streams
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git

@@ -137,6 +137,8 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string) 
 		exitErrorf("[TEST FAILURE] Validation Failed. Number of missing log records: %d", sum)
 	} else {
 		fmt.Println("[TEST SUCCESSFULL] Found all the log records.")
+		// The file was created when the integ test started. Removing this file as a flag of test success.
+		os.Remove("/out/kinesis-test")
 	}
 }
 
@@ -167,6 +169,6 @@ func deleteS3Objects(s3Client *s3.S3, bucket string) {
 }
 
 func exitErrorf(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, msg + "\n", args...)
+	fmt.Fprintf(os.Stderr, msg+"\n", args...)
 	os.Exit(1)
 }
