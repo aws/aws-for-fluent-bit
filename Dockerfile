@@ -83,22 +83,26 @@ RUN yum upgrade -y \
           nc
 
 COPY --from=builder /fluent-bit /fluent-bit
-COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/bin/firehose.so /fluent-bit/firehose.so
-COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/bin/cloudwatch.so /fluent-bit/cloudwatch.so
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/bin/firehose.so /fluent-bit/firehose.so
+COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/bin/cloudwatch.so /fluent-bit/cloudwatch.so
 RUN mkdir -p /fluent-bit/licenses/fluent-bit
 RUN mkdir -p /fluent-bit/licenses/firehose
 RUN mkdir -p /fluent-bit/licenses/cloudwatch
+RUN mkdir -p /fluent-bit/licenses/kinesis
 COPY THIRD-PARTY /fluent-bit/licenses/fluent-bit/
-COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/THIRD-PARTY \
-    /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/LICENSE \
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/THIRD-PARTY \
+    /kinesis-firehose/LICENSE \
     /fluent-bit/licenses/firehose/
-COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/THIRD-PARTY \
-    /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/LICENSE \
+COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
+    /cloudwatch/LICENSE \
     /fluent-bit/licenses/cloudwatch/
-
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
+    /kinesis-streams/LICENSE \
+    /fluent-bit/licenses/kinesis/
 
 # Optional Metrics endpoint
 EXPOSE 2020
 
 # Entry point
-CMD ["/fluent-bit/bin/fluent-bit", "-e", "/fluent-bit/firehose.so", "-e", "/fluent-bit/cloudwatch.so", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+CMD ["/fluent-bit/bin/fluent-bit", "-e", "/fluent-bit/firehose.so", "-e", "/fluent-bit/cloudwatch.so", "-e", "/fluent-bit/kinesis.so", "-c", "/fluent-bit/etc/fluent-bit.conf"]
