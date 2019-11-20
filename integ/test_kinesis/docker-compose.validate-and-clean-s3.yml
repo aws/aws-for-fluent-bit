@@ -1,14 +1,14 @@
 version: "2"
 
 services:
-    cloudwatch_validator:
-        build: ${PROJECT_ROOT}/integ/validate_cloudwatch
+    validate-s3:
+        build: ${PROJECT_ROOT}/integ/s3
         environment:
             - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
             - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
             - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
-            - "TAG=${TAG}"
             - "AWS_REGION=${AWS_REGION}"
-            - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
+            - "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+            - "S3_ACTION=${S3_ACTION}"
         volumes:
             - ${PROJECT_ROOT}/integ/out:/out
