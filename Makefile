@@ -34,6 +34,14 @@ firehose-dev:
 	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
+.PHONY: streams-dev
+streams-dev:
+	docker build \
+	--build-arg STREAMS_PLUGIN_CLONE_URL=${STREAMS_PLUGIN_CLONE_URL} \
+	--build-arg STREAMS_PLUGIN_BRANCH=${STREAMS_PLUGIN_BRANCH} \
+	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
+
 .PHONY: integ
 integ: release
 	./integ/integ.sh cloudwatch

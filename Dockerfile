@@ -85,9 +85,11 @@ RUN yum upgrade -y \
 COPY --from=builder /fluent-bit /fluent-bit
 COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/bin/firehose.so /fluent-bit/firehose.so
 COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/bin/cloudwatch.so /fluent-bit/cloudwatch.so
+COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-streams-for-fluent-bit/bin/kinesis.so /fluent-bit/kinesis.so
 RUN mkdir -p /fluent-bit/licenses/fluent-bit
 RUN mkdir -p /fluent-bit/licenses/firehose
 RUN mkdir -p /fluent-bit/licenses/cloudwatch
+RUN mkdir -p /fluent-bit/licenses/kinesis
 COPY THIRD-PARTY /fluent-bit/licenses/fluent-bit/
 COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/THIRD-PARTY \
     /go/src/github.com/aws/amazon-kinesis-firehose-for-fluent-bit/LICENSE \
@@ -95,10 +97,13 @@ COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-
 COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/THIRD-PARTY \
     /go/src/github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/LICENSE \
     /fluent-bit/licenses/cloudwatch/
+# COPY --from=aws-fluent-bit-plugins:latest /go/src/github.com/aws/amazon-kinesis-streams-for-fluent-bit/THIRD-PARTY \
+#     /go/src/github.com/aws/amazon-kinesis-streams-for-fluent-bit/LICENSE \
+#     /fluent-bit/licenses/kinesis/
 
 
 # Optional Metrics endpoint
 EXPOSE 2020
 
 # Entry point
-CMD ["/fluent-bit/bin/fluent-bit", "-e", "/fluent-bit/firehose.so", "-e", "/fluent-bit/cloudwatch.so", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+CMD ["/fluent-bit/bin/fluent-bit", "-e", "/fluent-bit/firehose.so", "-e", "/fluent-bit/cloudwatch.so", "-e", "/fluent-bit/kinesis.so", "-c", "/fluent-bit/etc/fluent-bit.conf"]
