@@ -12,6 +12,16 @@ RUN git fetch && git checkout $FIREHOSE_PLUGIN_BRANCH
 RUN go mod download
 RUN make release
 
+# Kinesis
+ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
+ARG KINESIS_PLUGIN_BRANCH=master
+
+RUN git clone $KINESIS_PLUGIN_CLONE_URL /go/src/github.com/aws/amazon-kinesis-streams-for-fluent-bit
+WORKDIR /go/src/github.com/aws/amazon-kinesis-streams-for-fluent-bit
+RUN git fetch && git checkout $KINESIS_PLUGIN_BRANCH
+RUN go mod download
+RUN make release
+
 # CloudWatch
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
 ARG CLOUDWATCH_PLUGIN_BRANCH=master

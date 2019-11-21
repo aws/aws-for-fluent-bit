@@ -60,9 +60,15 @@ export CLOUDWATCH_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
 export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
 ```
 
-Then run `make cloudwatch-dev` or `make firehose-dev` to build the image with your changes.
+Or for Kinesis
+```
+export CLOUDWATCH_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
+export CLOUDWATCH_PLUGIN_BRANCH="Your branch on your fork"
+```
 
-To run the integration tests on your code, run `make integ-cloudwatch-dev` or `make integ-firehose-dev`.
+Then run `make cloudwatch-dev` or `make firehose-dev` or `make kinesis-dev` to build the image with your changes.
+
+To run the integration tests on your code, run `make integ-cloudwatch-dev` or `make integ-firehose-dev` or `make integ-kinesis-dev`.
 
 ## License
 

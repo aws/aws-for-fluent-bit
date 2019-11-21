@@ -86,6 +86,13 @@ Resources:
                             },
                             {
                                 "Effect": "Allow",
+                                "Action": [
+                                    "kinesis:PutRecord"
+                                ],
+                                "Resource": "*"
+                            },
+                            {
+                                "Effect": "Allow",
                                 "Action": "logs:PutLogEvents",
                                 "Resource": "arn:aws:logs:*:*:log-group:*:*:*"
                             },
