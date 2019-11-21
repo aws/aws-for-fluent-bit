@@ -1,3 +1,4 @@
+#!/bin/bash
 export AWS_REGION="us-west-2"
 export PROJECT_ROOT="$(pwd)"
 
@@ -32,7 +33,10 @@ test_kinesis() {
 	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml build
 	docker-compose --file ./integ/test_kinesis/docker-compose.test.yml up --abort-on-container-exit
 
+    # Giving a pause before running the validation test
+    # Firehose delivery stream has a buffer time which causes the delay to send the data
 	sleep 120
+
 	# Creates a file as a flag for the validation failure
 	mkdir -p ./integ/out
 	touch ./integ/out/kinesis-test
@@ -80,7 +84,8 @@ fi
 
 if [ "${1}" = "cicd" ]; then
 	source ./integ/resources/setup_test_environment.sh
-	test_cloudwatch && test_kinesis
+	clean_cloudwatch && test_cloudwatch 
+	clean_s3 && test_kinesis
 fi
 
 if [ "${1}" = "delete" ]; then
