@@ -42,7 +42,6 @@ kinesis-dev:
 	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
-
 .PHONY: integ
 integ: release
 	./integ/integ.sh cloudwatch
@@ -55,10 +54,31 @@ integ-cloudwatch: release
 integ-cloudwatch-dev: cloudwatch-dev
 	./integ/integ.sh cloudwatch
 
-.PHONY: integ-clean
-integ-clean:
-	./integ/integ.sh clean
-
 .PHONY: integ-clean-cloudwatch
 integ-clean-cloudwatch:
 	./integ/integ.sh clean-cloudwatch
+
+.PHONY: integ-kinesis
+integ-kinesis: release
+	./integ/integ.sh kinesis
+
+.PHONY: integ-kinesis-dev
+integ-kinesis-dev: kinesis-dev
+	./integ/integ.sh kinesis
+
+.PHONY: integ-clean-s3
+integ-clean-s3:
+	./integ/integ.sh clean-s3
+
+.PHONY: integ-dev
+integ-dev: release 
+	./integ/integ.sh kinesis
+	./integ/integ.sh cloudwatch
+
+.PHONY: integ
+integ: 
+	./integ/integ.sh cicd
+
+.PHONY: delete-resources
+delete-resources: 
+	./integ/integ.sh delete
