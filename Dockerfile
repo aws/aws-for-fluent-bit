@@ -100,9 +100,13 @@ COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
     /kinesis-streams/LICENSE \
     /fluent-bit/licenses/kinesis/
+COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Optional Metrics endpoint
 EXPOSE 2020
 
 # Entry point
-CMD ["/fluent-bit/bin/fluent-bit", "-e", "/fluent-bit/firehose.so", "-e", "/fluent-bit/cloudwatch.so", "-e", "/fluent-bit/kinesis.so", "-c", "/fluent-bit/etc/fluent-bit.conf"]
+CMD /entrypoint.sh
