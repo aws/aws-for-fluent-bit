@@ -15,6 +15,7 @@ test_cloudwatch() {
 }
 
 clean_cloudwatch() {
+	export LOG_GROUP_NAME="fluent-bit-integ-test"
 	# Clean up resources that were created in the test
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml up --abort-on-container-exit
@@ -84,7 +85,7 @@ fi
 
 if [ "${1}" = "cicd" ]; then
 	source ./integ/resources/setup_test_environment.sh
-	clean_cloudwatch && test_cloudwatch 
+	clean_cloudwatch && test_cloudwatch
 	clean_s3 && test_kinesis
 fi
 
