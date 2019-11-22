@@ -85,7 +85,7 @@ fi
 
 if [ "${1}" = "cicd" ]; then
 	source ./integ/resources/setup_test_environment.sh
-	clean_cloudwatch && test_cloudwatch
+    test_cloudwatch && clean_cloudwatch
 	clean_s3 && test_kinesis
 fi
 
