@@ -1,0 +1,52 @@
+---
+schemaVersion: '2.2'
+description: Install Fluent Bit and the AWS output plugins on Amazon Linux 2 via AWS Systems Manager
+parameters:
+  BucketName:
+    type: String
+    description: (Required) The name of the S3 Bucket to download the Fluent Bit binaries and configs.
+mainSteps:
+- action: aws:runShellScript
+  name: installFluentBit
+  inputs:
+    runCommand:
+    - sudo yum-config-manager --add-repo https://packages.fluentbit.io/centos/7
+    - sudo yum-config-manager --setopt=packages.fluentbit.io_centos_7.gpgcheck=1 --save
+    - sudo yum-config-manager --setopt=packages.fluentbit.io_centos_7.gpgkey=http://packages.fluentbit.io/fluentbit.key --save
+    - sudo yum install td-agent-bit -y
+- action: aws:downloadContent
+  name: downloadCloudWatchBinary
+  inputs:
+    sourceType: S3
+    sourceInfo: "{\"path\":\"https://{{BucketName}}.s3.amazonaws.com/cloudwatch.so\"}"
+    destinationPath: /etc/td-agent-bit
+- action: aws:downloadContent
+  name: downloadFireHoseBinary
+  inputs:
+    sourceType: S3
+    sourceInfo: "{\"path\":\"https://{{BucketName}}.s3.amazonaws.com/firehose.so\"}"
+    destinationPath: /etc/td-agent-bit
+- action: aws:downloadContent
+  name: downloadKinesisBinary
+  inputs:
+    sourceType: S3
+    sourceInfo: "{\"path\":\"https://{{BucketName}}.s3.amazonaws.com/kinesis.so\"}"
+    destinationPath: /etc/td-agent-bit
+- action: aws:downloadContent
+  name: downloadPluginsConf
+  inputs:
+    sourceType: S3
+    sourceInfo: "{\"path\":\"https://{{BucketName}}.s3.amazonaws.com/plugins.conf\"}"
+    destinationPath: /etc/td-agent-bit
+- action: aws:downloadContent
+  name: downloadTdAgentBitConf
+  inputs:
+    sourceType: S3
+    sourceInfo: "{\"path\":\"https://{{BucketName}}.s3.amazonaws.com/td-agent-bit.conf\"}"
+    destinationPath: /etc/td-agent-bit
+- action: aws:runShellScript
+  name: startFluentBit
+  inputs:
+    runCommand:
+    - sudo systemctl start td-agent-bit
+
