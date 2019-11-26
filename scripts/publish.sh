@@ -122,8 +122,8 @@ check_parameter() {
 }
 
 verify_ssm() {
-	check_parameter ${region} latest
-	check_parameter ${region} ${AWS_FOR_FLUENT_BIT_VERSION}
+	check_parameter ${1} latest
+	check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 }
 
 push_to_ecr() {
