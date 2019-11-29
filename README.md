@@ -1,5 +1,21 @@
 ## AWS for Fluent Bit Docker Image
 
+### Contents
+
+- [Versioning FAQ](#versioning-faq)
+- [Public Images](#public-images)
+    - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
+    - [Using SSM Parameters in CloudFormation Templates](#using-ssm-parameters-in-cloudFormation-templates)
+    - [Using image tags](#using-image-tags)
+        - [Docker Hub](#docker-hub)
+        - [Amazon ECR](#amazon-ecr)
+- [Plugins](#plugins)
+- [Using the AWS Plugins outside of a container](#using-the-aws-plugins-outside-of-a-container)
+- [Development](#development)
+    - [Releasing](#releasing)
+    - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
+- [License](#license)
+
 ### Versioning FAQ
 
 The version of the AWS for Fluent Bit image is not linked to the version of Fluent Bit which it contains.
@@ -102,6 +118,12 @@ We currently bundle the following projects in this image:
 * [amazon-kinesis-firehose-for-fluent-bit](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit)
 * [amazon-cloudwatch-logs-for-fluent-bit](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit)
 * [amazon-kinesis-streams-for-fluent-bit](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit)
+
+### Using the AWS Plugins outside of a container
+
+You can use the AWS Fluent Bit plugins with [td-agent-bit](https://docs.fluentbit.io/manual/v/1.3/installation/td-agent-bit).
+
+We provide a [tutorial](examples/fluent-bit/systems-manager-ec2/) on using SSM to configure instances with td-agent-bit and the plugins.
 
 ### Development
 
