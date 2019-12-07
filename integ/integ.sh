@@ -88,8 +88,14 @@ if [ "${1}" = "clean-s3" ]; then
 fi
 
 if [ "${1}" = "cicd" ]; then
-	source ./integ/resources/setup_test_environment.sh
     test_cloudwatch && clean_cloudwatch
+	if [ -f ./integ/out/cloudwatch-test ]; then
+		# if the file still exists, test failed
+		echo "Test Failed for Cloudwatch."
+		exit 1
+	fi
+
+	source ./integ/resources/setup_test_environment.sh
 	clean_s3 && test_kinesis
 fi
 
