@@ -9,6 +9,11 @@ test_cloudwatch() {
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.test.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.test.yml up --abort-on-container-exit
 	sleep 10
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/cloudwatch-test
+
 	# Validate that log data is present in CW
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.validate.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.validate.yml up --abort-on-container-exit
@@ -56,13 +61,12 @@ clean_s3() {
 }
 
 if [ "${1}" = "cloudwatch" ]; then
-	mkdir -p ./integ/out
-	touch ./integ/out/cloudwatch-test
 	test_cloudwatch
 	clean_cloudwatch
+
 	if [ -f ./integ/out/cloudwatch-test ]; then
 		# if the file still exists, test failed
-		echo "Test Failed."
+		echo "Test Failed for Cloudwatch."
 		exit 1
 	fi
 fi
@@ -84,8 +88,14 @@ if [ "${1}" = "clean-s3" ]; then
 fi
 
 if [ "${1}" = "cicd" ]; then
-	source ./integ/resources/setup_test_environment.sh
     test_cloudwatch && clean_cloudwatch
+	if [ -f ./integ/out/cloudwatch-test ]; then
+		# if the file still exists, test failed
+		echo "Test Failed for Cloudwatch."
+		exit 1
+	fi
+
+	source ./integ/resources/setup_test_environment.sh
 	clean_s3 && test_kinesis
 fi
 
