@@ -121,7 +121,7 @@ We currently bundle the following projects in this image:
 
 ### Using the AWS Plugins outside of a container
 
-You can use the AWS Fluent Bit plugins with [td-agent-bit](https://docs.fluentbit.io/manual/v/1.3/installation/td-agent-bit).
+You can use the AWS Fluent Bit plugins with [td-agent-bit](https://docs.fluentbit.io/manual/installation/td-agent-bit).
 
 We provide a [tutorial](examples/fluent-bit/systems-manager-ec2/) on using SSM to configure instances with td-agent-bit and the plugins.
 
