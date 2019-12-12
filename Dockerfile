@@ -3,8 +3,8 @@ FROM amazonlinux:latest as builder
 # Fluent Bit version; update these for each release
 ENV FLB_MAJOR 1
 ENV FLB_MINOR 3
-ENV FLB_PATCH 3
-ENV FLB_VERSION 1.3.3
+ENV FLB_PATCH 4
+ENV FLB_VERSION 1.3.4
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.3
 
