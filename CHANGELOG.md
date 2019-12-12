@@ -10,7 +10,7 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit 1.1.0
 
 Compared to `2.0.0` this release adds:
-* Bug - Container exits with code 137 when stopped - [#11](https://github.com/aws/aws-for-fluent-bit/issues/11)
+* Bug - Container exits with code 0 when it gracefully shuts down - [#11](https://github.com/aws/aws-for-fluent-bit/issues/11)
 * Feature - Support IAM Roles for Service Accounts in Amazon EKS in all plugins
     * [kinesis:6](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/6)
     * [firehose:17](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit/pull/17)
