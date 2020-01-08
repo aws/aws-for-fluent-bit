@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.1.1
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit 1.3.4
+* Amazon CloudWatch Logs for Fluent Bit 1.1.1
+* Amazon Kinesis Streams for Fluent Bit 1.1.0
+* Amazon Kinesis Firehose for Fluent Bit 1.1.0
+
+Compared to `2.1.0` this release adds:
+* Bug - Discard and do not send empty messages [cloudwatch:40](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/40)
+
 ### 2.1.0
 
 This release includes:
