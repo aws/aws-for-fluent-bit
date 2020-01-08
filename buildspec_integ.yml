@@ -15,11 +15,7 @@ phases:
       - 'export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Token`'
 
       # Pull the image that we built and pushed in the `Build` stage
-      - 'ecs-cli pull amazon/aws-for-fluent-bit:latest'
-                                                               
-      # When we pull image from ECR, it comes with accountId, ECR registry, and region name.
-      # Tag the image only with the name which will be used by the integration test.
-      # Don't forget to update your account and region in the image registry
+      - 'ecs-cli pull amazon/aws-for-fluent-bit:latest'                                                            
       - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:latest'
 
       # List the images to do a double check

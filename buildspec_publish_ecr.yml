@@ -10,10 +10,6 @@ phases:
     commands:
       # Pull the image that we built and pushed in the `Build` stage
       - 'ecs-cli pull amazon/aws-for-fluent-bit:latest'
-                                                               
-      # When we pull an image from ECR, it comes with accountId, ECR registry, and region name.
-      # Tag the image only with the name.
-      # Don't forget to update your account and region in the image registry.
       - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:latest'
 
       # List the docker images 
