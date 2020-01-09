@@ -9,8 +9,8 @@ phases:
   build:
     commands:
       # Pull the image that we built and pushed in the `Build` stage
-      - 'ecs-cli pull amazon/aws-for-fluent-bit:latest'
-      - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:latest'
+      - 'ecs-cli pull amazon/aws-for-fluent-bit-test:latest'
+      - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest amazon/aws-for-fluent-bit:latest'
 
       # List the docker images 
       - docker images
