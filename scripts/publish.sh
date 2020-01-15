@@ -396,7 +396,7 @@ fi
 # Following scripts will be called only from the CI/CD pipeline
 if [ "${1}" = "cicd-publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub rhossai2/test-aws-for-fluent-bit:latest rhossai2/test-aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
+		publish_to_docker_hub amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			sync_latest_image ${region} ${gov_regions_account_id}
