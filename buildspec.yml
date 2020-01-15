@@ -1,0 +1,21 @@
+version: 0.2         
+phases:
+  install:
+    runtime-versions:
+      golang: 1.12
+  pre_build:
+    commands:
+      - echo Building the AWS for Fluent Bit image
+  build:
+    commands:
+      # Command to build your project
+      - make release
+
+      # List the docker images 
+      - docker images
+
+      # Push the image to ECR in the same account and same region the pipeline is hosted.
+      - ecs-cli push amazon/aws-for-fluent-bit-test:latest
+artifacts:
+  files:
+    - '**/*'

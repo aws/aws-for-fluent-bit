@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Stack for Firehose Delivery Stream with Kinesis Data Stream and S3 Bucket.
+Resources:
+  firehoseDeliveryStream:
+    DependsOn:
+      - deliveryStreamPolicy
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration: 
+        KinesisStreamARN: !GetAtt kinesisStream.Arn
+        RoleARN: !GetAtt deliveryStreamRole.Arn
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !Join 
+          - ''
+          - - 'arn:aws:s3:::'
+            - !Ref s3Bucket
+        BufferingHints:
+          IntervalInSeconds: '60'
+          SizeInMBs: '50'
+        CompressionFormat: UNCOMPRESSED
+        Prefix: firehose/
+        RoleARN: !GetAtt deliveryStreamRole.Arn
+  kinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      ShardCount: 5
+  s3Bucket:
+    Type: AWS::S3::Bucket
+  deliveryStreamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref 'AWS::AccountId'
+  deliveryStreamPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: firehose_delivery_stream_policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 's3:AbortMultipartUpload'
+              - 's3:GetBucketLocation'
+              - 's3:GetObject'
+              - 's3:ListBucket'
+              - 's3:ListBucketMultipartUploads'
+              - 's3:PutObject'
+            Resource:
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref s3Bucket
+              - !Join 
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref s3Bucket
+                  - '*'
+          - Effect: Allow
+            Action:
+              - 'kinesis:DescribeStream'
+              - 'kinesis:PutRecord'
+              - 'kinesis:PutRecords'
+              - 'kinesis:GetShardIterator'
+              - 'kinesis:GetRecords'
+              - 'kinesis:ListShards'
+              - 'kinesis:DescribeStreamSummary'
+              - 'kinesis:RegisterStreamConsumer'
+            Resource:
+              - !GetAtt kinesisStream.Arn
+      Roles:
+        - !Ref deliveryStreamRole        
+Outputs: 
+  kinesisStream:
+    Description: The name of the kinesis data stream
+    Value: !Ref kinesisStream
+  s3BucketName:
+    Description: The name of the s3 bucket
+    Value: !Ref s3Bucket
