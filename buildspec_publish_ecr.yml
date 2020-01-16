@@ -35,7 +35,9 @@ phases:
           export AWS_SESSION_TOKEN=
         fi
 
-      # Assume role to verify, get the credentials, and set them as environment variables
+      # Assume role to verify, get the credentials, and set them as environment variables.
+      # Verification should be done using the credentials from a different account. It ensures that
+      # the images we published are public and accessible from any account.
       - CREDS=`aws sts assume-role --role-arn ${VERIFY_ROLE_ARN} --role-session-name ${REGION_TO_PUSH} --region ${REGION_TO_PUSH}`
       - export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
       - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
