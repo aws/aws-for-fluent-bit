@@ -15,6 +15,7 @@ phases:
       - docker images
 
       # Push the image to ECR in the same account and same region the pipeline is hosted.
+      - docker tag amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit-test:latest
       - ecs-cli push amazon/aws-for-fluent-bit-test:latest
 artifacts:
   files:

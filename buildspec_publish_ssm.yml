@@ -1,0 +1,24 @@
+version: 0.2         
+phases:
+  install:
+    runtime-versions:
+      golang: 1.12
+  pre_build:
+    commands:
+      - echo Publish SSM parameters
+  build:
+    commands:
+      - './scripts/publish_test.sh cicd-publish-ssm ${AWS_REGION}'
+
+      # Assume role to verify, get the credentials, and set them as environment variables.
+      # Verification should be done using the credentials from a different account. It ensures that
+      # the ssm parameters we published are public and accessible from any account.
+      - CREDS=`aws sts assume-role --role-arn ${VERIFY_ROLE_ARN} --role-session-name ${AWS_REGION} --region ${AWS_REGION}`
+      - export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
+      - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
+      - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
+
+      - './scripts/publish_test.sh cicd-verify-ssm ${AWS_REGION}'
+artifacts:
+  files:
+    - '**/*'
