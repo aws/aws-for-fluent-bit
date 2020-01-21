@@ -413,7 +413,7 @@ if [ "${1}" = "cicd-publish" ]; then
 	elif [ "${2}" = "${bahrain_region}" ]; then
 		sync_latest_image ${bahrain_region} ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		publish_ecr ${hongkong_region} ${hongkong_account_id}
+		sync_latest_image ${hongkong_region} ${hongkong_account_id}
 	else
 		publish_ecr "${2}" ${classic_regions_account_id}
 	fi
