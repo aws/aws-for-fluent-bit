@@ -53,8 +53,11 @@ RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
 
 # Configuration files
-COPY fluent-bit.conf \
-     /fluent-bit/etc/
+COPY fluent-bit.conf /fluent-bit/etc/
+# Custome config files
+COPY /custom/fluent-bit-nginx.conf /fluent-bit/etc/
+COPY /custom/fluent-bit-apache2.conf /fluent-bit/etc/
+COPY fluent-bit.conf /fluent-bit/etc/fluent-bit-default.conf
 
 # Add parsers files
 WORKDIR /home
