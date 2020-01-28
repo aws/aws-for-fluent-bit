@@ -21,6 +21,7 @@ def validate_test_case(test_name, log_group, log_stream, validator_func):
         counter += 1
 
     print('SUCCESS: ' + test_name)
+    return True
 
 def vanilla_validator(counter, log):
     event = json.loads(log['message'])
@@ -39,7 +40,11 @@ def log_key_validator(counter, log):
 
 tag = os.environ.get('TAG')
 # CW Test Case 1: Simple/Basic Configuration, Log message is JSON
-validate_test_case('CW Test 1: Basic Config', LOG_GROUP_NAME, 'from-fluent-bit-basic-test-' + tag, vanilla_validator)
+success_case_1 = validate_test_case('CW Test 1: Basic Config', LOG_GROUP_NAME, 'from-fluent-bit-basic-test-' + tag, vanilla_validator)
 
 # CW Test Case 2: tests 'log_key' option, Log message is just the stdout output (a number)
-validate_test_case('CW Test 2: log_key option', LOG_GROUP_NAME, 'from-fluent-bit-log-key-test-' + tag, log_key_validator)
+success_case_2 = validate_test_case('CW Test 2: log_key option', LOG_GROUP_NAME, 'from-fluent-bit-log-key-test-' + tag, log_key_validator)
+
+if success_case_1 and success_case_2:
+    # if this file is still present, integ script will mark the test as a failure
+    os.remove("/out/cloudwatch-test")

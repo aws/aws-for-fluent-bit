@@ -17,6 +17,8 @@ set -xeuo pipefail
 scripts=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd "${scripts}"
 
+IMAGE_SHA_MATCHED="FALSE"
+
 classic_regions="
 us-east-1
 eu-west-1
@@ -96,17 +98,20 @@ publish_to_docker_hub() {
 }
 
 publish_ssm() {
+	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --overwrite \
+	--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
+	--type String --region ${1} --value ${2}:${AWS_FOR_FLUENT_BIT_VERSION}
 	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
 	--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
-	--type String --region ${1} --value ${2}
+	--type String --region ${1} --value ${2}:latest
 }
 
 rollback_ssm() {
-	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/latest --region ${1}
+	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
 }
 
-verify_ssm() {
-	repo_uri=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/latest --region ${1} --query 'Parameter.Value')
+check_parameter() {
+	repo_uri=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/${2} --region ${1} --query 'Parameter.Value')
 	IFS='.' read -r -a array <<< "$repo_uri"
 	region="${array[3]}"
 	if [ "${1}" != "${region}" ]; then
@@ -116,6 +121,11 @@ verify_ssm() {
 	# remove leading and trailing quotes from repo_uri
 	repo_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
 	pull_ecr $repo_uri $region
+}
+
+verify_ssm() {
+	check_parameter ${1} latest
+	check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 }
 
 push_to_ecr() {
@@ -135,7 +145,7 @@ publish_ecr() {
 	region=${1}
 	account_id=${2}
 	push_to_ecr amazon/aws-for-fluent-bit:latest aws-for-fluent-bit:latest ${region} ${account_id}
-	push_to_ecr amazon/aws-for-fluent-bit:latest "aws-for-fluent-bit:${FLUENT_BIT_VERSION}" ${region} ${account_id}
+	push_to_ecr amazon/aws-for-fluent-bit:latest "aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}" ${region} ${account_id}
 	make_repo_public ${region}
 }
 
@@ -143,14 +153,58 @@ verify_ecr() {
 	region=${1}
 	account_id=${2}
 	pull_ecr ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:latest ${region}
-	pull_ecr ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:${FLUENT_BIT_VERSION} ${region}
+	pull_ecr ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION} ${region}
+	
+	# Get the image SHA's
+	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:latest)
+	sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+
+	verify_sha $sha1 $sha2
 }
 
-FLUENT_BIT_VERSION=$(cat ../FLUENT_BIT_VERSION)
+verify_dockerhub() {
+	# Get the image SHA's
+	sha1=$(docker pull amazon/aws-for-fluent-bit:latest | grep sha256: | cut -f 3 -d :)
+	sha2=$(docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :)
+
+	verify_sha $sha1 $sha2
+}
+
+verify_sha() {
+	sha1=${1}
+	sha2=${2}
+
+	match_two_sha $sha1 $sha2
+
+	if [ "$IMAGE_SHA_MATCHED" = "TRUE" ]; then
+		echo '[Publish Verification] Successfull'
+		IMAGE_SHA_MATCHED="FALSE"
+	else
+		echo '[Publish Verification] Failed'
+		exit 1
+	fi
+}
+
+match_two_sha() {
+	sha1=${1}
+	sha2=${2}
+	
+	# Get the last 64 chars of the SHA string
+	last64_1=$(echo $sha1 | egrep -o '.{1,64}$')
+	last64_2=$(echo $sha2 | egrep -o '.{1,64}$')
+
+	if [ "$last64_1" = "$last64_2" ]; then
+		IMAGE_SHA_MATCHED="TRUE"
+	else
+		IMAGE_SHA_MATCHED="FALSE"
+	fi
+}
+
+AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 
 if [ "${1}" = "publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:${FLUENT_BIT_VERSION}
+		publish_to_docker_hub amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
 
 	if [ "${2}" = "aws" ]; then
@@ -187,7 +241,7 @@ fi
 if [ "${1}" = "verify" ]; then
 	if [ "${2}" = "dockerhub" ]; then
 		docker pull amazon/aws-for-fluent-bit:latest
-		docker pull amazon/aws-for-fluent-bit:${FLUENT_BIT_VERSION}
+		docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
 	if [ "${2}" = "aws" ]; then
 		for region in ${classic_regions}; do
@@ -224,28 +278,28 @@ fi
 if [ "${1}" = "publish-ssm" ]; then
 	if [ "${2}" = "aws" ]; then
 		for region in ${classic_regions}; do
-			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:latest
+			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
 		done
 	fi
 
 	if [ "${2}" = "aws-cn" ]; then
 		for region in ${cn_regions}; do
-			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:latest
+			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
 		done
 	fi
 
 	if [ "${2}" = "aws-us-gov" ]; then
 		for region in ${gov_regions}; do
-			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:latest
+			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
 		done
 	fi
 
 	if [ "${2}" = "${hongkong_region}" ]; then
-		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit:latest
+		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit
 	fi
 
 	if [ "${2}" = "${bahrain_region}" ]; then
-		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit:latest
+		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit
 	fi
 fi
 
@@ -303,5 +357,36 @@ if [ "${1}" = "rollback-ssm" ]; then
 
 	if [ "${2}" = "${bahrain_region}" ]; then
 		rollback_ssm ${bahrain_region}
+	fi
+fi
+
+# Publish using CI/CD pipeline
+# Following scripts will be called only from the CI/CD pipeline
+if [ "${1}" = "cicd-publish" ]; then
+	if [ "${2}" = "dockerhub" ]; then
+		publish_to_docker_hub amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
+	elif [ "${2}" = "aws-us-gov" ]; then
+		for region in ${gov_regions}; do
+			gov_cloud_sync ${region} ${gov_regions_account_id} 
+		done
+	elif [ "${2}" = "${hongkong_region}" ]; then
+		publish_ecr ${hongkong_region} ${hongkong_account_id}
+	elif [ "${2}" = "${bahrain_region}" ]; then
+		publish_ecr ${bahrain_region} ${bahrain_account_id}
+	else
+		publish_ecr "${2}" ${classic_regions_account_id}
+	fi
+fi
+
+# Verify using CI/CD pipeline
+if [ "${1}" = "cicd-verify" ]; then
+	if [ "${2}" = "dockerhub" ]; then
+		verify_dockerhub
+	elif [ "${2}" = "${hongkong_region}" ]; then
+		verify_ecr ${hongkong_region} ${hongkong_account_id}
+	elif [ "${2}" = "${bahrain_region}" ]; then
+		verify_ecr ${bahrain_region} ${bahrain_account_id}
+	else
+		verify_ecr "${2}" ${classic_regions_account_id}
 	fi
 fi
