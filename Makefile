@@ -62,19 +62,28 @@ integ-kinesis: release
 integ-kinesis-dev: kinesis-dev
 	./integ/integ.sh kinesis
 
+.PHONY: integ-firehose
+integ-firehose: release
+	./integ/integ.sh firehose
+
+.PHONY: integ-firehose-dev
+integ-firehose-dev: firehose-dev
+	./integ/integ.sh firehose
+
 .PHONY: integ-clean-s3
 integ-clean-s3:
 	./integ/integ.sh clean-s3
 
 .PHONY: integ-dev
-integ-dev: release 
+integ-dev: release
 	./integ/integ.sh kinesis
+	./integ/integ.sh firehose
 	./integ/integ.sh cloudwatch
 
 .PHONY: integ
-integ: 
+integ:
 	./integ/integ.sh cicd
 
 .PHONY: delete-resources
-delete-resources: 
+delete-resources:
 	./integ/integ.sh delete

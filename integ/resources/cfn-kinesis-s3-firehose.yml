@@ -1,17 +1,17 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Stack for Firehose Delivery Stream with Kinesis Data Stream and S3 Bucket.
 Resources:
-  firehoseDeliveryStream:
+  firehoseDeliveryStreamForKinesisTest:
     DependsOn:
       - deliveryStreamPolicy
     Type: AWS::KinesisFirehose::DeliveryStream
     Properties:
       DeliveryStreamType: KinesisStreamAsSource
-      KinesisStreamSourceConfiguration: 
+      KinesisStreamSourceConfiguration:
         KinesisStreamARN: !GetAtt kinesisStream.Arn
         RoleARN: !GetAtt deliveryStreamRole.Arn
       ExtendedS3DestinationConfiguration:
-        BucketARN: !Join 
+        BucketARN: !Join
           - ''
           - - 'arn:aws:s3:::'
             - !Ref s3Bucket
@@ -19,7 +19,24 @@ Resources:
           IntervalInSeconds: '60'
           SizeInMBs: '50'
         CompressionFormat: UNCOMPRESSED
-        Prefix: firehose/
+        Prefix: kinesis-test/
+        RoleARN: !GetAtt deliveryStreamRole.Arn
+  firehoseDeliveryStreamForFirehoseTest:
+    DependsOn:
+      - deliveryStreamPolicy
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamType: DirectPut
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !Join
+          - ''
+          - - 'arn:aws:s3:::'
+            - !Ref s3Bucket
+        BufferingHints:
+          IntervalInSeconds: '60'
+          SizeInMBs: '50'
+        CompressionFormat: UNCOMPRESSED
+        Prefix: firehose-test/
         RoleARN: !GetAtt deliveryStreamRole.Arn
   kinesisStream:
     Type: AWS::Kinesis::Stream
@@ -57,11 +74,11 @@ Resources:
               - 's3:ListBucketMultipartUploads'
               - 's3:PutObject'
             Resource:
-              - !Join 
+              - !Join
                 - ''
                 - - 'arn:aws:s3:::'
                   - !Ref s3Bucket
-              - !Join 
+              - !Join
                 - ''
                 - - 'arn:aws:s3:::'
                   - !Ref s3Bucket
@@ -79,11 +96,14 @@ Resources:
             Resource:
               - !GetAtt kinesisStream.Arn
       Roles:
-        - !Ref deliveryStreamRole        
-Outputs: 
+        - !Ref deliveryStreamRole
+Outputs:
   kinesisStream:
     Description: The name of the kinesis data stream
     Value: !Ref kinesisStream
   s3BucketName:
     Description: The name of the s3 bucket
     Value: !Ref s3Bucket
+  firehoseStream:
+    Description: The name of the kinesis firehose stream
+    Value: !Ref firehoseDeliveryStreamForFirehoseTest
