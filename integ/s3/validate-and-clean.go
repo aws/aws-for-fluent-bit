@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,8 @@ const (
 	envAWSRegion = "AWS_REGION"
 	envS3Bucket  = "S3_BUCKET_NAME"
 	envS3Action  = "S3_ACTION"
+	envS3Prefix  = "S3_PREFIX"
+	envTestFile  = "TEST_FILE"
 )
 
 type Message struct {
@@ -35,6 +38,16 @@ func main() {
 		exitErrorf("[TEST FAILURE] Bucket name required. Set the value for environment variable- %s", envS3Bucket)
 	}
 
+	prefix := os.Getenv(envS3Prefix)
+	if prefix == "" {
+		exitErrorf("[TEST FAILURE] S3 object prefix required. Set the value for environment variable- %s", envS3Prefix)
+	}
+
+	testFile := os.Getenv(envTestFile)
+	if testFile == "" {
+		exitErrorf("[TEST FAILURE] test verfication file name required. Set the value for environment variable- %s", envTestFile)
+	}
+
 	s3Client, err := getS3Client(region)
 	if err != nil {
 		exitErrorf("[TEST FAILURE] Unable to create new S3 client: %v", err)
@@ -43,11 +56,11 @@ func main() {
 	s3Action := os.Getenv(envS3Action)
 	if s3Action == "validate" {
 		// Validate the data on the s3 bucket
-		getS3ObjectsResponse := getS3Objects(s3Client, bucket)
-		validate(s3Client, getS3ObjectsResponse, bucket)
+		getS3ObjectsResponse := getS3Objects(s3Client, bucket, prefix)
+		validate(s3Client, getS3ObjectsResponse, bucket, testFile)
 	} else {
 		// Clean the s3 bucket-- delete all objects
-		deleteS3Objects(s3Client, bucket)
+		deleteS3Objects(s3Client, bucket, prefix)
 	}
 }
 
@@ -64,11 +77,12 @@ func getS3Client(region string) (*s3.S3, error) {
 	return s3.New(sess), nil
 }
 
-// Returns all the objects from a S3 bucket
-func getS3Objects(s3Client *s3.S3, bucket string) *s3.ListObjectsV2Output {
+// Returns all the objects from a S3 bucket with the given prefix
+func getS3Objects(s3Client *s3.S3, bucket string, prefix string) *s3.ListObjectsV2Output {
 	input := &s3.ListObjectsV2Input{
 		Bucket:  aws.String(bucket),
 		MaxKeys: aws.Int64(100),
+		Prefix:  aws.String(prefix),
 	}
 
 	response, err := s3Client.ListObjectsV2(input)
@@ -83,7 +97,7 @@ func getS3Objects(s3Client *s3.S3, bucket string) *s3.ListObjectsV2Output {
 // Validates the log messages. Our log producer is designed to send 1000 integers [0 - 999].
 // Both of the Kinesis Streams and Kinesis Firehose try to send each log maintaining the "at least once" policy.
 // To validate, we need to make sure all the valid numbers [0 - 999] are stored at least once.
-func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string) {
+func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, testFile string) {
 	logCounter := make([]int, 1000)
 	for index := range logCounter {
 		logCounter[index] = 1
@@ -138,7 +152,7 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string) 
 	} else {
 		fmt.Println("[TEST SUCCESSFULL] Found all the log records.")
 		// The file was created when the integ test started. Removing this file as a flag of test success.
-		os.Remove("/out/kinesis-test")
+		os.Remove(filepath.Join("/out", testFile))
 	}
 }
 
@@ -153,11 +167,12 @@ func getS3Object(s3Client *s3.S3, input *s3.GetObjectInput) *s3.GetObjectOutput 
 	return obj
 }
 
-// Delete all the objects from a specified S3 bucket
-func deleteS3Objects(s3Client *s3.S3, bucket string) {
+// Delete all the objects with the given prefix from the specified S3 bucket
+func deleteS3Objects(s3Client *s3.S3, bucket string, prefix string) {
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
+		Prefix: aws.String(prefix),
 	})
 
 	// Traverse the iterator deleting each object

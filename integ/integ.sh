@@ -56,6 +56,28 @@ test_kinesis() {
 	fi
 }
 
+test_firehose() {
+	# Generates log data which will be stored on the s3 bucket
+	docker-compose --file ./integ/test_firehose/docker-compose.test.yml build
+	docker-compose --file ./integ/test_firehose/docker-compose.test.yml up --abort-on-container-exit
+
+    # Giving a pause before running the validation test
+    # Firehose delivery stream has a buffer time which causes the delay to send the data
+	sleep 120
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/firehose-test
+
+	validate_or_clean_s3 validate
+
+	if [ -f ./integ/out/firehose-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for firehose."
+		exit 1
+	fi
+}
+
 clean_s3() {
 	validate_or_clean_s3 clean
 }
@@ -76,10 +98,21 @@ if [ "${1}" = "clean-cloudwatch" ]; then
 fi
 
 if [ "${1}" = "kinesis" ]; then
+	export S3_PREFIX="kinesis-test"
+	export TEST_FILE="kinesis-test"
 	source ./integ/resources/create_test_resources.sh
 	source ./integ/resources/setup_test_environment.sh
 
 	clean_s3 && test_kinesis
+fi
+
+if [ "${1}" = "firehose" ]; then
+	export S3_PREFIX="firehose-test"
+	export TEST_FILE="firehose-test"
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
+	clean_s3 && test_firehose
 fi
 
 if [ "${1}" = "clean-s3" ]; then
@@ -96,7 +129,13 @@ if [ "${1}" = "cicd" ]; then
 	fi
 
 	source ./integ/resources/setup_test_environment.sh
+	test_cloudwatch && clean_cloudwatch
+	export S3_PREFIX="kinesis-test"
+	export TEST_FILE="kinesis-test"
 	clean_s3 && test_kinesis
+	export S3_PREFIX="firehose-test"
+	export TEST_FILE="firehose-test"
+	clean_s3 && test_firehose
 fi
 
 if [ "${1}" = "delete" ]; then

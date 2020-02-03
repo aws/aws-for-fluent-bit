@@ -1,0 +1,23 @@
+version: "2"
+
+services:
+    fluent-bit:
+        image: amazon/aws-for-fluent-bit:latest
+        environment:
+            - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+            - "FIREHOSE_STREAM=${FIREHOSE_STREAM}"
+            - FLB_LOG_LEVEL=debug
+        volumes:
+            - /var/run/:/var/run
+            - ./:/fluent-bit/etc/
+    logger-test:
+        build: ${PROJECT_ROOT}/integ/logger
+        depends_on:
+            - fluent-bit
+        logging:
+            driver: fluentd
+            options:
+                fluentd-address: unix:///var/run/fluent.sock
+                fluentd-async-connect: "true"
