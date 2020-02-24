@@ -10,5 +10,6 @@ services:
             - "TAG=${TAG}"
             - "AWS_REGION=${AWS_REGION}"
             - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
+            - "EMF_METRIC_NAME_PATH=/out/expected-metric-name"
         volumes:
             - ${PROJECT_ROOT}/integ/out:/out

@@ -32,3 +32,19 @@ services:
                 tag: "log-key-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
                 fluentd-async-connect: "true"
+    logger-emf:
+        build: ${PROJECT_ROOT}/integ/emf_logger
+        depends_on:
+            - fluent-bit
+        environment:
+            - "EMF_METRIC_NAME_PATH=/out/expected-metric-name"
+        logging:
+            driver: fluentd
+            options:
+                tag: "log-emf-test-${TAG}"
+                fluentd-address: unix:///var/run/fluent.sock
+                fluentd-async-connect: "true"
+        # this volume is used for synchronization between the test
+        # and the validator
+        volumes:
+            - ${PROJECT_ROOT}/integ/out:/out
