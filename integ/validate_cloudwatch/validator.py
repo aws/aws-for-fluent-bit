@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 client = boto3.client('logs', region_name=os.environ.get('AWS_REGION'))
 metrics_client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
-start_time = datetime.utcnow() - timedelta(seconds=10)
+start_time = datetime.utcnow() - timedelta(seconds=60)
 end_time = datetime.utcnow()
 
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
