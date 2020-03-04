@@ -1,5 +1,20 @@
 # Changelog
 
+### 2.2.0
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit 1.3.9
+* Amazon CloudWatch Logs for Fluent Bit 1.2.0
+* Amazon Kinesis Streams for Fluent Bit 1.2.0
+* Amazon Kinesis Firehose for Fluent Bit 1.2.0
+
+Compared to `2.1.1` this release adds:
+* Feature -  Add time_key and time_key_format config options to add timestamp to records [firehose:9](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit/issues/9)
+* Feature -  Add time_key and time_key_format config options to add timestamp to records [kinesis:17](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/17)
+* Feature - Add support for Embedded Metric Format [cloudwatch:27](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/27)
+
+
 ### 2.1.1
 
 This release includes:
