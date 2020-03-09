@@ -124,8 +124,6 @@ check_parameter() {
 }
 
 sync_latest_image() {
-	LATEST_VERSION=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq '."results"[1]["name"]' | tr -d '"') 
-	echo $LATEST_VERSION
 	region=${1}
 	account_id=${2}
 	sha1=$(docker pull amazon/aws-for-fluent-bit:latest | grep sha256: | cut -f 3 -d :)
@@ -151,8 +149,8 @@ sync_latest_image() {
 		publish_ecr ${region} ${account_id}
 	fi
 
-
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION}" --region ${region})
+	LATEST_VERSION=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq '."results"[1]["name"]' | tr -d '"') 
+	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${LATEST_VERSION}" --region ${region})
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit
