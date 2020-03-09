@@ -124,7 +124,7 @@ check_parameter() {
 }
 
 sync_latest_image() {
-	LATEST_VERSION= 'curl -s -S "https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/" | jq '."results"[1]["name"]''
+	LATEST_VERSION= 'curl -s -S https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/ | jq '."results"[1]["name"]''
 	echo $LATEST_VERSION
 	region=${1}
 	account_id=${2}
