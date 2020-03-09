@@ -38,29 +38,29 @@ eu-west-3
 eu-north-1
 "
 
-classic_regions_account_id="906394416424"
+classic_regions_account_id="803860917211"
 
 cn_regions="
 cn-north-1
 cn-northwest-1
 "
 
-cn_regions_account_id="128054284489"
+cn_regions_account_id="803860917211"
 
 gov_regions="
 us-gov-east-1
 us-gov-west-1
 "
 
-gov_regions_account_id="161423150738"
+gov_regions_account_id="803860917211"
 
 hongkong_region="ap-east-1"
 
-hongkong_account_id="449074385750"
+hongkong_account_id="803860917211"
 
 bahrain_region="me-south-1"
 
-bahrain_account_id="741863432321"
+bahrain_account_id="803860917211"
 
 gamma_region="us-west-2"
 
@@ -124,6 +124,8 @@ check_parameter() {
 }
 
 sync_latest_image() {
+	LATEST_VERSION= 'curl -s -S "https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/" | jq '."results"[1]["name"]''
+	echo $LATEST_VERSION
 	region=${1}
 	account_id=${2}
 	sha1=$(docker pull amazon/aws-for-fluent-bit:latest | grep sha256: | cut -f 3 -d :)
@@ -148,6 +150,7 @@ sync_latest_image() {
 	if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 		publish_ecr ${region} ${account_id}
 	fi
+
 
 	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION}" --region ${region})
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
