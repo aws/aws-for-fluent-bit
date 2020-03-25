@@ -41,29 +41,29 @@ eu-west-3
 eu-north-1
 "
 
-classic_regions_account_id="803860917211"
+classic_regions_account_id="906394416424"
 
 cn_regions="
 cn-north-1
 cn-northwest-1
 "
 
-cn_regions_account_id="803860917211"
+cn_regions_account_id="128054284489"
 
 gov_regions="
 us-gov-east-1
 us-gov-west-1
 "
 
-gov_regions_account_id="803860917211"
+gov_regions_account_id="161423150738"
 
 hongkong_region="ap-east-1"
 
-hongkong_account_id="803860917211"
+hongkong_account_id="449074385750"
 
 bahrain_region="me-south-1"
 
-bahrain_account_id="803860917211"
+bahrain_account_id="741863432321"
 
 gamma_region="us-west-2"
 
@@ -89,12 +89,12 @@ publish_to_docker_hub() {
 	# Publish to DockerHub only if $DRY_RUN is set to false
 	if [[ "${DRY_RUN}" == "false" ]]; then
 		docker tag ${1} ${2}
-		#docker push ${1}
-		#docker push ${2}
+		docker push ${1}
+		docker push ${2}
 	else
 		echo "DRY_RUN: docker tag ${1} ${2}"
-		#echo "DRY_RUN: docker push ${1}"
-		#echo "DRY_RUN: docker push ${2}"
+		echo "DRY_RUN: docker push ${1}"
+		echo "DRY_RUN: docker push ${2}"
 		echo "DRY_RUN is NOT set to 'false', skipping DockerHub update. Exiting..."
 	fi
 
