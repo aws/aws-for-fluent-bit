@@ -8,7 +8,7 @@ phases:
       - echo Sync latest image from Dockerhub
   build:
     commands:
-      - './scripts/publish.sh cicd-publish ap-east-1'
+      - './scripts/publish.sh cicd-publish ${AWS_REGION}'
 
       # Assume role to verify, get the credentials, and set them as environment variables.
       # Verification should be done using the credentials from a different account. It ensures that
