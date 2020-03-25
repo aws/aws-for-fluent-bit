@@ -160,9 +160,11 @@ sync_latest_image() {
 }
 
 verify_ssm() {
+	is_sync_task=${2:-false}
+
 	check_parameter ${1} latest
 
-	if [ "${2}" = "sync_task"]; then
+	if [ "${is_sync_task}" = "true"]; then
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	else
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
@@ -193,6 +195,7 @@ publish_ecr() {
 verify_ecr() {
 	region=${1}
 	account_id=${2}
+	is_sync_task=${3:-false}
 
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
@@ -202,7 +205,7 @@ verify_ecr() {
 	pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest ${region}
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
-	if [ "${3}" = "sync_task" ]; then
+	if [ "${is_sync_task}" = "true" ]; then
 		pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${region}
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 	else
@@ -436,16 +439,16 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_dockerhub
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			verify_ecr ${region} ${gov_regions_account_id} sync_task
+			verify_ecr ${region} ${gov_regions_account_id} true
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			verify_ecr ${region} ${cn_regions_account_id} sync_task
+			verify_ecr ${region} ${cn_regions_account_id} true
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ecr ${bahrain_region} ${bahrain_account_id} sync_task
+		verify_ecr ${bahrain_region} ${bahrain_account_id} true
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ecr ${hongkong_region} ${hongkong_account_id} sync_task
+		verify_ecr ${hongkong_region} ${hongkong_account_id} true
 	else
 		verify_ecr "${2}" ${classic_regions_account_id}
 	fi
@@ -476,16 +479,16 @@ fi
 if [ "${1}" = "cicd-verify-ssm" ]; then
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			verify_ssm ${region} sync_task
+			verify_ssm ${region} true
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			verify_ssm ${region} sync_task
+			verify_ssm ${region} true
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region} sync_task
+		verify_ssm ${bahrain_region} true
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region} sync_task
+		verify_ssm ${hongkong_region} true
 	else
 		for region in ${classic_regions}; do
 			verify_ssm ${region}
