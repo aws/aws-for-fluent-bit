@@ -18,6 +18,9 @@ scripts=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${scripts}"
 
 IMAGE_SHA_MATCHED="FALSE"
+AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
+AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq '."results"[1]["name"]' | tr -d '"') 
+
 
 classic_regions="
 us-east-1
@@ -86,12 +89,12 @@ publish_to_docker_hub() {
 	# Publish to DockerHub only if $DRY_RUN is set to false
 	if [[ "${DRY_RUN}" == "false" ]]; then
 		docker tag ${1} ${2}
-		docker push ${1}
-		docker push ${2}
+		#docker push ${1}
+		#docker push ${2}
 	else
 		echo "DRY_RUN: docker tag ${1} ${2}"
-		echo "DRY_RUN: docker push ${1}"
-		echo "DRY_RUN: docker push ${2}"
+		#echo "DRY_RUN: docker push ${1}"
+		#echo "DRY_RUN: docker push ${2}"
 		echo "DRY_RUN is NOT set to 'false', skipping DockerHub update. Exiting..."
 	fi
 
@@ -149,8 +152,7 @@ sync_latest_image() {
 		publish_ecr ${region} ${account_id}
 	fi
 
-	LATEST_VERSION=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq '."results"[1]["name"]' | tr -d '"') 
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${LATEST_VERSION}" --region ${region})
+	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region})
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit
@@ -159,7 +161,12 @@ sync_latest_image() {
 
 verify_ssm() {
 	check_parameter ${1} latest
-	check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
+
+	if [ "${2}" = "sync_task"]; then
+		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	else
+		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
+	fi
 }
 
 push_to_ecr() {
@@ -193,11 +200,15 @@ verify_ecr() {
 	fi
 
 	pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest ${region}
-	pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION} ${region}
-
-	#Verification logic matching the image SHA
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
-	sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+
+	if [ "${3}" = "sync_task" ]; then
+		pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${region}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
+	else
+		pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION} ${region}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+	fi
 
 	verify_sha $sha1 $sha2
 }
@@ -240,7 +251,6 @@ match_two_sha() {
 	fi
 }
 
-AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 
 if [ "${1}" = "publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
@@ -426,16 +436,16 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_dockerhub
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			verify_ecr ${region} ${gov_regions_account_id}
+			verify_ecr ${region} ${gov_regions_account_id} sync_task
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			verify_ecr ${region} ${cn_regions_account_id}
+			verify_ecr ${region} ${cn_regions_account_id} sync_task
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ecr ${bahrain_region} ${bahrain_account_id}
+		verify_ecr ${bahrain_region} ${bahrain_account_id} sync_task
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ecr ${hongkong_region} ${hongkong_account_id}
+		verify_ecr ${hongkong_region} ${hongkong_account_id} sync_task
 	else
 		verify_ecr "${2}" ${classic_regions_account_id}
 	fi
@@ -466,16 +476,16 @@ fi
 if [ "${1}" = "cicd-verify-ssm" ]; then
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} sync_task
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} sync_task
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region}
+		verify_ssm ${bahrain_region} sync_task
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region}
+		verify_ssm ${hongkong_region} sync_task
 	else
 		for region in ${classic_regions}; do
 			verify_ssm ${region}
