@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.3.0
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.4.2](https://fluentbit.io/announcements/v1.4.2/)
+* Amazon CloudWatch Logs for Fluent Bit 1.2.0
+* Amazon Kinesis Streams for Fluent Bit 1.2.1
+* Amazon Kinesis Firehose for Fluent Bit 1.2.0
+
+Compared to `2.2.0` this release adds:
+* Bug Fix - Updated logic to calculate individual and maximum record size [kinesis:22](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/22)
+
+
 ### 2.2.0
 
 This release includes:
