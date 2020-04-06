@@ -166,7 +166,7 @@ verify_ssm() {
 
 	check_parameter ${1} latest
 
-	if [ "${is_sync_task}" = "true"]; then
+	if [ "${is_sync_task}" = "true" ]; then
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	else
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
