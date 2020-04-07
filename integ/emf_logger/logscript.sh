@@ -13,6 +13,6 @@ echo $metricName > $EMF_METRIC_NAME_PATH
 emfPayload='{"_aws":{"Timestamp":'"$(date +%s)000"',"CloudWatchMetrics":[{"Namespace":"'"$metricNamespace"'","Dimensions":[["dimensionKey"]],"Metrics":[{"Name":"'"$metricName"'"}]}]},"dimensionKey":"dimensionValue","'"$metricName"'":'"$metricValue"'}'
 echo $emfPayload > /dev/tcp/fluent-bit/5170
 
-sleep 20
+sleep 120
 
 exit 0
