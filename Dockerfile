@@ -3,7 +3,7 @@ FROM amazonlinux:latest as builder
 # Fluent Bit version; update these for each release
 ENV FLB_VERSION 1.4.2
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
-ENV FLB_DOCKER_BRANCH 1.3
+ENV FLB_DOCKER_BRANCH 1.4
 
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
@@ -63,9 +63,9 @@ WORKDIR /home/fluent-bit-docker-image
 RUN git fetch && git checkout ${FLB_DOCKER_BRANCH}
 RUN mkdir -p /fluent-bit/parsers/
 # /fluent-bit/etc is the normal path for config and parsers files
-RUN cp parsers*.conf /fluent-bit/etc
+RUN cp conf/parsers*.conf /fluent-bit/etc
 # /fluent-bit/etc is overwritten by FireLens, so its users will use /fluent-bit/parsers/
-RUN cp parsers*.conf /fluent-bit/parsers/
+RUN cp conf/parsers*.conf /fluent-bit/parsers/
 
 ADD configs/parse-json.conf /fluent-bit/configs/
 ADD configs/minimize-log-loss.conf /fluent-bit/configs/
