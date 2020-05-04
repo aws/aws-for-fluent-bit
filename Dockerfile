@@ -109,5 +109,9 @@ RUN chmod +x /entrypoint.sh
 # Optional Metrics endpoint
 EXPOSE 2020
 
+# For Tagging logs
+ARG SERVICE_NAME
+ENV SERVICE_NAME $SERVICE_NAME
+
 # Entry point
 CMD /entrypoint.sh
