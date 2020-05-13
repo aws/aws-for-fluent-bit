@@ -77,7 +77,9 @@ RUN yum upgrade -y \
           pkgconfig \
           systemd-devel \
           zlib-devel \
-          nc
+          nc \
+          logrotate \
+          crontabs
 
 COPY --from=builder /fluent-bit /fluent-bit
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so
