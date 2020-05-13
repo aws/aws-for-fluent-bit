@@ -79,6 +79,7 @@ RUN yum upgrade -y \
           zlib-devel \
           nc \
           logrotate \
+          cronie \
           crontabs
 
 COPY --from=builder /fluent-bit /fluent-bit
