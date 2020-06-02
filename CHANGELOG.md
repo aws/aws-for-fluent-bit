@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.3.1
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.4.5](https://fluentbit.io/announcements/v1.4.5/)
+* Amazon CloudWatch Logs for Fluent Bit 1.2.0
+* Amazon Kinesis Streams for Fluent Bit 1.2.2
+* Amazon Kinesis Firehose for Fluent Bit 1.2.1
+
+Compared to `2.3.0` this release adds:
+* Bug Fix - Remove redundant exponential backoff code from Firehose and Kinesis plugins [firehose:23](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit/issues/23)
+
 ### 2.3.0
 
 This release includes:
