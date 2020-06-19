@@ -3,7 +3,7 @@ ENV GO111MODULE on
 
 # Kinesis Streams
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
-ARG KINESIS_PLUGIN_BRANCH=master
+ARG KINESIS_PLUGIN_BRANCH=mainline
 
 RUN git clone $KINESIS_PLUGIN_CLONE_URL /kinesis-streams
 WORKDIR /kinesis-streams
@@ -13,7 +13,7 @@ RUN make release
 
 # Firehose
 ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit.git
-ARG FIREHOSE_PLUGIN_BRANCH=master
+ARG FIREHOSE_PLUGIN_BRANCH=mainline
 
 RUN git clone $FIREHOSE_PLUGIN_CLONE_URL /kinesis-firehose
 WORKDIR /kinesis-firehose
@@ -23,7 +23,7 @@ RUN make release
 
 # CloudWatch
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
-ARG CLOUDWATCH_PLUGIN_BRANCH=master
+ARG CLOUDWATCH_PLUGIN_BRANCH=mainline
 
 RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /cloudwatch
 WORKDIR /cloudwatch
