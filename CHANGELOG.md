@@ -1,5 +1,19 @@
 # Changelog
 
+### 2.4.0
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.0](https://fluentbit.io/announcements/v1.5.0/)
+* Amazon CloudWatch Logs for Fluent Bit 1.2.0
+* Amazon Kinesis Streams for Fluent Bit 1.3.0
+* Amazon Kinesis Firehose for Fluent Bit 1.2.1
+
+Compared to `2.3.1` this release adds:
+* Feature - Add experimental concurrency feature in Kinesis plugin [kinesis:33](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/33)
+* Feature - Add support for [Amazon ElasticSearch with IAM auth in the core Fluent Bit `es` plugin](https://docs.fluentbit.io/manual/pipeline/outputs/elasticsearch).
+* New Plugin - [`cloudwatch_logs` plugin in Fluent Bit core](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch) is a high performance replacement for the `cloudwatch` Golang plugin.
+
 ### 2.3.1
 
 This release includes:
