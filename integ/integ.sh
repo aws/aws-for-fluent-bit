@@ -83,6 +83,19 @@ clean_s3() {
 }
 
 if [ "${1}" = "cloudwatch" ]; then
+	export PLUGIN_UNDER_TEST="cloudwatch"
+	test_cloudwatch
+	clean_cloudwatch
+
+	if [ -f ./integ/out/cloudwatch-test ]; then
+		# if the file still exists, test failed
+		echo "Test Failed for Cloudwatch."
+		exit 1
+	fi
+fi
+
+if [ "${1}" = "cloudwatch_logs" ]; then
+	export PLUGIN_UNDER_TEST="cloudwatch_logs"
 	test_cloudwatch
 	clean_cloudwatch
 
@@ -121,15 +134,25 @@ if [ "${1}" = "clean-s3" ]; then
 fi
 
 if [ "${1}" = "cicd" ]; then
-    test_cloudwatch && clean_cloudwatch
+	export PLUGIN_UNDER_TEST="cloudwatch"
+	echo "Running tests on Golang CW Plugin"
+	test_cloudwatch && clean_cloudwatch
 	if [ -f ./integ/out/cloudwatch-test ]; then
 		# if the file still exists, test failed
-		echo "Test Failed for Cloudwatch."
+		echo "Test Failed for Cloudwatch (Golang)."
+		exit 1
+	fi
+
+	export PLUGIN_UNDER_TEST="cloudwatch_logs"
+	echo "Running tests on Core C CW Plugin"
+	test_cloudwatch && clean_cloudwatch
+	if [ -f ./integ/out/cloudwatch-test ]; then
+		# if the file still exists, test failed
+		echo "Test Failed for Cloudwatch (Core)."
 		exit 1
 	fi
 
 	source ./integ/resources/setup_test_environment.sh
-	test_cloudwatch && clean_cloudwatch
 	export S3_PREFIX="kinesis-test"
 	export TEST_FILE="kinesis-test"
 	clean_s3 && test_kinesis
