@@ -14,7 +14,9 @@
 - [Development](#development)
     - [Releasing](#releasing)
     - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
+- [Fluent Bit Examples](#fluent-bit-examples)
 - [License](#license)
+
 
 ### Versioning FAQ
 
@@ -131,9 +133,9 @@ We provide a [tutorial](examples/fluent-bit/systems-manager-ec2/) on using SSM t
 
 Use `make release` to build the image.
 To run the integration tests, run `make integ-dev`. The `make integ-dev` command will run the integration tests for all of our plugins-
-kinesis streams, and cloudwatch.
+kinesis streams, kinesis firehose, and cloudwatch.
 
-To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis`.
+To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis` or `make integ-firehose`.
 
 [Documentation on GitHub steps for releases](Release_Process.md).
 
@@ -141,7 +143,7 @@ To run integration tests separately, execute `make integ-cloudwatch` or `make in
 
 You can build a version of the image with code in your GitHub fork. To do so, you must need to set the following environment variables.
 Otherwise, you will see an error message like the following one:
-`fatal: repository '/kinesis-streams' or '/cloudwatch' does not exist.`
+`fatal: repository '/kinesis-streams' or '/kinesis-firehose' or '/cloudwatch' does not exist.`
 
 Set the following environment variables for CloudWatch:
 
@@ -156,9 +158,18 @@ export KINESIS_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
 export KINESIS_PLUGIN_BRANCH="Your branch on your fork"
 ```
 
-Then run `make cloudwatch-dev` or `make kinesis-dev` to build the image with your changes.
+Or for Kinesis Firehose:
+```
+export FIREHOSE_PLUGIN_CLONE_URL="Your GitHub fork clone URL"
+export FIREHOSE_PLUGIN_BRANCH="Your branch on your fork"
+```
 
-To run the integration tests on your code, execute `make integ-cloudwatch-dev` or `make integ-kinesis-dev`.
+Then run `make cloudwatch-dev` or `make kinesis-dev` or `make firehose-dev` to build the image with your changes.
+
+To run the integration tests on your code, execute `make integ-cloudwatch-dev` or `make integ-kinesis-dev` or `make integ-firehose-dev`.
+
+## Fluent Bit Examples
+Check out Fluent Bit examples from our [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples#fluent-bit-examples) repo.
 
 ## License
 
