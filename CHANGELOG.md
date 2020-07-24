@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.6.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.1](https://fluentbit.io/announcements/v1.5.1/)
+* Amazon CloudWatch Logs for Fluent Bit 1.3.1
+* Amazon Kinesis Streams for Fluent Bit 1.5.0
+* Amazon Kinesis Firehose for Fluent Bit 1.4.0
+
+Compared to `2.5.0` this release adds:
+* Feature - Add `log_key` option support to `firehose`, and `kinesis` plugins.
+* Bug - Add an empty check before sending log events to destinations for `firehose` and `cloudwatch` plugins.
+
 ### 2.5.0
 
 This release includes:

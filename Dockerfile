@@ -1,7 +1,7 @@
 FROM amazonlinux:latest as builder
 
 # Fluent Bit version; update these for each release
-ENV FLB_VERSION 1.5.0
+ENV FLB_VERSION 1.5.1
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.5
 
@@ -41,7 +41,7 @@ RUN yum install -y  \
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch && git checkout aws-patch-1_5_0
+RUN git fetch && git checkout ${FLB_DOCKER_BRANCH}
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
