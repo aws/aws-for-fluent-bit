@@ -32,11 +32,7 @@ RUN yum install -y  \
       --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
       --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
       --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
-      --family cmake #\
-#    && wget -O "/tmp/fluent-bit-${FLB_VERSION}.zip" ${FLB_TARBALL} \
-#    && cd /tmp && unzip "fluent-bit-$FLB_VERSION.zip" \
-#    && cd "fluent-bit-$FLB_VERSION"/build/ \
-#    && rm -rf /tmp/fluent-bit-$FLB_VERSION/build/*
+      --family cmake
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
