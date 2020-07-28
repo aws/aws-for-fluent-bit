@@ -37,7 +37,7 @@ RUN yum install -y  \
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch && git checkout ${FLB_VERSION}
+RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
