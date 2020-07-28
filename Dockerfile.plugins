@@ -12,7 +12,7 @@ ARG CLOUDWATCH_PLUGIN_TAG=v1.3.2
 
 RUN git clone $KINESIS_PLUGIN_CLONE_URL /kinesis-streams
 WORKDIR /kinesis-streams
-RUN git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git rev-parse HEAD
+RUN git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git describe --tags
 RUN go mod download
 RUN make release
 
@@ -20,7 +20,7 @@ RUN make release
 
 RUN git clone $FIREHOSE_PLUGIN_CLONE_URL /kinesis-firehose
 WORKDIR /kinesis-firehose
-RUN git fetch --all --tags && git checkout tags/$FIREHOSE_PLUGIN_TAG -b $FIREHOSE_PLUGIN_TAG && git rev-parse HEAD
+RUN git fetch --all --tags && git checkout tags/$FIREHOSE_PLUGIN_TAG -b $FIREHOSE_PLUGIN_TAG && git describe --tags
 RUN go mod download
 RUN make release
 
@@ -28,6 +28,6 @@ RUN make release
 
 RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /cloudwatch
 WORKDIR /cloudwatch
-RUN git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git rev-parse HEAD
+RUN git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags
 RUN go mod download
 RUN make release
