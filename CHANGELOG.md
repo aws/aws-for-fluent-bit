@@ -1,5 +1,13 @@
 # Changelog
 
+### 2.6.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.2](https://fluentbit.io/announcements/v1.5.2/)
+* Amazon CloudWatch Logs for Fluent Bit 1.3.2
+* Amazon Kinesis Streams for Fluent Bit 1.5.1
+* Amazon Kinesis Firehose for Fluent Bit 1.4.1
+
 ### 2.6.0
 This release includes:
 * An Amazon Linux 2 Base
