@@ -15,14 +15,15 @@ phases:
       - 'export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Token`'
 
       # Pull the image that we built and pushed in the `Build` stage
-      - 'ecs-cli pull amazon/aws-for-fluent-bit-test:latest'                                                            
-      - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest amazon/aws-for-fluent-bit:latest'
-
-      # List the images to do a double check
-      - 'docker images'
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest
+      - docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test amazon/aws-for-fluent-bit:latest
+      
+      # List the images to do a double check          
+      - docker images
 
       # Command to run the integration test
-      - 'make integ'
+      - make integ
 artifacts:
   files:
     - '**/*'
