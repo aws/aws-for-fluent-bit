@@ -3,12 +3,13 @@ export AWS_REGION="us-west-2"
 export PROJECT_ROOT="$(pwd)"
 
 test_cloudwatch() {
-	export LOG_GROUP_NAME="fluent-bit-integ-test"
+	export ARCHITECTURE=$(uname -m)
+	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
 	# Tag is used to name the log stream; each test run has a unique (random) log stream name
 	export TAG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.test.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.test.yml up --abort-on-container-exit
-	sleep 10
+	sleep 120
 
 	# Creates a file as a flag for the validation failure
 	mkdir -p ./integ/out
@@ -20,7 +21,7 @@ test_cloudwatch() {
 }
 
 clean_cloudwatch() {
-	export LOG_GROUP_NAME="fluent-bit-integ-test"
+	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
 	# Clean up resources that were created in the test
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml up --abort-on-container-exit
@@ -81,7 +82,6 @@ test_firehose() {
 clean_s3() {
 	validate_or_clean_s3 clean
 }
-
 if [ "${1}" = "cloudwatch" ]; then
 	export PLUGIN_UNDER_TEST="cloudwatch"
 	test_cloudwatch
