@@ -14,9 +14,24 @@ phases:
       # List the docker images 
       - docker images
 
-      # Push the image to ECR in the same account and same region the pipeline is hosted.
-      - docker tag amazon/aws-for-fluent-bit:latest amazon/aws-for-fluent-bit-test:latest
-      - ecs-cli push amazon/aws-for-fluent-bit-test:latest
+      # Push the image to ECR with corresponding architecture as the tag.
+      - aws ecr get-login-password --region ${AWS_REGION}| docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - aws ecr create-repository --repository-name amazon/aws-for-fluent-bit-test --image-scanning-configuration scanOnPush=true --region ${AWS_REGION}  || true
+      - architecture=$(docker inspect --format='{{.Architecture}}'  amazon/aws-for-fluent-bit)
+      - docker tag amazon/aws-for-fluent-bit:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
+      - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
+
+       # Create manifest list
+      - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
+      - docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 || true
+      - docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
+      
+      # Sanity check for the debug log
+      - docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true
+
+      # Push manifest list
+      - docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true 
 artifacts:
   files:
     - '**/*'

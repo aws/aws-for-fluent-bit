@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 client = boto3.client('logs', region_name=os.environ.get('AWS_REGION'))
 metrics_client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
-start_time = datetime.utcnow() - timedelta(seconds=60)
+start_time = datetime.utcnow() - timedelta(seconds=600)
 end_time = datetime.utcnow()
 
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
@@ -55,7 +55,7 @@ def validate_metric(test_name, metric_namespace, dim_key, dim_value, expected_sa
             return True
         attempts += 1
         print(f"No metrics yet. Sleeping before trying again. Attempt # {attempts}")
-        time.sleep(2)
+        time.sleep(10)
 
     sys.exit('TEST_FAILURE: failed to validate metric existence in CloudWatch')
 
