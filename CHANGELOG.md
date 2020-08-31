@@ -1,5 +1,51 @@
 # Changelog
 
+### 2.6.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.2](https://fluentbit.io/announcements/v1.5.2/)
+* Amazon CloudWatch Logs for Fluent Bit 1.3.2
+* Amazon Kinesis Streams for Fluent Bit 1.5.1
+* Amazon Kinesis Firehose for Fluent Bit 1.4.1
+
+### 2.6.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.1](https://fluentbit.io/announcements/v1.5.1/)
+* Amazon CloudWatch Logs for Fluent Bit 1.3.1
+* Amazon Kinesis Streams for Fluent Bit 1.5.0
+* Amazon Kinesis Firehose for Fluent Bit 1.4.0
+
+Compared to `2.5.0` this release adds:
+* Feature - Add `log_key` option support to `firehose`, and `kinesis` plugins.
+* Bug - Add an empty check before sending log events to destinations for `firehose` and `cloudwatch` plugins.
+
+### 2.5.0
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.0](https://fluentbit.io/announcements/v1.5.0/)
+* Amazon CloudWatch Logs for Fluent Bit 1.3.0
+* Amazon Kinesis Streams for Fluent Bit 1.4.0
+* Amazon Kinesis Firehose for Fluent Bit 1.3.0
+
+Compared to `2.4.0` this release adds:
+* Feature - Add `sts_endpoint` parameter to `cloudwatch`, `firehose`, and `kinesis` plugins to support specifying a custom STS API endpoint.
+
+### 2.4.0
+
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.0](https://fluentbit.io/announcements/v1.5.0/)
+* Amazon CloudWatch Logs for Fluent Bit 1.2.0
+* Amazon Kinesis Streams for Fluent Bit 1.3.0
+* Amazon Kinesis Firehose for Fluent Bit 1.2.1
+
+Compared to `2.3.1` this release adds:
+* Feature - Add experimental concurrency feature in Kinesis plugin [kinesis:33](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/33)
+* Feature - Add support for [Amazon ElasticSearch with IAM auth in the core Fluent Bit `es` plugin](https://docs.fluentbit.io/manual/pipeline/outputs/elasticsearch).
+* New Plugin - [`cloudwatch_logs` plugin in Fluent Bit core](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch) is a high performance replacement for the `cloudwatch` Golang plugin.
+
 ### 2.3.1
 
 This release includes:

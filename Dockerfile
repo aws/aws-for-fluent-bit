@@ -1,9 +1,9 @@
 FROM amazonlinux:latest as builder
 
 # Fluent Bit version; update these for each release
-ENV FLB_VERSION 1.4.2
+ENV FLB_VERSION 1.5.2
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
-ENV FLB_DOCKER_BRANCH 1.4
+ENV FLB_DOCKER_BRANCH 1.5
 
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
@@ -32,13 +32,12 @@ RUN yum install -y  \
       --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
       --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
       --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
-      --family cmake \
-    && wget -O "/tmp/fluent-bit-${FLB_VERSION}.zip" ${FLB_TARBALL} \
-    && cd /tmp && unzip "fluent-bit-$FLB_VERSION.zip" \
-    && cd "fluent-bit-$FLB_VERSION"/build/ \
-    && rm -rf /tmp/fluent-bit-$FLB_VERSION/build/*
+      --family cmake
 
+WORKDIR /tmp/fluent-bit-$FLB_VERSION/
+RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
+RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
