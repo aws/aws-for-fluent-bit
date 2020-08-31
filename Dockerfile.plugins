@@ -1,4 +1,4 @@
-FROM golang:1.12
+FROM golang:1.13
 ENV GO111MODULE on
 
 # Kinesis Streams
@@ -30,3 +30,15 @@ WORKDIR /cloudwatch
 RUN git fetch && git checkout $CLOUDWATCH_PLUGIN_BRANCH
 RUN go mod download
 RUN make release
+
+# Grafana Loki
+ARG LOKI_PLUGIN_CLONE_URL=https://github.com/Bokun/loki.git
+ARG LOKI_PLUGIN_BRANCH=master
+
+RUN git clone $LOKI_PLUGIN_CLONE_URL /loki
+WORKDIR /loki
+RUN git fetch && git checkout $LOKI_PLUGIN_BRANCH
+#RUN go mod download
+RUN make fluent-bit-plugin
+# go build $(DYN_GO_FLAGS) -buildmode=c-shared -o cmd/fluent-bit/out_loki.so ./cmd/fluent-bit/
+

@@ -115,6 +115,10 @@ if [ "${1}" = "firehose" ]; then
 	clean_s3 && test_firehose
 fi
 
+if [ "${1}" = "loki" ]; then
+  echo "TODO Test Loki."
+fi
+
 if [ "${1}" = "clean-s3" ]; then
 	source ./integ/resources/setup_test_environment.sh
 	clean_s3
