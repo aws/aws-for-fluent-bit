@@ -9,6 +9,7 @@ services:
             - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
             - FLB_LOG_LEVEL=debug
             - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
+            - "PLUGIN_UNDER_TEST=${PLUGIN_UNDER_TEST}"
         volumes:
             - /var/run/:/var/run
             - ./:/fluent-bit/etc/
