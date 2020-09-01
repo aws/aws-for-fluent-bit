@@ -1,4 +1,4 @@
-FROM golang:1.13
+FROM golang:1.15
 ENV GO111MODULE on
 
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
@@ -7,12 +7,17 @@ ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for
 ARG FIREHOSE_PLUGIN_TAG=v1.4.1
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
 ARG CLOUDWATCH_PLUGIN_TAG=v1.3.2
+# ARG LOKI_PLUGIN_CLONE_URL=https://github.com/Bokun/loki.git
+ARG LOKI_PLUGIN_CLONE_URL=https://github.com/grafana/loki.git
+ARG LOKI_PLUGIN_BRANCH=master
 
 # Kinesis Streams
 
 RUN git clone $KINESIS_PLUGIN_CLONE_URL /kinesis-streams
 WORKDIR /kinesis-streams
 RUN git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git describe --tags
+RUN rm go.sum
+RUN go mod tidy
 RUN go mod download
 RUN make release
 
@@ -29,17 +34,17 @@ RUN make release
 RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /cloudwatch
 WORKDIR /cloudwatch
 RUN git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags
+RUN rm go.sum
+RUN go mod tidy
 RUN go mod download
 RUN make release
 
 # Grafana Loki
-ARG LOKI_PLUGIN_CLONE_URL=https://github.com/Bokun/loki.git
-ARG LOKI_PLUGIN_BRANCH=master
 
 RUN git clone $LOKI_PLUGIN_CLONE_URL /loki
 WORKDIR /loki
 RUN git fetch && git checkout $LOKI_PLUGIN_BRANCH
-#RUN go mod download
+# RUN go mod download
 RUN make fluent-bit-plugin
 # go build $(DYN_GO_FLAGS) -buildmode=c-shared -o cmd/fluent-bit/out_loki.so ./cmd/fluent-bit/
 

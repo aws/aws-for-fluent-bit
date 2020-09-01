@@ -79,7 +79,7 @@ integ-firehose-dev: firehose-dev
 	./integ/integ.sh firehose
 
 .PHONY: integ-loki
-integ-loki-dev: release
+integ-loki: release
 	./integ/integ.sh loki
 
 .PHONY: integ-loki-dev
