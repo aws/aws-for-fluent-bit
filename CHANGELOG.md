@@ -1,5 +1,21 @@
 # Changelog
 
+### 2.7.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.5.6](https://fluentbit.io/announcements/v1.5.6/)
+* Amazon CloudWatch Logs for Fluent Bit 1.4.0
+* Amazon Kinesis Streams for Fluent Bit 1.6.0
+* Amazon Kinesis Firehose for Fluent Bit 1.4.1
+
+Compared to `2.6.1` this release adds:
+* Feature - Add support for zlib compression of records [kinesis:26](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/issues/26)
+* Feature - Add KPL aggregation support [kinesis:16](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/issues/16)
+* Feature - Add support for dynamic log group names [cloudwatch:46](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/46)
+* Feature - Add support for dynamic log stream names [cloudwatch:16](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/16)
+* Feature - Support tagging of newly created log groups [cloudwatch:51](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/51)
+* Feature - Support setting log group retention policies [cloudwatch:50](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/50)
+
 ### 2.6.1
 This release includes:
 * An Amazon Linux 2 Base

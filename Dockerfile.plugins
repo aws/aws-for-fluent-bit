@@ -2,13 +2,13 @@ FROM golang:1.12
 ENV GO111MODULE on
 
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
-ARG KINESIS_PLUGIN_TAG=v1.5.1
+ARG KINESIS_PLUGIN_TAG=v1.6.0
 ARG KINESIS_PLUGIN_BRANCH=""
 ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit.git
 ARG FIREHOSE_PLUGIN_TAG=v1.4.1
 ARG FIREHOSE_PLUGIN_BRANCH=""
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
-ARG CLOUDWATCH_PLUGIN_TAG=v1.3.2
+ARG CLOUDWATCH_PLUGIN_TAG=v1.4.0
 ARG CLOUDWATCH_PLUGIN_BRANCH=""
 
 # Kinesis Streams
