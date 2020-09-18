@@ -78,6 +78,30 @@ test_firehose() {
 	fi
 }
 
+test_s3() {
+	# Generates log data which will be stored on the s3 bucket
+	docker-compose --file ./integ/test_s3/docker-compose.test.yml build
+	docker-compose --file ./integ/test_s3/docker-compose.test.yml up --abort-on-container-exit
+
+    # Giving a pause before running the validation test
+	sleep 20
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/s3-test
+
+	export S3_ACTION="validate"
+	docker-compose --file ./integ/test_s3/docker-compose.validate-and-clean-s3.yml build
+	docker-compose --file ./integ/test_s3/docker-compose.validate-and-clean-s3.yml up --abort-on-container-exit
+
+	if [ -f ./integ/out/s3-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for S3."
+		exit 1
+	fi
+}
+
+
 clean_s3() {
 	validate_or_clean_s3 clean
 }
@@ -113,6 +137,7 @@ fi
 if [ "${1}" = "kinesis" ]; then
 	export S3_PREFIX="kinesis-test"
 	export TEST_FILE="kinesis-test"
+	export EXPECTED_EVENTS_LEN="1000"
 	source ./integ/resources/create_test_resources.sh
 	source ./integ/resources/setup_test_environment.sh
 
@@ -122,10 +147,21 @@ fi
 if [ "${1}" = "firehose" ]; then
 	export S3_PREFIX="firehose-test"
 	export TEST_FILE="firehose-test"
+	export EXPECTED_EVENTS_LEN="1000"
 	source ./integ/resources/create_test_resources.sh
 	source ./integ/resources/setup_test_environment.sh
 
 	clean_s3 && test_firehose
+fi
+
+if [ "${1}" = "s3" ]; then
+	export S3_PREFIX="fluent-bit-logs"
+	export TEST_FILE="s3-test"
+	export EXPECTED_EVENTS_LEN="7717"
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
+	clean_s3 && test_s3
 fi
 
 if [ "${1}" = "clean-s3" ]; then
@@ -155,10 +191,19 @@ if [ "${1}" = "cicd" ]; then
 	source ./integ/resources/setup_test_environment.sh
 	export S3_PREFIX="kinesis-test"
 	export TEST_FILE="kinesis-test"
+	export EXPECTED_EVENTS_LEN="1000"
 	clean_s3 && test_kinesis
 	export S3_PREFIX="firehose-test"
 	export TEST_FILE="firehose-test"
 	clean_s3 && test_firehose
+
+	export S3_PREFIX="fluent-bit-logs"
+	export TEST_FILE="s3-test"
+	export EXPECTED_EVENTS_LEN="7717"
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
+	clean_s3 && test_s3
 fi
 
 if [ "${1}" = "delete" ]; then
