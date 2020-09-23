@@ -98,6 +98,7 @@ publish_to_docker_hub() {
 			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION} 
 			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}  
 		done
+
 		create_manifest_list ${1} "latest"
 		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION} 
 
@@ -137,34 +138,49 @@ check_parameter() {
 	fi
 	# remove leading and trailing quotes from repo_uri
 	repo_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
-	pull_ecr $repo_uri $region
+	docker pull $repo_uri
 }
 
 sync_latest_image() {
 	region=${1}
 	account_id=${2}
-	sha1=$(docker pull amazon/aws-for-fluent-bit:latest | grep sha256: | cut -f 3 -d :)
 
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
-	fi
+	fi 
 
-	repoList=$(aws ecr describe-repositories --region ${region})
-	repoName=$(echo $repoList | jq .repositories[0].repositoryName)
-	if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
-		pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest ${region}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
-	else
-		sha2='repo_not_found'
-	fi
+	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
+	for arch in "${ARCHITECTURES[@]}"
+	do	
+		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :) 
+		repoList=$(aws ecr describe-repositories --region ${region})
+		repoName=$(echo $repoList | jq .repositories[0].repositoryName)
+		if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
+			imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${arch}-${AWS_FOR_FLUENT_BIT_VERSION} || echo "0")
+			if [ "$imageTag" = '1' ]; then
+				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} 
+				sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION})
+			else
+				sha2='repo_not_found'
+			fi
+		else
+			sha2='repo_not_found'
+		fi
 
-	docker images
-	match_two_sha $sha1 $sha2
+		match_two_sha $sha1 $sha2
 
-	if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
-		publish_ecr ${region} ${account_id}
-	fi
+		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
+			aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
+			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} \
+				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
+		fi
+	done
+
+	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest"
+	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
+
+	make_repo_public ${region}
 
 	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region})
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
@@ -204,20 +220,8 @@ create_manifest_list() {
 }
 
 push_image_ecr() {
-	account_id=${1}
-	region=${2}
-
-	for arch in "${ARCHITECTURES[@]}"
-	do
-		docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
-			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
-    	        docker push ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
-	done
-}
-
-# TODO: remove dependency on ecs-cli
-pull_ecr() {
-	ecs-cli pull ${1} --region ${2}
+	docker tag ${1} ${2}
+    	docker push ${2}
 }
 
 make_repo_public() {
@@ -227,14 +231,16 @@ make_repo_public() {
 publish_ecr() {
 	region=${1}
 	account_id=${2}
-	echo $region
-	echo $account_id
 
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
 	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
 	
-	push_image_ecr ${account_id} ${region}
-		
+	for arch in "${ARCHITECTURES[@]}"
+	do
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
+			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+	done
+	
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "latest"
 
@@ -250,13 +256,12 @@ verify_ecr() {
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
-
-	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 	docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
 	if [ "${is_sync_task}" = "true" ]; then
-		pull_ecr ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${region}
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 	else
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
