@@ -176,7 +176,7 @@ sync_latest_image() {
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
 			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} \
-				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
+				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} 
 		fi
 	done
 
@@ -272,6 +272,24 @@ verify_ecr() {
 	fi
 
 	verify_sha $sha1 $sha2
+}
+
+verify_ecr_image_scan() {
+	region=${1}
+	repo_uri=${2}
+	tag=${3}
+	
+	imageTag=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+	if [ "$imageTag" = '1' ]; then
+		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}	
+		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
+		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
+		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL')
+		if [ "$highVulnerabilityCount" != null ] || [ "$criticalVulnerabilityCount" != null ]; then
+			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities."
+			exit 1
+		fi	
+	fi
 }
 
 verify_dockerhub() {
@@ -552,4 +570,8 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 			verify_ssm ${region}
 		done
 	fi
+fi
+
+if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
+	verify_ecr_image_scan ${2} ${3} ${4}	
 fi
