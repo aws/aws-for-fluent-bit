@@ -79,6 +79,11 @@ test_firehose() {
 }
 
 test_s3() {
+	# different S3 prefix for each test
+	export S3_PREFIX_PUT_OBJECT="logs/putobject"
+	export S3_PREFIX_MULTIPART="logs/multipart"
+	# Tag is used in the s3 keys; each test run has a unique (random) tag
+	export TAG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
 	# Generates log data which will be stored on the s3 bucket
 	docker-compose --file ./integ/test_s3/docker-compose.test.yml build
 	docker-compose --file ./integ/test_s3/docker-compose.test.yml up --abort-on-container-exit
@@ -91,8 +96,22 @@ test_s3() {
 	touch ./integ/out/s3-test
 
 	export S3_ACTION="validate"
-	docker-compose --file ./integ/test_s3/docker-compose.validate-and-clean-s3.yml build
-	docker-compose --file ./integ/test_s3/docker-compose.validate-and-clean-s3.yml up --abort-on-container-exit
+	docker-compose --file ./integ/test_s3/docker-compose.validate-s3-multipart.yml build
+	docker-compose --file ./integ/test_s3/docker-compose.validate-s3-multipart.yml up --abort-on-container-exit
+
+	if [ -f ./integ/out/s3-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for S3."
+		exit 1
+	fi
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/s3-test
+
+	export S3_ACTION="validate"
+	docker-compose --file ./integ/test_s3/docker-compose.validate-s3-putobject.yml build
+	docker-compose --file ./integ/test_s3/docker-compose.validate-s3-putobject.yml up --abort-on-container-exit
 
 	if [ -f ./integ/out/s3-test ]; then
 		# if the file still exists, test failed
@@ -155,7 +174,7 @@ if [ "${1}" = "firehose" ]; then
 fi
 
 if [ "${1}" = "s3" ]; then
-	export S3_PREFIX="fluent-bit-logs"
+	export S3_PREFIX="logs"
 	export TEST_FILE="s3-test"
 	export EXPECTED_EVENTS_LEN="7717"
 	source ./integ/resources/create_test_resources.sh
@@ -197,7 +216,6 @@ if [ "${1}" = "cicd" ]; then
 	export TEST_FILE="firehose-test"
 	clean_s3 && test_firehose
 
-	export S3_PREFIX="fluent-bit-logs"
 	export TEST_FILE="s3-test"
 	export EXPECTED_EVENTS_LEN="7717"
 	source ./integ/resources/create_test_resources.sh
