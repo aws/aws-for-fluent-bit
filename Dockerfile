@@ -37,7 +37,7 @@ RUN yum install -y  \
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch && git checkout aws_patch_1.6.0 -b v${FLB_VERSION} && git status
+RUN git fetch origin && git checkout aws_patch_1.6.0 && git checkout -b v${FLB_VERSION} && git status
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
