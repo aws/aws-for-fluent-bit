@@ -1,4 +1,4 @@
-version: 0.2         
+version: 0.2
 phases:
   install:
     runtime-versions:
@@ -8,6 +8,8 @@ phases:
       - echo Sync latest image from Dockerhub
   build:
     commands:
+      # Enforce STS regional endpoints
+      - export AWS_STS_REGIONAL_ENDPOINTS=regional
       - './scripts/publish.sh cicd-publish ${AWS_REGION}'
 
       # Assume role to verify, get the credentials, and set them as environment variables.
@@ -17,7 +19,7 @@ phases:
       - export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
       - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
-      
+
       # Verify from the verification account
       - './scripts/publish.sh cicd-verify ${AWS_REGION}'
       - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION}'

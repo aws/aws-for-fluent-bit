@@ -1,4 +1,4 @@
-version: 0.2         
+version: 0.2
 phases:
   install:
     runtime-versions:
@@ -8,6 +8,8 @@ phases:
       - echo Publish SSM parameters
   build:
     commands:
+      # Enforce STS regional endpoints
+      - export AWS_STS_REGIONAL_ENDPOINTS=regional
       - './scripts/publish.sh cicd-publish-ssm ${AWS_REGION}'
 
       # Assume role to verify, get the credentials, and set them as environment variables.

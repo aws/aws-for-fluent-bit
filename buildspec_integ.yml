@@ -1,4 +1,4 @@
-version: 0.2         
+version: 0.2
 phases:
   install:
     runtime-versions:
@@ -8,6 +8,8 @@ phases:
       - echo Running the integration test
   build:
     commands:
+      # Enforce STS regional endpoints
+      - export AWS_STS_REGIONAL_ENDPOINTS=regional
       # Get the default credentials and set as environment variables
       - 'CREDS=`curl 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI`'
       - 'export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .AccessKeyId`'
@@ -15,7 +17,7 @@ phases:
       - 'export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Token`'
 
       # Pull the image that we built and pushed in the `Build` stage
-      - 'ecs-cli pull amazon/aws-for-fluent-bit-test:latest'                                                            
+      - 'ecs-cli pull amazon/aws-for-fluent-bit-test:latest'
       - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest amazon/aws-for-fluent-bit:latest'
 
       # List the images to do a double check

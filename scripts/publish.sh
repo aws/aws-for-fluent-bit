@@ -20,9 +20,12 @@ cd "${scripts}"
 IMAGE_SHA_MATCHED="FALSE"
 AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 
-docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq -r '.results[].name' | sort -r) 
+docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq -r '.results[].name' | sort -r)
 tag_array=(`echo ${docker_hub_image_tags}`)
 AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=${tag_array[1]}
+
+# Enforce STS regional endpoints
+AWS_STS_REGIONAL_ENDPOINTS=regional
 
 classic_regions="
 us-east-1
