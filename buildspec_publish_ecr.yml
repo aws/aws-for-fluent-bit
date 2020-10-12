@@ -1,4 +1,4 @@
-version: 0.2         
+version: 0.2
 phases:
   install:
     runtime-versions:
@@ -8,11 +8,13 @@ phases:
       - echo Publish the image to ECR
   build:
     commands:
+      # Enforce STS regional endpoints
+      - export AWS_STS_REGIONAL_ENDPOINTS=regional
       # Pull the image that we built and pushed in the `Build` stage
       - 'ecs-cli pull amazon/aws-for-fluent-bit-test:latest'
       - 'docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest amazon/aws-for-fluent-bit:latest'
 
-      # List the docker images 
+      # List the docker images
       - docker images
 
       # Assume role to publish, get the credentials, and set them as environment variables
@@ -24,9 +26,9 @@ phases:
           export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
         fi
 
-      # Push the image to ECR 
+      # Push the image to ECR
       - './scripts/publish.sh cicd-publish ${REGION_TO_PUSH}'
-      
+
       # Nullify the temporary credentials for the assumed role to publish
       - |
         if [ "${PUBLISH_ROLE_ARN}" != "" ]; then
@@ -42,7 +44,7 @@ phases:
       - export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
       - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
-      
+
       # Verify from the verification account
       - './scripts/publish.sh cicd-verify ${REGION_TO_PUSH}'
 artifacts:
