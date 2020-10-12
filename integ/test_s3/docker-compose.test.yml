@@ -8,6 +8,7 @@ services:
             - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
             - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
             - "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+            - "ARCHITECTURE=${ARCHITECTURE}"
             - FLB_LOG_LEVEL=debug
         volumes:
             - /var/run/:/var/run
