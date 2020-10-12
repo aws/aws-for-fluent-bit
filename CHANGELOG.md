@@ -1,5 +1,19 @@
 # Changelog
 
+### 2.8.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.6.0](https://fluentbit.io/announcements/v1.6.0/)
+* Amazon CloudWatch Logs for Fluent Bit 1.4.1
+* Amazon Kinesis Streams for Fluent Bit 1.6.1
+* Amazon Kinesis Firehose for Fluent Bit 1.4.2
+
+Compared to `2.7.0` this release adds:
+* New Plugin - [`s3` plugin in Fluent Bit core](https://docs.fluentbit.io/manual/pipeline/outputs/s3) is a high performance replacement output that can send data directly to S3
+* New Plugin - [`kinesis_firehose` plugin in Fluent Bit core](https://docs.fluentbit.io/manual/pipeline/outputs/firehose) is a high performance replacement for the `firehose` Golang plugin.
+* Bug - Truncate records to max size in `cloudwatch`, `firehose`, and `kinesis` plugins
+* Bug - Add back `auto_create_group` option [cloudwatch:96](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/96)
+
 ### 2.7.0
 This release includes:
 * An Amazon Linux 2 Base
