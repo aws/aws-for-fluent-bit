@@ -217,6 +217,7 @@ if [ "${1}" = "cicd" ]; then
 	export TEST_FILE="firehose-test"
 	clean_s3 && test_firehose
 
+	export S3_PREFIX="logs"
 	export TEST_FILE="s3-test"
 	export EXPECTED_EVENTS_LEN="7717"
 	source ./integ/resources/create_test_resources.sh
