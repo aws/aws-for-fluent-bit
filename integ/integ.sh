@@ -82,7 +82,7 @@ test_s3() {
 	# different S3 prefix for each test
 	export ARCHITECTURE=$(uname -m)
 	export S3_PREFIX_PUT_OBJECT="logs/${ARCHITECTURE}/putobject"
-	export S3_PREFIX_MULTIPART="logs/${ARCHITECTURE}/logs/multipart"
+	export S3_PREFIX_MULTIPART="logs/${ARCHITECTURE}/multipart"
 	# Tag is used in the s3 keys; each test run has a unique (random) tag
 	export TAG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
 	# Generates log data which will be stored on the s3 bucket
