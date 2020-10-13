@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	envAWSRegion = "AWS_REGION"
-	envS3Bucket  = "S3_BUCKET_NAME"
-	envS3Action  = "S3_ACTION"
-	envS3Prefix  = "S3_PREFIX"
-	envTestFile  = "TEST_FILE"
+	envAWSRegion       = "AWS_REGION"
+	envS3Bucket        = "S3_BUCKET_NAME"
+	envS3Action        = "S3_ACTION"
+	envS3Prefix        = "S3_PREFIX"
+	envTestFile        = "TEST_FILE"
+	envExpectedLogsLen = "EXPECTED_EVENTS_LEN"
 )
 
 type Message struct {
@@ -48,6 +49,15 @@ func main() {
 		exitErrorf("[TEST FAILURE] test verfication file name required. Set the value for environment variable- %s", envTestFile)
 	}
 
+	expectedEventsLen := os.Getenv(envExpectedLogsLen)
+	if expectedEventsLen == "" {
+		exitErrorf("[TEST FAILURE] number of expected log events required. Set the value for environment variable- %s", envExpectedLogsLen)
+	}
+	numEvents, convertionError := strconv.Atoi(expectedEventsLen)
+	if convertionError != nil {
+		exitErrorf("[TEST FAILURE] String to Int convertion Error for EXPECTED_EVENTS_LEN:", convertionError)
+	}
+
 	s3Client, err := getS3Client(region)
 	if err != nil {
 		exitErrorf("[TEST FAILURE] Unable to create new S3 client: %v", err)
@@ -57,7 +67,7 @@ func main() {
 	if s3Action == "validate" {
 		// Validate the data on the s3 bucket
 		getS3ObjectsResponse := getS3Objects(s3Client, bucket, prefix)
-		validate(s3Client, getS3ObjectsResponse, bucket, testFile)
+		validate(s3Client, getS3ObjectsResponse, bucket, testFile, numEvents)
 	} else {
 		// Clean the s3 bucket-- delete all objects
 		deleteS3Objects(s3Client, bucket, prefix)
@@ -97,8 +107,8 @@ func getS3Objects(s3Client *s3.S3, bucket string, prefix string) *s3.ListObjects
 // Validates the log messages. Our log producer is designed to send 1000 integers [0 - 999].
 // Both of the Kinesis Streams and Kinesis Firehose try to send each log maintaining the "at least once" policy.
 // To validate, we need to make sure all the valid numbers [0 - 999] are stored at least once.
-func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, testFile string) {
-	logCounter := make([]int, 1000)
+func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, testFile string, numEvents int) {
+	logCounter := make([]int, numEvents)
 	for index := range logCounter {
 		logCounter[index] = 1
 	}
@@ -121,6 +131,9 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 			if d == "" {
 				continue
 			}
+			if len(d) > 500 {
+				continue
+			}
 
 			var message Message
 
@@ -134,8 +147,8 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 				exitErrorf("[TEST FAILURE] String to Int convertion Error:", convertionError)
 			}
 
-			if number < 0 || number >= 1000 {
-				exitErrorf("[TEST FAILURE] Invalid number: %d found. Expected value in range (0 - 999)", number)
+			if number < 0 || number >= numEvents {
+				exitErrorf("[TEST FAILURE] Invalid number: %d found. Expected value in range (0 - %d)", number, numEvents)
 			}
 
 			logCounter[number] = 0

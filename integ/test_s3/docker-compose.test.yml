@@ -1,0 +1,35 @@
+version: "2"
+
+services:
+    fluent-bit:
+        image: amazon/aws-for-fluent-bit:latest
+        environment:
+            - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+            - "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+            - "ARCHITECTURE=${ARCHITECTURE}"
+            - FLB_LOG_LEVEL=debug
+        volumes:
+            - /var/run/:/var/run
+            - ./:/fluent-bit/etc/
+    logger-multipart-test:
+        build: ${PROJECT_ROOT}/integ/s3-logger
+        depends_on:
+            - fluent-bit
+        logging:
+            driver: fluentd
+            options:
+                tag: "multipart-upload-test-${TAG}"
+                fluentd-address: unix:///var/run/fluent.sock
+                fluentd-async-connect: "true"
+    logger-put-object-test:
+        build: ${PROJECT_ROOT}/integ/s3-logger
+        depends_on:
+            - fluent-bit
+        logging:
+            driver: fluentd
+            options:
+                tag: "put-object-test-${TAG}"
+                fluentd-address: unix:///var/run/fluent.sock
+                fluentd-async-connect: "true"

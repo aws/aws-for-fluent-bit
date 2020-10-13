@@ -12,5 +12,6 @@ services:
             - "S3_ACTION=${S3_ACTION}"
             - "S3_PREFIX=${S3_PREFIX}"
             - "TEST_FILE=${TEST_FILE}"
+            - "EXPECTED_EVENTS_LEN=${EXPECTED_EVENTS_LEN}"
         volumes:
             - ${PROJECT_ROOT}/integ/out:/out
