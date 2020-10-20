@@ -1,8 +1,8 @@
-version: 0.2         
+version: 0.2
 phases:
   install:
     runtime-versions:
-      golang: 1.12
+      golang: 1.15
   pre_build:
     commands:
       - echo Building the AWS for Fluent Bit image
@@ -11,7 +11,7 @@ phases:
       # Command to build your project
       - make release
 
-      # List the docker images 
+      # List the docker images
       - docker images
 
       # Push the image to ECR with corresponding architecture as the tag.
