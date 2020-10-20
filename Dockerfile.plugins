@@ -1,4 +1,4 @@
-FROM golang:1.12
+FROM golang:1.15
 ENV GO111MODULE on
 
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
