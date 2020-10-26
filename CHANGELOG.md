@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.9.0
+This release includes:
+* Fluent Bit [1.6.2](https://fluentbit.io/announcements/v1.6.2/)
+
 ### 2.8.0
 This release includes:
 * An Amazon Linux 2 Base
