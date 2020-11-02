@@ -1,5 +1,22 @@
 # Changelog
 
+### 2.9.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.6.3](https://fluentbit.io/announcements/v1.6.3/)
+* Amazon CloudWatch Logs for Fluent Bit 1.5.0
+* Amazon Kinesis Streams for Fluent Bit 1.7.0
+* Amazon Kinesis Firehose for Fluent Bit 1.5.0
+
+**This is the first release with images for both x86 and arm64.**
+
+Compared to `2.8.0` this release adds:
+* Feature - Automatically re-create CloudWatch log groups and log streams if they are deleted [cloudwatch:95](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/95)
+* Feature - Add default fallback log group and stream names [cloudwatch:99](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/99)
+* Feature - Add support for ECS Metadata and UUID via special variables in log stream and group names [cloudwatch:108](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/108)
+* Feature - Add new option replace_dots to replace dots in key names in `firehose` and `kinesis` plugins [firehose:46](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit/issues/46)
+* Enhancement - Add support for nested partition_key in log record [kinesis:30](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/issues/30)
+
 ### 2.8.0
 This release includes:
 * An Amazon Linux 2 Base
