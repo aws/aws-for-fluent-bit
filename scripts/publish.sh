@@ -97,13 +97,13 @@ publish_to_docker_hub() {
 	# Publish to DockerHub only if $DRY_RUN is set to false
 	if [[ "${DRY_RUN}" == "false" ]]; then
 		for arch in "${ARCHITECTURES[@]}"
-		do	
-			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION} 
-			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}  
+		do
+			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 
 		create_manifest_list ${1} "latest"
-		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION} 
+		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 
 	else
 		for arch in "${ARCHITECTURES[@]}"
@@ -151,18 +151,18 @@ sync_latest_image() {
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
-	fi 
+	fi
 
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 	for arch in "${ARCHITECTURES[@]}"
-	do	
-		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :) 
+	do
+		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :)
 		repoList=$(aws ecr describe-repositories --region ${region})
 		repoName=$(echo $repoList | jq .repositories[0].repositoryName)
 		if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
 			imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${arch}-${AWS_FOR_FLUENT_BIT_VERSION} || echo "0")
 			if [ "$imageTag" = '1' ]; then
-				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} 
+				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
 				sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION})
 			else
 				sha2='repo_not_found'
@@ -176,7 +176,7 @@ sync_latest_image() {
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
 			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} \
-				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} 
+				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	done
 
@@ -195,6 +195,12 @@ sync_latest_image() {
 verify_ssm() {
 	is_sync_task=${2:-false}
 
+	endpoint='amazonaws.com'
+	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
+		endpoint=${endpoint}.cn
+	fi
+	aws ecr get-login-password --region ${1} | docker login --username AWS --password-stdin ${3}.dkr.ecr.${1}.${endpoint}
+
 	check_parameter ${1} latest
 
 	if [ "${is_sync_task}" = "true" ]; then
@@ -208,14 +214,14 @@ create_manifest_list() {
 
 	export DOCKER_CLI_EXPERIMENTAL=enabled
 	tag=${2}
-	
-	# TODO: Add a way to automatically generate arch images in manifest 
-	docker manifest create ${1}:${tag} ${1}:arm64-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:amd64-${AWS_FOR_FLUENT_BIT_VERSION} 
+
+	# TODO: Add a way to automatically generate arch images in manifest
+	docker manifest create ${1}:${tag} ${1}:arm64-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:amd64-${AWS_FOR_FLUENT_BIT_VERSION}
 
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		docker manifest annotate --arch "$arch" ${1}:${tag} ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} 
-	done 
+		docker manifest annotate --arch "$arch" ${1}:${tag} ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+	done
 
 	# sanity check on the debug log.
  	docker manifest inspect ${1}:${tag}
@@ -237,13 +243,13 @@ publish_ecr() {
 
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
 	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
-	
+
 	for arch in "${ARCHITECTURES[@]}"
 	do
 		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 	done
-	
+
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "latest"
 
@@ -278,17 +284,17 @@ verify_ecr_image_scan() {
 	region=${1}
 	repo_uri=${2}
 	tag=${3}
-	
+
 	imageTag=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$imageTag" = '1' ]; then
-		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}	
+		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
 		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
 		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL')
 		if [ "$highVulnerabilityCount" != null ] || [ "$criticalVulnerabilityCount" != null ]; then
 			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities."
 			exit 1
-		fi	
+		fi
 	fi
 }
 
@@ -333,7 +339,7 @@ match_two_sha() {
 
 if [ "${1}" = "publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub amazon/aws-for-fluent-bit 
+		publish_to_docker_hub amazon/aws-for-fluent-bit
 	fi
 
 	if [ "${2}" = "aws" ]; then
@@ -434,28 +440,28 @@ fi
 if [ "${1}" = "verify-ssm" ]; then
 	if [ "${2}" = "aws" ]; then
 		for region in ${classic_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} false ${classic_regions_account_id}
 		done
 	fi
 
 	if [ "${2}" = "aws-cn" ]; then
 		for region in ${cn_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} false ${cn_regions_account_id}
 		done
 	fi
 
 	if [ "${2}" = "aws-us-gov" ]; then
 		for region in ${gov_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} false ${gov_regions_account_id}
 		done
 	fi
 
 	if [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region}
+		verify_ssm ${hongkong_region} false ${hongkong_account_id}
 	fi
 
 	if [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region}
+		verify_ssm ${bahrain_region} false ${bahrain_account_id}
 	fi
 fi
 
@@ -491,7 +497,7 @@ fi
 # Following scripts will be called only from the CI/CD pipeline
 if [ "${1}" = "cicd-publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub amazon/aws-for-fluent-bit  
+		publish_to_docker_hub amazon/aws-for-fluent-bit
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			sync_latest_image ${region} ${gov_regions_account_id}
@@ -555,23 +561,23 @@ fi
 if [ "${1}" = "cicd-verify-ssm" ]; then
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			verify_ssm ${region} true
+			verify_ssm ${region} true ${gov_regions_account_id}
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			verify_ssm ${region} true
+			verify_ssm ${region} true ${cn_regions_account_id}
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region} true
+		verify_ssm ${bahrain_region} true ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region} true
+		verify_ssm ${hongkong_region} true ${hongkong_account_id}
 	else
 		for region in ${classic_regions}; do
-			verify_ssm ${region}
+			verify_ssm ${region} true ${classic_regions_account_id}
 		done
 	fi
 fi
 
 if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
-	verify_ecr_image_scan ${2} ${3} ${4}	
+	verify_ecr_image_scan ${2} ${3} ${4}
 fi
