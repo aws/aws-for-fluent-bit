@@ -20,9 +20,9 @@ cd "${scripts}"
 IMAGE_SHA_MATCHED="FALSE"
 AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 
-docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/' | jq -r '.results[].name' | sort -r)
+docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
 tag_array=(`echo ${docker_hub_image_tags}`)
-AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=${tag_array[1]}
+AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
 
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
@@ -573,7 +573,7 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 		verify_ssm ${hongkong_region} true ${hongkong_account_id}
 	else
 		for region in ${classic_regions}; do
-			verify_ssm ${region} true ${classic_regions_account_id}
+			verify_ssm ${region} false ${classic_regions_account_id}
 		done
 	fi
 fi

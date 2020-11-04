@@ -3,6 +3,7 @@ phases:
   install:
     runtime-versions:
       golang: 1.13
+      python: 3.x
   pre_build:
     commands:
       - echo Sync latest image from Dockerhub
