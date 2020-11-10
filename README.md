@@ -169,7 +169,7 @@ Then run `make cloudwatch-dev` or `make kinesis-dev` or `make firehose-dev` to b
 To run the integration tests on your code, execute `make integ-cloudwatch-dev` or `make integ-kinesis-dev` or `make integ-firehose-dev`.
 
 ## Fluent Bit Examples
-Check out Fluent Bit examples from our [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples#fluent-bit-examples) repo.
+Check out Fluent Bit examples from our [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples) repo.
 
 ## License
 
