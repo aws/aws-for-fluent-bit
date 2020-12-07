@@ -118,6 +118,20 @@ publish_to_docker_hub() {
 
 }
 
+publish_to_public_ecr() {
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+
+	for arch in "${ARCHITECTURES[@]}"
+	do
+		docker tag ${1}:"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+		docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+	done
+
+	create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+	create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+}
+
 publish_ssm() {
 	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
 		--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
@@ -303,6 +317,18 @@ verify_dockerhub() {
 	# Get the image SHA's
 	sha1=$(docker pull amazon/aws-for-fluent-bit:latest | grep sha256: | cut -f 3 -d :)
 	sha2=$(docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :)
+
+	verify_sha $sha1 $sha2
+}
+
+verify_public_ecr() {
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+
+	# Get the image SHA's
+	docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
+	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:latest)
+	docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
+	sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 
 	verify_sha $sha1 $sha2
 }
@@ -499,6 +525,8 @@ fi
 if [ "${1}" = "cicd-publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
 		publish_to_docker_hub amazon/aws-for-fluent-bit
+	elif [ "${2}" = "public-ecr" ]; then
+		publish_to_public_ecr amazon/aws-for-fluent-bit
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			sync_latest_image ${region} ${gov_regions_account_id}
@@ -520,6 +548,8 @@ fi
 if [ "${1}" = "cicd-verify" ]; then
 	if [ "${2}" = "dockerhub" ]; then
 		verify_dockerhub
+	elif [ "${2}" = "public-ecr" ]; then
+		verify_public_ecr
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			verify_ecr ${region} ${gov_regions_account_id} true
