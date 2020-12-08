@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.10.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.6.8](https://fluentbit.io/announcements/v1.6.8/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.0
+* Amazon Kinesis Streams for Fluent Bit 1.7.1
+* Amazon Kinesis Firehose for Fluent Bit 1.5.1
+
+Compared to `2.9.0` this release adds:
+* Enhancement - Add support for updating the retention policy of existing log groups [cloudwatch:121](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/121)
+
 ### 2.9.0
 This release includes:
 * An Amazon Linux 2 Base
