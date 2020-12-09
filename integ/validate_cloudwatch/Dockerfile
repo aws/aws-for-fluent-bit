@@ -1,6 +1,6 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 
-RUN yum upgrade -y && yum install -y python3
+RUN yum upgrade -y && yum install -y python3 pip
 
 RUN pip install boto3
 
