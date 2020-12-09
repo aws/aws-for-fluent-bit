@@ -6,11 +6,6 @@ phases:
   pre_build:
     commands:
       - echo Running the integration test
-      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-      - unzip awscliv2.zip
-      - ./aws/install
-      - chmod +x /usr/local/bin/aws
-      - /usr/local/bin/aws --version
   build:
     commands:
       # Enforce STS regional endpoints
@@ -29,8 +24,6 @@ phases:
       # List the images to do a double check
       - docker images
 
-      # log into public ECR so we do not get throttled
-      - /usr/local/bin/aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       # Command to run the integration test
       - make integ
 artifacts:
