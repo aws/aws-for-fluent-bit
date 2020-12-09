@@ -119,9 +119,9 @@ publish_to_docker_hub() {
 }
 
 publish_ssm() {
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --overwrite \
+	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
 		--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:${AWS_FOR_FLUENT_BIT_VERSION}
+		--type String --region ${1} --value ${2}:${3}
 	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
 		--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 		--type String --region ${1} --value ${2}:latest
@@ -156,14 +156,14 @@ sync_latest_image() {
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} | grep sha256: | cut -f 3 -d :)
+		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} | grep sha256: | cut -f 3 -d :)
 		repoList=$(aws ecr describe-repositories --region ${region})
 		repoName=$(echo $repoList | jq .repositories[0].repositoryName)
 		if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
-			imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${arch}-${AWS_FOR_FLUENT_BIT_VERSION} || echo "0")
+			imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} || echo "0")
 			if [ "$imageTag" = '1' ]; then
-				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
-				sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION})
+				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+				sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 			else
 				sha2='repo_not_found'
 			fi
@@ -175,20 +175,20 @@ sync_latest_image() {
 
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
-			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION} \
-				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION}
+			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} \
+				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		fi
 	done
 
 	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest"
-	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
+	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 
 	make_repo_public ${region}
 
 	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region})
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
-		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit
+		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 }
 
@@ -412,28 +412,28 @@ fi
 if [ "${1}" = "publish-ssm" ]; then
 	if [ "${2}" = "aws" ]; then
 		for region in ${classic_regions}; do
-			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
+			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 	fi
 
 	if [ "${2}" = "aws-cn" ]; then
 		for region in ${cn_regions}; do
-			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
+			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		done
 	fi
 
 	if [ "${2}" = "aws-us-gov" ]; then
 		for region in ${gov_regions}; do
-			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
+			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		done
 	fi
 
 	if [ "${2}" = "${hongkong_region}" ]; then
-		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit
+		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 
 	if [ "${2}" = "${bahrain_region}" ]; then
-		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit
+		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 fi
 
@@ -540,19 +540,19 @@ fi
 if [ "${1}" = "cicd-publish-ssm" ]; then
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
+			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com.cn/aws-for-fluent-bit
+			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com.cn/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit
+		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit
+		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	else
 		for region in ${classic_regions}; do
-			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit
+			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 	fi
 fi
