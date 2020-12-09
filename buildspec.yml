@@ -15,7 +15,7 @@ phases:
   build:
     commands:
       # log into public ECR so we do not get throttled
-      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+      - /usr/local/bin/aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       # Command to build your project
       - make release
 
