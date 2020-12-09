@@ -1,5 +1,5 @@
 # Start from the latest golang base image
-FROM golang:latest
+FROM public.ecr.aws/bitnami/golang:1.13
 ENV GOPROXY=direct
 
 # Set the Current Working Directory inside the container

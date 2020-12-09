@@ -1,4 +1,4 @@
-FROM amazonlinux:latest as builder
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest as builder
 
 # Fluent Bit version; update these for each release
 ENV FLB_VERSION 1.6.8
@@ -69,7 +69,7 @@ RUN cp conf/parsers*.conf /fluent-bit/parsers/
 ADD configs/parse-json.conf /fluent-bit/configs/
 ADD configs/minimize-log-loss.conf /fluent-bit/configs/
 
-FROM amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum upgrade -y \
     && yum install -y openssl-devel \
           cyrus-sasl-devel \
