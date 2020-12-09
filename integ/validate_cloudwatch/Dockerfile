@@ -1,4 +1,6 @@
-FROM public.ecr.aws/bitnami/python:3.7
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+
+RUN yum upgrade -y && yum install -y python3
 
 RUN pip install boto3
 
