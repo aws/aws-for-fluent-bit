@@ -24,6 +24,8 @@ phases:
       # List the images to do a double check
       - docker images
 
+      # log into public ECR so we do not get throttled
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       # Command to run the integration test
       - make integ
 artifacts:
