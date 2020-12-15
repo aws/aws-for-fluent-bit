@@ -42,6 +42,14 @@ kinesis-dev:
 	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
+.PHONY: loki-dev
+loki-dev:
+	docker build \
+	--build-arg LOKI_PLUGIN_CLONE_URL=${LOKI_PLUGIN_CLONE_URL} \
+	--build-arg LOKI_PLUGIN_CLONE_BRANCH=${LOKI_PLUGIN_CLONE_BRANCH} \
+	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	docker build -t amazone/aws-for-fluent-bit:latest -f Dockerfile .
+
 .PHONY: integ-cloudwatch
 integ-cloudwatch: release
 	./integ/integ.sh cloudwatch
@@ -70,6 +78,14 @@ integ-firehose: release
 integ-firehose-dev: firehose-dev
 	./integ/integ.sh firehose
 
+.PHONY: integ-loki
+integ-loki: release
+	./integ/integ.sh loki
+
+.PHONY: integ-loki-dev
+integ-loki-dev: loki-dev
+	./integ/integ.sh loki
+
 .PHONY: integ-clean-s3
 integ-clean-s3:
 	./integ/integ.sh clean-s3
@@ -79,6 +95,7 @@ integ-dev: release
 	./integ/integ.sh kinesis
 	./integ/integ.sh firehose
 	./integ/integ.sh cloudwatch
+	./integ/integ.sh loki
 
 .PHONY: integ
 integ:

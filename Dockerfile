@@ -82,10 +82,12 @@ COPY --from=builder /fluent-bit /fluent-bit
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/bin/firehose.so /fluent-bit/firehose.so
 COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/bin/cloudwatch.so /fluent-bit/cloudwatch.so
+COPY --from=aws-fluent-bit-plugins:latest /loki/cmd/fluent-bit/out_loki.so /fluent-bit/out_loki.so
 RUN mkdir -p /fluent-bit/licenses/fluent-bit
 RUN mkdir -p /fluent-bit/licenses/firehose
 RUN mkdir -p /fluent-bit/licenses/cloudwatch
 RUN mkdir -p /fluent-bit/licenses/kinesis
+RUN mkdir -p /fluent-bit/licenses/loki
 COPY THIRD-PARTY /fluent-bit/licenses/fluent-bit/
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/THIRD-PARTY \
     /kinesis-firehose/LICENSE \
@@ -96,6 +98,9 @@ COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
     /kinesis-streams/LICENSE \
     /fluent-bit/licenses/kinesis/
+COPY --from=aws-fluent-bit-plugins:latest  \
+    /loki/LICENSE \
+    /fluent-bit/licenses/loki/
 COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
 
 COPY entrypoint.sh /entrypoint.sh

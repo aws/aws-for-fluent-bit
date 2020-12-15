@@ -174,3 +174,12 @@ Check out Fluent Bit examples from our [amazon-ecs-firelens-examples](https://gi
 ## License
 
 This project is licensed under the Apache-2.0 License.
+
+## Push to ECR
+
+```
+docker tag amazon/aws-for-fluent-bit:latest 991828066748.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:latest
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 991828066748.dkr.ecr.us-east-1.amazonaws.com
+docker push 991828066748.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:latest  
+```
+

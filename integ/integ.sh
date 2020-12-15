@@ -184,6 +184,10 @@ if [ "${1}" = "s3" ]; then
 	clean_s3 && test_s3
 fi
 
+if [ "${1}" = "loki" ]; then
+  echo "TODO Test Loki."
+fi
+
 if [ "${1}" = "clean-s3" ]; then
 	source ./integ/resources/setup_test_environment.sh
 	clean_s3

@@ -18,6 +18,9 @@ ARG FIREHOSE_PLUGIN_BRANCH=""
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
 ARG CLOUDWATCH_PLUGIN_TAG=v1.6.0
 ARG CLOUDWATCH_PLUGIN_BRANCH=""
+# ARG LOKI_PLUGIN_CLONE_URL=https://github.com/Bokun/loki.git
+ARG LOKI_PLUGIN_CLONE_URL=https://github.com/grafana/loki.git
+ARG LOKI_PLUGIN_BRANCH=master
 
 # Kinesis Streams
 
@@ -45,3 +48,13 @@ RUN if [ -n "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all && git checkout $
 RUN if [ -z "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
 RUN make release
+
+# Grafana Loki
+
+RUN git clone $LOKI_PLUGIN_CLONE_URL /loki
+WORKDIR /loki
+RUN git fetch && git checkout $LOKI_PLUGIN_BRANCH
+# RUN go mod download
+RUN make fluent-bit-plugin
+# go build $(DYN_GO_FLAGS) -buildmode=c-shared -o cmd/fluent-bit/out_loki.so ./cmd/fluent-bit/
+
