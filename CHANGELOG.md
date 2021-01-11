@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.10.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.6.10](https://fluentbit.io/announcements/v1.6.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.0
+* Amazon Kinesis Streams for Fluent Bit 1.7.1
+* Amazon Kinesis Firehose for Fluent Bit 1.5.1
+
+**This is the first release with images in [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit).**
+
 ### 2.10.0
 This release includes:
 * An Amazon Linux 2 Base
