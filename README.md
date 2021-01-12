@@ -7,6 +7,7 @@
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
     - [Using SSM Parameters in CloudFormation Templates](#using-ssm-parameters-in-cloudFormation-templates)
     - [Using image tags](#using-image-tags)
+        - [Amazon ECR Public Gallery](#amazon-ecr-public-gallery)
         - [Docker Hub](#docker-hub)
         - [Amazon ECR](#amazon-ecr)
 - [Plugins](#plugins)
@@ -99,6 +100,30 @@ Parameters:
 #### Using image tags
 
 You should lock your deployments to a specific version tag. We guarantee that these tags will be immutable- once they are released the will not change.
+
+##### Amazon ECR Public Gallery
+
+[aws-for-fluent-bit](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit)
+
+Our images are available in Amazon ECR Public Gallery. We recommend our customers to download images from this public repo. You can get images with different tags by following command:
+
+```
+docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:<tag>
+```
+
+For example, you can pull the image with latest version by:
+
+```
+docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
+```
+
+If you see errors for image pull limits, try log into public ECR with your AWS credentials:
+
+```
+aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+```
+
+You can check the [Amazon ECR Public official doc](https://docs.aws.amazon.com/AmazonECR/latest/public/get-set-up-for-amazon-ecr.html) for more details.
 
 ##### Docker Hub
 
