@@ -19,6 +19,7 @@ cd "${scripts}"
 
 IMAGE_SHA_MATCHED="FALSE"
 AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
+AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
 docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
 tag_array=(`echo ${docker_hub_image_tags}`)
@@ -141,6 +142,12 @@ publish_ssm() {
 		--type String --region ${1} --value ${2}:latest
 }
 
+publish_stable_ssm() {
+	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
+		--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
+		--type String --region ${1} --value ${2}:${3}
+}
+
 rollback_ssm() {
 	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
 }
@@ -171,6 +178,7 @@ sync_latest_image() {
 	for arch in "${ARCHITECTURES[@]}"
 	do
 		sha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} | grep sha256: | cut -f 3 -d :)
+		stableSha1=$(docker pull amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION} | grep sha256: | cut -f 3 -d :)
 		repoList=$(aws ecr describe-repositories --region ${region})
 		repoName=$(echo $repoList | jq .repositories[0].repositoryName)
 		if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
@@ -181,8 +189,17 @@ sync_latest_image() {
 			else
 				sha2='repo_not_found'
 			fi
+
+			imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0")
+			if [ "$imageTag" = '1' ]; then
+				docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+				stableSha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+			else
+				stableSha2='repo_not_found'
+			fi
 		else
 			sha2='repo_not_found'
+			stableSha2='repo_not_found'
 		fi
 
 		match_two_sha $sha1 $sha2
@@ -192,10 +209,19 @@ sync_latest_image() {
 			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} \
 				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		fi
+
+		match_two_sha $stableSha1 $stableSha2
+
+		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
+			aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
+			push_image_ecr amazon/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION} \
+				${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		fi
 	done
 
 	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 
 	make_repo_public ${region}
 
@@ -203,6 +229,12 @@ sync_latest_image() {
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	fi
+
+	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" --region ${region})
+	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
+	if [ "$invalid_parameter" != 'null' ]; then
+		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 	fi
 }
 
@@ -219,6 +251,7 @@ verify_ssm() {
 
 	if [ "${is_sync_task}" = "true" ]; then
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		check_parameter ${1} stable
 	else
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
@@ -285,6 +318,13 @@ verify_ecr() {
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
 	if [ "${is_sync_task}" = "true" ]; then
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable
+		stableSha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable)
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		stableSha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+
+		verify_sha $stableSha1 $stableSha2
+
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 	else
@@ -539,6 +579,10 @@ if [ "${1}" = "cicd-publish" ]; then
 		sync_latest_image ${bahrain_region} ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
 		sync_latest_image ${hongkong_region} ${hongkong_account_id}
+	elif [ "${3}" = "stable" ]; then
+		for region in ${classic_regions}; do
+			sync_latest_image ${region} ${classic_regions_account_id}
+		done
 	else
 		publish_ecr "${2}" ${classic_regions_account_id}
 	fi
@@ -562,6 +606,10 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_ecr ${bahrain_region} ${bahrain_account_id} true
 	elif [ "${2}" = "${hongkong_region}" ]; then
 		verify_ecr ${hongkong_region} ${hongkong_account_id} true
+	elif [ "${3}" = "stable"]; then
+		for region in ${classic_regions}; do
+			verify_ecr ${region} ${classic_regions_account_id} true
+		done
 	else
 		verify_ecr "${2}" ${classic_regions_account_id}
 	fi
@@ -602,6 +650,10 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 		verify_ssm ${bahrain_region} true ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
 		verify_ssm ${hongkong_region} true ${hongkong_account_id}
+	elif [ "${3}" = "stable" ]; then
+		for region in ${classic_regions}; do
+			verify_ssm ${region} true ${classic_regions_account_id}
+		done
 	else
 		for region in ${classic_regions}; do
 			verify_ssm ${region} false ${classic_regions_account_id}
