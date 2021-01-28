@@ -5,16 +5,41 @@ phases:
       python: 3.7
   pre_build:
     commands:
-      - echo Sync latest image from Dockerhub
+      - echo Sync latest image from Amazon ECR Public Gallery
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       - unzip awscliv2.zip
-      - ./aws/install
+      - which aws
+      - ls -l /root/.pyenv/shims/aws
+      - ./aws/install --bin-dir /root/.pyenv/shims --install-dir /root/.pyenv/shims --update
   build:
     commands:
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
-      - './scripts/publish.sh cicd-publish ${AWS_REGION}'
+      
+      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable' 
 
+      # Publish stable tag to Dockerhub
+      - './scripts/publish.sh cicd-publish ${AWS_REGION} public-dockerhub'
+
+       # Assume role to publish, get the credentials, and set them as environment variables
+      - |
+        if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then
+          CREDS=`aws sts assume-role --role-arn ${PUBLISH_ROLE_ARN_PUBLIC_ECR} --role-session-name publicECR`
+          export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
+          export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
+          export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
+        fi
+       # Publish stable tag to Public ECR
+      - './scripts/publish.sh cicd-publish ${AWS_REGION} public-ecr'
+
+      # Nullify the temporary credentials for the assumed role to publish
+      - |
+        if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then
+          export AWS_ACCESS_KEY_ID=
+          export AWS_SECRET_ACCESS_KEY=
+          export AWS_SESSION_TOKEN=
+        fi
+      
       # Assume role to verify, get the credentials, and set them as environment variables.
       # Verification should be done using the credentials from a different account. It ensures that
       # the images we published are public and accessible from any account.
@@ -24,8 +49,16 @@ phases:
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
       # Verify from the verification account
-      - './scripts/publish.sh cicd-verify ${AWS_REGION}'
-      - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION}'
+      - './scripts/publish.sh cicd-verify ${AWS_REGION} stable'
+      - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
+
+       # Nullify the temporary credentials for the assumed role to verify
+      - export AWS_ACCESS_KEY_ID=
+      - export AWS_SECRET_ACCESS_KEY=
+      - export AWS_SESSION_TOKEN=
+
+      # Verify the publishing on Public ECR and Dockerhub
+      - './scripts/publish.sh cicd-verify stable public-repo'
 artifacts:
   files:
     - '**/*'
