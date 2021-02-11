@@ -130,7 +130,7 @@ publish_to_public_ecr() {
 
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-			create_manifest_list public.ecr.aws/saws-observability/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
