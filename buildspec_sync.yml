@@ -19,11 +19,8 @@ phases:
       - './scripts/publish.sh cicd-publish ${AWS_REGION} stable' 
 
       # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
-      - |
-        if [ "${AWS_REGION}" = "us-west-2" ]; then
-          './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
-        fi
-
+      - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
+      
       # Assume role to publish, get the credentials, and set them as environment variables
       - |
         if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then
@@ -34,10 +31,7 @@ phases:
         fi
       
       # Publish stable tag to Public ECR when AWS_REGION is us-west-2
-      - |
-        if [ "${AWS_REGION}" = "us-west-2" ]; then
-          './scripts/publish.sh cicd-publish public-ecr-stable ${AWS_REGION}'
-        fi
+      - './scripts/publish.sh cicd-publish public-ecr-stable ${AWS_REGION}'
 
       # Nullify the temporary credentials for the assumed role to publish
       - |
