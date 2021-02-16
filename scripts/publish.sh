@@ -190,7 +190,7 @@ sync_latest_image() {
 	
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 		aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
@@ -373,7 +373,7 @@ verify_dockerhub() {
 }
 
 verify_public_ecr() {
-	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 
 	# Verify the image with stable tag
 	if [ $# -eq 1 ]; then
