@@ -20,7 +20,7 @@ RUN yum install -y  \
       unzip \
       git \
       go \
-      openssl-devel \
+      openssl11-devel \
       cyrus-sasl-devel \
       pkgconfig \
       systemd-devel \
@@ -71,7 +71,7 @@ ADD configs/minimize-log-loss.conf /fluent-bit/configs/
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum upgrade -y \
-    && yum install -y openssl-devel \
+    && yum install -y openssl11-devel \
           cyrus-sasl-devel \
           pkgconfig \
           systemd-devel \
