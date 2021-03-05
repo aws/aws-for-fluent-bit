@@ -4,6 +4,7 @@
 
 - [Versioning FAQ](#versioning-faq)
 - [Public Images](#public-images)
+    - [Using the stable tag](#using-the-stable-tag)
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
     - [Using SSM Parameters in CloudFormation Templates](#using-ssm-parameters-in-cloudFormation-templates)
     - [Using image tags](#using-image-tags)
@@ -48,7 +49,13 @@ No. We continue to consume Fluent Bit from its main repository. We are not forki
 
 ### Public Images
 
-Each release updates the `latest` tag and adds a tag for the version of the image.
+Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version.
+
+#### Using the stable tag
+
+A `stable` tag can be trusted that it is the latest version in which there are no high impact bugs. A release may be marked as stable if the following rules are all met:
+* It has been out for at least 2 weeks
+* No bugs have been reported which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs of the tail input
 
 #### Using SSM to find available versions
 
