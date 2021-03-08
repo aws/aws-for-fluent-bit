@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.12.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.7.2](https://fluentbit.io/announcements/v1.7.2/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.0
+* Amazon Kinesis Streams for Fluent Bit 1.7.1
+* Amazon Kinesis Firehose for Fluent Bit 1.6.0
+
+Compared to `2.11.0` this release adds:
+* Enhancement - Add an option to send multiple log events as a record  [firehose:12](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit/issues/12)
+
 ### 2.11.0
 This release includes:
 * An Amazon Linux 2 Base
