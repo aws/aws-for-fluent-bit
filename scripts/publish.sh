@@ -312,8 +312,6 @@ verify_ecr() {
 		endpoint=${endpoint}.cn
 	fi
 	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
-	docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
-	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
 	if [ "${is_sync_task}" = "true" ]; then
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable
@@ -324,11 +322,13 @@ verify_ecr() {
 		verify_sha $stableSha1 $stableSha2
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 	else
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 	fi
+	docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
+	sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
 	verify_sha $sha1 $sha2
 }
