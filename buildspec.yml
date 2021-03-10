@@ -9,6 +9,8 @@ phases:
       - echo Building the AWS for Fluent Bit image
   build:
     commands:
+      # Check latest image versions from dockerhub and from gibhub source file
+      - './scripts/publish.sh cicd-check-image-version'
       # Command to build your project
       - make release
 
