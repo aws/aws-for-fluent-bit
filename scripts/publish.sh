@@ -333,6 +333,13 @@ verify_ecr() {
 	verify_sha $sha1 $sha2
 }
 
+check_image_version() {
+	if [ "${1}" = "${2}" ]; then
+		echo "Accidental release: latest image versions from dockerhub and from github source file match."
+		exit 1
+	fi
+}
+
 verify_ecr_image_scan() {
 	region=${1}
 	repo_uri=${2}
@@ -696,4 +703,8 @@ fi
 
 if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
 	verify_ecr_image_scan ${2} ${3} ${4}
+fi
+
+if [ "${1}" = "cicd-check-image-version" ]; then
+	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 fi
