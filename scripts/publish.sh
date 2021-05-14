@@ -45,6 +45,7 @@ ca-central-1
 eu-west-2
 eu-west-3
 eu-north-1
+ap-northeast-3
 "
 
 classic_regions_account_id="906394416424"
