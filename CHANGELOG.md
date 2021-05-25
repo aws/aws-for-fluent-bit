@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.15.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.7.6](https://fluentbit.io/announcements/v1.7.6/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.1
+* Amazon Kinesis Streams for Fluent Bit 1.7.1
+* Amazon Kinesis Firehose for Fluent Bit 1.6.0
+
+Important Note:
+* Two different security vulnerabilities were found in [openssl](https://access.redhat.com/security/cve/CVE-2021-3449) and [glibc](https://access.redhat.com/security/cve/CVE-2021-3326) which we use to build our `aws-for-fluent-bit` image. This new image will use the updated version of these dependencies. It is highly recommended to upgrade your existing workload or run new workload with this latest version (2.15.0) of `aws-for-fluent-bit` image.
+
 ### 2.14.0
 This release includes:
 * An Amazon Linux 2 Base
