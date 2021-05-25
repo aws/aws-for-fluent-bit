@@ -375,6 +375,18 @@ verify_ecr_image_scan() {
 }
 
 verify_dockerhub() {
+	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
+	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
+
+	# Logout when the script exits
+	trap cleanup EXIT
+	cleanup() {
+		docker logout
+	}
+
+	# login to DockerHub
+	docker login -u "${username}" --password "${password}"
+	
 	# Verify the image with stable tag
 	if [ $# -eq 1 ]; then
 		# Get the image SHA's
