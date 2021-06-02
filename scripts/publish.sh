@@ -243,6 +243,13 @@ sync_latest_image() {
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 	fi
+
+	stable_uri=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameter.Value')
+	stable_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$stable_uri")
+
+	if [ "$stable_uri" != "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" ]; then
+		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+	fi
 }
 
 verify_ssm() {
