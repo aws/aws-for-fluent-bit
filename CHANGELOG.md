@@ -9,7 +9,7 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit 1.6.0
 
 Important Note:
-* One high and seventeen medium known security vulnerabilities were found in our previous version v2.16.0. This new image will use the updated version of these dependencies. It is highly recommended to upgrade your existing workload or run new workload with this latest version (2.16.1) of `aws-for-fluent-bit` image.
+* We fixed known issues which were found in our previous version v2.16.0. This new image will use the updated version of our dependencies. It is highly recommended to upgrade your existing workload or run new workload with this latest version (2.16.1) of `aws-for-fluent-bit` image.
 
 ### 2.16.0
 This release includes:
