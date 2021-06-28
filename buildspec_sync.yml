@@ -60,8 +60,8 @@ phases:
       - export AWS_SECRET_ACCESS_KEY=
       - export AWS_SESSION_TOKEN=
 
-      # Verify the publishing on Public ECR and Dockerhub
-      - './scripts/publish.sh cicd-verify stable public-repo'
+      # Verify the publishing on Public ECR and Dockerhub when AWS_REGION is us-west-2
+      - './scripts/publish.sh cicd-verify stable ${AWS_REGION}'
 artifacts:
   files:
     - '**/*'
