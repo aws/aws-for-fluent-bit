@@ -1,9 +1,9 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest as builder
 
 # Fluent Bit version; update these for each release
-ENV FLB_VERSION 1.7.9
+ENV FLB_VERSION 1.8.1
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
-ENV FLB_DOCKER_BRANCH 1.7
+ENV FLB_DOCKER_BRANCH 1.8
 
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
