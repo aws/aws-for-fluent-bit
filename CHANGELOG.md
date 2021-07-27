@@ -8,6 +8,9 @@ This release includes:
 * Amazon Kinesis Streams for Fluent Bit 1.7.1
 * Amazon Kinesis Firehose for Fluent Bit 1.6.0
 
+Compared to `2.17.0` this release adds:
+* Feature - [Multiline Filter]((https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace)) which helps to concatenate messages that originally belong to one context but were split across multiple records or log lines.
+
 ### 2.17.0
 This release includes:
 * An Amazon Linux 2 Base
