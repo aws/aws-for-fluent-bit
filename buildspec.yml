@@ -10,7 +10,7 @@ phases:
   build:
     commands:
       # Check latest image versions from dockerhub and from GitHub source file
-      # - './scripts/publish.sh cicd-check-image-version'
+      - './scripts/publish.sh cicd-check-image-version'
       # Command to build your project
       - make release
 
