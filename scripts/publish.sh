@@ -350,8 +350,11 @@ verify_ecr() {
 }
 
 check_image_version() {
-	if [ "${1}" = "${2}" ]; then
-		echo "Accidental release: latest image versions from dockerhub and from github source file match."
+	export DOCKER_CLI_EXPERIMENTAL=enabled
+	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
+	docker manifest inspect amazon/aws-for-fluent-bit:${1} > /dev/null
+	if [ "$?" = "0" ]; then
+		echo "Accidental release: current image version from github source file match a previous version from dockerhub."
 		exit 1
 	fi
 }
@@ -792,5 +795,5 @@ if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
 fi
 
 if [ "${1}" = "cicd-check-image-version" ]; then
-	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} 
 fi
