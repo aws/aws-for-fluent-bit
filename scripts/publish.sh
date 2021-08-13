@@ -88,9 +88,7 @@ DOCKER_HUB_SECRET="com.amazonaws.dockerhub.aws-for-fluent-bit.credentials"
 
 ARCHITECTURES=("amd64" "arm64")
 
-publish_to_docker_hub() {
-	export DOCKER_CLI_EXPERIMENTAL=enabled
-
+docker_hub_login() {
 	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
 	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
 
@@ -102,6 +100,12 @@ publish_to_docker_hub() {
 
 	# login to DockerHub
 	docker login -u "${username}" --password "${password}"
+}
+
+publish_to_docker_hub() {
+	export DOCKER_CLI_EXPERIMENTAL=enabled
+
+	docker_hub_login
 
 	if [ $# -eq 2 ]; then
 		# Get the image SHA's
@@ -351,6 +355,9 @@ verify_ecr() {
 
 check_image_version() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
+
+	docker_hub_login
+	
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
 	docker manifest inspect amazon/aws-for-fluent-bit:${1} > /dev/null
 	if [ "$?" = "0" ]; then
@@ -378,17 +385,7 @@ verify_ecr_image_scan() {
 }
 
 verify_dockerhub() {
-	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
-	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
-
-	# Logout when the script exits
-	trap cleanup EXIT
-	cleanup() {
-		docker logout
-	}
-
-	# login to DockerHub
-	docker login -u "${username}" --password "${password}"
+	docker_hub_login
 	
 	# Verify the image with stable tag
 	if [ $# -eq 1 ]; then
