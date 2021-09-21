@@ -3,7 +3,7 @@
 ### 2.19.1
 This release includes:
 * An Amazon Linux 2 Base
-* Fluent Bit [1.8.6](https://fluentbit.io/announcements/v1.8.6/)
+* Fluent Bit [1.8.7](https://fluentbit.io/announcements/v1.8.7/)
 * Amazon CloudWatch Logs for Fluent Bit 1.6.2
 * Amazon Kinesis Streams for Fluent Bit 1.7.2
 * Amazon Kinesis Firehose for Fluent Bit 1.6.0
