@@ -4,6 +4,8 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:latest as builder
 ENV FLB_VERSION 1.8.6
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.8
+# tini version to install
+ENV TINI_VERSION 0.19.0
 
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
@@ -69,6 +71,13 @@ RUN cp conf/parsers*.conf /fluent-bit/parsers/
 ADD configs/parse-json.conf /fluent-bit/configs/
 ADD configs/minimize-log-loss.conf /fluent-bit/configs/
 
+# Add tini as init system
+RUN wget -O /fluent-bit/tini https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini && \
+    wget -O tini.asc https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini.asc && \
+    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7 && \
+    gpg --batch --verify tini.asc /fluent-bit/tini && \
+    chmod +x /fluent-bit/tini
+
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum upgrade -y \
     && yum install -y openssl11-devel \
@@ -106,4 +115,5 @@ RUN chmod +x /entrypoint.sh
 EXPOSE 2020
 
 # Entry point
+ENTRYPOINT ["/fluent-bit/tini",  "--"]
 CMD /entrypoint.sh
