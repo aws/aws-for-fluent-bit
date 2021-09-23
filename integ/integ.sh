@@ -127,7 +127,7 @@ clean_s3() {
 	validate_or_clean_s3 clean
 }
 if [ "${1}" = "cloudwatch" ]; then
-	export PLUGIN_UNDER_TEST="cloudwatch"
+	export CW_PLUGIN_UNDER_TEST="cloudwatch"
 	test_cloudwatch
 	clean_cloudwatch
 
@@ -139,7 +139,7 @@ if [ "${1}" = "cloudwatch" ]; then
 fi
 
 if [ "${1}" = "cloudwatch_logs" ]; then
-	export PLUGIN_UNDER_TEST="cloudwatch_logs"
+	export CW_PLUGIN_UNDER_TEST="cloudwatch_logs"
 	test_cloudwatch
 	clean_cloudwatch
 
@@ -190,7 +190,7 @@ if [ "${1}" = "clean-s3" ]; then
 fi
 
 if [ "${1}" = "cicd" ]; then
-	export PLUGIN_UNDER_TEST="cloudwatch"
+	export CW_PLUGIN_UNDER_TEST="cloudwatch"
 	echo "Running tests on Golang CW Plugin"
 	test_cloudwatch && clean_cloudwatch
 	if [ -f ./integ/out/cloudwatch-test ]; then
@@ -199,7 +199,7 @@ if [ "${1}" = "cicd" ]; then
 		exit 1
 	fi
 
-	export PLUGIN_UNDER_TEST="cloudwatch_logs"
+	export CW_PLUGIN_UNDER_TEST="cloudwatch_logs"
 	echo "Running tests on Core C CW Plugin"
 	test_cloudwatch && clean_cloudwatch
 	if [ -f ./integ/out/cloudwatch-test ]; then
