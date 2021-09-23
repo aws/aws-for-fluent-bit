@@ -35,9 +35,9 @@ RUN yum install -y  \
       --family cmake
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
-RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
+RUN git clone https://github.com/DrewZhang13/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
+RUN git fetch && git checkout 1.8.7-SSL-patch && git status
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \

@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.19.2
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.7](https://fluentbit.io/announcements/v1.8.7/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.2
+* Amazon Kinesis Streams for Fluent Bit 1.7.3
+* Amazon Kinesis Firehose for Fluent Bit 1.6.0
+
+Compared to `2.19.0` this release adds:
+* Feature - Auto Retry Config Option Added for AWS Plugins [Fluent Bit:4046](https://github.com/fluent/fluent-bit/pull/4046)
+* Enhancement - Support `gzip` compression algorithms for compression of each record [kinesis:162](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/162)
+* Bug - Fix error handling for OpenSSL apis [Fluent Bit:4098](https://github.com/fluent/fluent-bit/issues/4098)
+
 ### 2.19.1
 This release includes:
 * An Amazon Linux 2 Base
