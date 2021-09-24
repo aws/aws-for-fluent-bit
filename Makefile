@@ -77,8 +77,11 @@ integ-clean-s3:
 .PHONY: integ-dev
 integ-dev: release
 	./integ/integ.sh kinesis
+	./integ/integ.sh kinesis_streams
 	./integ/integ.sh firehose
+	./integ/integ.sh kinesis_firehose
 	./integ/integ.sh cloudwatch
+	./integ/integ.sh cloudwatch_logs
 
 .PHONY: integ
 integ:

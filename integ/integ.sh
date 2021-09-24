@@ -57,10 +57,54 @@ test_kinesis() {
 	fi
 }
 
+test_kinesis_streams() {
+	# Generates log data which will be stored on the s3 bucket
+	docker-compose --file ./integ/test_kinesis/docker-compose.core.test.yml build
+	docker-compose --file ./integ/test_kinesis/docker-compose.core.test.yml up --abort-on-container-exit
+
+    # Giving a pause before running the validation test
+    # Firehose delivery stream has a buffer time which causes the delay to send the data
+	sleep 120
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/kinesis-test
+
+	validate_or_clean_s3 validate
+
+	if [ -f ./integ/out/kinesis-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for kinesis stream."
+		exit 1
+	fi
+}
+
 test_firehose() {
 	# Generates log data which will be stored on the s3 bucket
 	docker-compose --file ./integ/test_firehose/docker-compose.test.yml build
 	docker-compose --file ./integ/test_firehose/docker-compose.test.yml up --abort-on-container-exit
+
+    # Giving a pause before running the validation test
+    # Firehose delivery stream has a buffer time which causes the delay to send the data
+	sleep 120
+
+	# Creates a file as a flag for the validation failure
+	mkdir -p ./integ/out
+	touch ./integ/out/firehose-test
+
+	validate_or_clean_s3 validate
+
+	if [ -f ./integ/out/firehose-test ]; then
+		# if the file still exists, test failed
+		echo "Test failed for firehose."
+		exit 1
+	fi
+}
+
+test_kinesis_firehose() {
+	# Generates log data which will be stored on the s3 bucket
+	docker-compose --file ./integ/test_firehose/docker-compose.core.test.yml build
+	docker-compose --file ./integ/test_firehose/docker-compose.core.test.yml up --abort-on-container-exit
 
     # Giving a pause before running the validation test
     # Firehose delivery stream has a buffer time which causes the delay to send the data
@@ -164,6 +208,16 @@ if [ "${1}" = "kinesis" ]; then
 	clean_s3 && test_kinesis
 fi
 
+if [ "${1}" = "kinesis_streams" ]; then
+	export S3_PREFIX="kinesis-test"
+	export TEST_FILE="kinesis-test"
+	export EXPECTED_EVENTS_LEN="1000"
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
+	clean_s3 && test_kinesis_streams
+fi
+
 if [ "${1}" = "firehose" ]; then
 	export S3_PREFIX="firehose-test"
 	export TEST_FILE="firehose-test"
@@ -172,6 +226,16 @@ if [ "${1}" = "firehose" ]; then
 	source ./integ/resources/setup_test_environment.sh
 
 	clean_s3 && test_firehose
+fi
+
+if [ "${1}" = "kinesis_firehose" ]; then
+	export S3_PREFIX="firehose-test"
+	export TEST_FILE="firehose-test"
+	export EXPECTED_EVENTS_LEN="1000"
+	source ./integ/resources/create_test_resources.sh
+	source ./integ/resources/setup_test_environment.sh
+
+	clean_s3 && test_kinesis_firehose
 fi
 
 if [ "${1}" = "s3" ]; then
@@ -209,13 +273,28 @@ if [ "${1}" = "cicd" ]; then
 	fi
 
 	source ./integ/resources/setup_test_environment.sh
+
+	# golang kinesis plugin
 	export S3_PREFIX="kinesis-test"
 	export TEST_FILE="kinesis-test"
 	export EXPECTED_EVENTS_LEN="1000"
 	clean_s3 && test_kinesis
+	
+	# golang firehose plugin
 	export S3_PREFIX="firehose-test"
 	export TEST_FILE="firehose-test"
 	clean_s3 && test_firehose
+
+	# core kinesis plugin
+	export S3_PREFIX="kinesis-test"
+	export TEST_FILE="kinesis-test"
+	export EXPECTED_EVENTS_LEN="1000"
+	clean_s3 && test_kinesis_streams
+
+	# core firehose plugin
+	export S3_PREFIX="firehose-test"
+	export TEST_FILE="firehose-test"
+	clean_s3 && test_kinesis_firehose
 
 	export S3_PREFIX="logs"
 	export TEST_FILE="s3-test"
