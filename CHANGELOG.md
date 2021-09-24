@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.19.2
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.6](https://fluentbit.io/announcements/v1.8.6/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.3
+* Amazon Kinesis Streams for Fluent Bit 1.7.3
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.19.1` this release adds:
+* Enhancement - Upgrade Go version to 1.17
+
 ### 2.19.1
 This release includes:
 * An Amazon Linux 2 Base
