@@ -4,8 +4,8 @@ RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/mas
 RUN chmod +x /bin/gimme
 RUN yum upgrade -y && yum install -y tar gzip git
 ENV HOME /home
-RUN /bin/gimme 1.13
-ENV PATH ${PATH}:/home/.gimme/versions/go1.13.linux.arm64/bin:/home/.gimme/versions/go1.13.linux.amd64/bin
+RUN /bin/gimme 1.17
+ENV PATH ${PATH}:/home/.gimme/versions/go1.17.linux.arm64/bin:/home/.gimme/versions/go1.17.linux.amd64/bin
 RUN go version
 ENV GOPROXY=direct
 
