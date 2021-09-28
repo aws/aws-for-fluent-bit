@@ -8,6 +8,8 @@ ENV FLB_DOCKER_BRANCH 1.8
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
 
+RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+RUN chmod +x /bin/gimme
 RUN yum upgrade -y
 RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
 RUN yum install -y  \
@@ -18,8 +20,8 @@ RUN yum install -y  \
       make \
       wget \
       unzip \
+      tar \
       git \
-      go \
       openssl11-devel \
       cyrus-sasl-devel \
       pkgconfig \
@@ -33,6 +35,10 @@ RUN yum install -y  \
       --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
       --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
       --family cmake
+ENV HOME /home
+RUN /bin/gimme 1.17
+ENV PATH ${PATH}:/home/.gimme/versions/go1.17.linux.arm64/bin:/home/.gimme/versions/go1.17.linux.amd64/bin
+RUN go version
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
