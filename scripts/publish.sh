@@ -230,8 +230,10 @@ sync_latest_image() {
 		fi
 	done
 
-	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	if [ "${account_id}" != "${classic_regions_account_id}" ]; then
+		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	if
 	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
 
 	make_repo_public ${region}
