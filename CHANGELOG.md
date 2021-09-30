@@ -1,5 +1,22 @@
 # Changelog
 
+### 2.20.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.7](https://fluentbit.io/announcements/v1.8.7/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.3
+* Amazon Kinesis Streams for Fluent Bit 1.8.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.19.2` this release adds:
+* Feature - Add support for gzip compression of records [kinesis:162](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/162)
+* Enhancement - Build `aws-for-fluent-bit` image with release mode rather than debug mode [aws-for-fluent-bit:249](https://github.com/aws/aws-for-fluent-bit/pull/249)
+* Bug - Fix return value from `tls_net_read` [fluentbit:4098](https://github.com/fluent/fluent-bit/issues/4098)
+* Bug - Downgrade `mbedtls` to 2.24.0 to fix the performance regression issue in `mbedtls` 2.26.0 [fluentbit:4110](https://github.com/fluent/fluent-bit/issues/4110)
+
+Important Note:
+* Besides upgrading Fluent Bit version to 1.8.7, we also include some customized changes with this latest version (2.20.0) of `aws-for-fluent-bit` image. This aims to fix performance and stability issues in Fluent Bit.
+
 ### 2.19.2
 This release includes:
 * An Amazon Linux 2 Base
