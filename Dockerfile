@@ -1,7 +1,7 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest as builder
 
 # Fluent Bit version; update these for each release
-ENV FLB_VERSION 1.8.6
+ENV FLB_VERSION 1.8.7
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.8
 
@@ -41,9 +41,9 @@ ENV PATH ${PATH}:/home/.gimme/versions/go1.17.linux.arm64/bin:/home/.gimme/versi
 RUN go version
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
-RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
+RUN git clone https://github.com/zhonghui12/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
+RUN git fetch origin && git checkout custom-1.8.7 && git status
 RUN cmake -DFLB_DEBUG=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
