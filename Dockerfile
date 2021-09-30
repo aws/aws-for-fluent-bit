@@ -44,7 +44,7 @@ WORKDIR /tmp/fluent-bit-$FLB_VERSION/
 RUN git clone https://github.com/zhonghui12/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
 RUN git fetch origin && git checkout custom-1.8.7 && git status
-RUN cmake -DFLB_DEBUG=On \
+RUN cmake -DFLB_RELEASE=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \
           -DFLB_TLS=On \
