@@ -10,7 +10,7 @@ ENV GO111MODULE on
 RUN go env -w GOPROXY=direct
 
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
-ARG KINESIS_PLUGIN_TAG=v1.7.3
+ARG KINESIS_PLUGIN_TAG=v1.8.0
 ARG KINESIS_PLUGIN_BRANCH=""
 ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit.git
 ARG FIREHOSE_PLUGIN_TAG=v1.6.1
