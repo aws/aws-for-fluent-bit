@@ -1,5 +1,13 @@
 # Changelog
 
+### 2.20.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.8](https://fluentbit.io/announcements/v1.8.8/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.3
+* Amazon Kinesis Streams for Fluent Bit 1.8.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
 ### 2.20.0
 This release includes:
 * An Amazon Linux 2 Base
