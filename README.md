@@ -49,7 +49,7 @@ No. We continue to consume Fluent Bit from its main repository. We are not forki
 
 ### Public Images
 
-Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version.
+Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version. Deploying `latest` to prod without going through a test stage first is not recommended.
 
 #### Using the stable tag
 
