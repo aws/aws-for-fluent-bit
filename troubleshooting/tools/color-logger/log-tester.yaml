@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: large-logs-tester-fixed
+  name: large-logs-tester-fixed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: large-logs-tester-fixed
+  template:
+    metadata:
+      labels:
+        app: large-logs-tester-fixed
+    spec:
+      containers:
+      - image: 144718711470.dkr.ecr.us-west-2.amazonaws.com/test-logger:latest
+        name: large-logs-tester-fixed
+        env:
+        - name: PAYLOAD_COUNT
+          value: "10000"
+        - name: MESSAGE_INTERVAL
+          value: "1"
+        - name: PAYLOAD_SIZE
+          value: "10000"

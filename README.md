@@ -3,6 +3,7 @@
 ### Contents
 
 - [Versioning FAQ](#versioning-faq)
+- [Debugging Guide](troubleshooting/debugging.md)
 - [Public Images](#public-images)
     - [Using the stable tag](#using-the-stable-tag)
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
@@ -46,6 +47,10 @@ Thus, we moved to the a new versioning scheme. Because customers already are rel
 **Does this mean you are diverging from fluent/fluent-bit?**
 
 No. We continue to consume Fluent Bit from its main repository. We are not forking Fluent Bit.
+
+### Debugging Guide
+
+[Please read the debugging.md](troubleshooting/debugging.md)
 
 ### Public Images
 
