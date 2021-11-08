@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-container
+  name:  app-container
+spec:
+  replicas: 8
+  selector:
+    matchLabels:
+      app:  app-container
+  template:
+    metadata:
+      labels:
+        app:  app-container
+    spec:
+      containers:
+      - image: 144718711470.dkr.ecr.us-west-2.amazonaws.com/perf-logger-1000:latest
+        name:  app-container
