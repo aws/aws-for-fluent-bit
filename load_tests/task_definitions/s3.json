@@ -1,0 +1,51 @@
+{
+	"family": "load-test-fluent-bit-s3-$THROUGHPUT",
+	"taskRoleArn": "$TASK_ROLE_ARN",
+	"executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
+	"containerDefinitions": [
+		{
+			"essential": true,
+			"image": "$FLUENT_BIT_IMAGE",
+			"name": "log_router",
+			"firelensConfiguration": {
+				"type": "fluentbit"
+			},
+			"logConfiguration": {
+				"logDriver": "awslogs",
+				"options": {
+					"awslogs-group": "firelens-container",
+					"awslogs-region": "us-west-2",
+					"awslogs-create-group": "true",
+					"awslogs-stream-prefix": "ecs-load-test"
+				}
+			},
+			"cpu": 1024,
+			"memoryReservation": 50
+		},
+		{
+			"essential": true,
+			"image": "$APP_IMAGE",
+			"name": "app",
+			"environment" : [ 
+				{ "name" : "ITERATION", "value" : "$THROUGHPUT" },
+				{ "name" : "TIME", "value" : "$LOGGER_RUN_TIME_IN_SECOND" }
+			],
+			"logConfiguration": {
+				"logDriver":"awsfirelens",
+				"options": {
+					"Name": "s3",
+					"region": "us-west-2",
+					"bucket": "$S3_BUCKET_NAME",
+					"total_file_size": "50M",
+					"upload_timeout": "1m",
+					"use_put_object": "On",
+					"s3_key_format": "/s3-test/ecs/$THROUGHPUT/$TAG/%Y/%m/%d/%H/%M/%S",
+					"log-driver-buffer-limit": "536870911",
+					"auto_retry_requests": "true",
+					"workers": "1"
+				}
+			},
+			"memoryReservation": 100
+		}
+	]
+}

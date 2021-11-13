@@ -1,0 +1,51 @@
+{
+	"family": "load-test-fluent-bit-cloudwatch-$THROUGHPUT",
+	"taskRoleArn": "$TASK_ROLE_ARN",
+	"executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
+	"containerDefinitions": [
+		{
+			"essential": true,
+			"image": "$FLUENT_BIT_IMAGE",
+			"name": "log_router",
+			"firelensConfiguration": {
+				"type": "fluentbit"
+			},
+			"logConfiguration": {
+				"logDriver": "awslogs",
+				"options": {
+					"awslogs-group": "firelens-container",
+					"awslogs-region": "us-west-2",
+					"awslogs-create-group": "true",
+					"awslogs-stream-prefix": "ecs-load-test"
+				}
+			},
+			"cpu": 1024,
+			"memoryReservation": 50
+		},
+		{
+			"essential": true,
+			"image": "$APP_IMAGE",
+			"name": "app",
+			"environment" : [ 
+				{ "name" : "ITERATION", "value" : "$THROUGHPUT" },
+				{ "name" : "TIME", "value" : "$LOGGER_RUN_TIME_IN_SECOND" }
+			],
+			"logConfiguration": {
+				"logDriver":"awsfirelens",
+				"options": {
+					"Name": "cloudwatch_logs",
+					"region": "us-west-2",
+					"log_key": "log",
+					"log_group_name": "$CW_LOG_GROUP_NAME",
+					"auto_create_group": "true",
+					"log_stream_name": "$THROUGHPUT",
+					"log-driver-buffer-limit": "536870911",
+					"auto_retry_requests": "true",
+					"workers": "1",
+					"Retry_Limit": "5"
+				}
+			},
+			"memoryReservation": 100
+		}
+	]
+}

@@ -1,0 +1,10 @@
+aws-cdk.core<=1.138.2
+aws-cdk.aws_kinesis<=1.138.2
+aws-cdk.aws_s3<=1.138.2
+aws-cdk.aws_kinesisfirehose<=1.138.2
+aws-cdk.aws_iam<=1.138.2
+aws-cdk.aws_logs<=1.138.2
+aws-cdk.aws_autoscaling<=1.138.2
+aws-cdk.aws_ec2<=1.138.2
+aws-cdk.aws_ecs<=1.138.2
+boto3

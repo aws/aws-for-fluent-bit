@@ -1,0 +1,50 @@
+version: 0.2
+env:
+  shell: bash
+  variables: 
+    THROUGHPUT_LIST: '["20m", "25m", "30m"]'
+    CW_THROUGHPUT_LIST: '["1m", "2m", "3m"]'
+    TESTING_RESOURCES_STACK_NAME: 'load-test-fluent-bit-testing-resources'
+    LOG_STORAGE_STACK_NAME: 'load-test-fluent-bit-log-storage'
+    PREFIX: 'load-test-fluent-bit-'
+
+phases:
+  install:
+    runtime-versions:
+      golang: 1.13
+      python: 3.x
+      nodejs: 12
+  pre_build:
+    commands:
+      - echo Running the load tests
+      - npm config set prefix /usr/local
+      - npm install -g aws-cdk@latest
+      - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - unzip awscliv2.zip
+      - which aws
+      - ls -l /root/.pyenv/shims/aws
+      - ./aws/install --bin-dir /root/.pyenv/shims --install-dir /root/.pyenv/shims --update
+      - aws configure set default.region us-west-2
+  build:
+    commands:
+      # Assume role to get the credentials, and set them as environment variables
+      - CREDS=`aws sts assume-role --role-arn ${LOAD_TEST_CFN_ROLE_ARN} --role-session-name load-test-cfn`
+      - export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r .Credentials.AccessKeyId`
+      - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
+      - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
+
+      # Activate Python virtual environment and install the AWS CDK core dependencies
+      - python -m venv venv
+      - source venv/bin/activate
+      - pip install -r ./load_tests/requirements.txt
+      # Create and set up related testing resources
+      - python ./load_tests/load_test.py create_testing_resources
+      - source ./load_tests/setup_test_environment.sh
+      # Run load tests on corresponding platform - ECS only for now
+      # TODO: add EKS load tests
+      - python ./load_tests/load_test.py ${PLATFORM}
+      # Clear up testing resources
+      - python ./load_tests/load_test.py delete_testing_resources
+artifacts:
+  files:
+    - '**/*'
