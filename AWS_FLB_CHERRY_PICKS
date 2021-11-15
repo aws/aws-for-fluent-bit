@@ -1,0 +1,12 @@
+# Fix return value from tls_net_read (https://github.com/fluent/fluent-bit/pull/4100)
+https://github.com/krispraws/fluent-bit.git tls_net_read_fix 8d1cfeb5ba830b360fe6e1228190ed900842a3ea
+
+# Downgrade mbedtls to 2.24.0 to fix the performance regression issue (https://github.com/fluent/fluent-bit/issues/4110)
+https://github.com/zhonghui12/fluent-bit.git custom-1.8.7 30fc6305695623cbc95d51df07ae185dfec8bff2
+
+# Support timeout on synchronous network calls (https://github.com/fluent/fluent-bit/pull/4184)
+https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r2 e44f8789d605f9ab19a212b4139bc7fec8d0b530
+https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r2 30b00b295db9e3ee646a0262a07ca53cf0025b58
+
+# IMDS graceful fallback from IMDSv2 to IMDSv1 (https://github.com/aws/aws-for-fluent-bit/issues/259)
+https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r2 890915050ef2353a06c7d3e079e4d2ce821fc30b

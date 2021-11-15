@@ -41,9 +41,25 @@ ENV PATH ${PATH}:/home/.gimme/versions/go1.17.linux.arm64/bin:/home/.gimme/versi
 RUN go version
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
-RUN git clone https://github.com/matthewfala/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
+RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch origin && git checkout 1_8_9_patch && git status
+RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
+
+RUN git config --global user.email "aws-firelens@amazon.com" \
+  && git config --global user.name "FireLens Team"
+
+# Apply Fluent Bit patches to base version
+COPY AWS_FLB_CHERRY_PICKS \
+  /AWS_FLB_CHERRY_PICKS
+
+RUN cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' \
+  | xargs -l bash -c 'git fetch $0 $1 && git cherry-pick $2'
+
+RUN echo "Cherry Pick Patch Summary:"; \
+  git log --oneline \
+  -`cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' | sed '/^\s*$/d' | wc -l | awk '{ print $1 }'` \
+  | tac | awk '{ print "Commit",NR,"--",$0 }'; sleep 2
+
 RUN cmake -DFLB_RELEASE=On \
           -DFLB_TRACE=Off \
           -DFLB_JEMALLOC=On \

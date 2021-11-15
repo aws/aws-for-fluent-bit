@@ -1,5 +1,23 @@
 # Changelog
 
+### 2.21.2
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.9](https://fluentbit.io/announcements/v1.8.9/)
+* Amazon CloudWatch Logs for Fluent Bit 1.6.4
+* Amazon Kinesis Streams for Fluent Bit 1.8.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.21.1` this release adds:
+* Bug - Remove corrupted unicode fragments on truncation [aws-for-fluent-bit:252](https://github.com/aws/aws-for-fluent-bit/issues/252)
+
+Compared to `2.21.1` this release includes the following fixes for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
+
+Same as `2.21.1`, this release includes the following fixes for AWS customers that we are working on getting accepted upstream:
+* Bug - Fix return value from `tls_net_read` [fluentbit:4098](https://github.com/fluent/fluent-bit/issues/4098)
+* Bug - Downgrade `mbedtls` to 2.24.0 to fix the performance regression issue in `mbedtls` 2.26.0 [fluentbit:4110](https://github.com/fluent/fluent-bit/issues/4110)
+
 ### 2.21.1
 This release includes:
 * An Amazon Linux 2 Base
