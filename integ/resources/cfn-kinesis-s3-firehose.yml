@@ -42,8 +42,18 @@ Resources:
     Type: AWS::Kinesis::Stream
     Properties:
       ShardCount: 5
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: alias/aws/kinesis
   s3Bucket:
     Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration: 
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
   deliveryStreamRole:
     Type: AWS::IAM::Role
     Properties:
