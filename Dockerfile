@@ -57,8 +57,8 @@ RUN cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' \
 
 RUN echo "Cherry Pick Patch Summary:"; \
   git log --oneline \
-  -`cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' | sed '/^\s*$/d' | wc -l | awk '{ print $1 }'` \
-  | tac | awk '{ print "Commit",NR,"--",$0 }'; sleep 2
+  -`cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' | sed '/^\s*$/d' | wc -l | awk '{ print $1+1 }'` \
+  | tac | awk '{ print "Commit",NR-1,"--",$0 }'; sleep 2
 
 RUN cmake -DFLB_RELEASE=On \
           -DFLB_TRACE=Off \
