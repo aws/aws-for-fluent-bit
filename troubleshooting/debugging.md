@@ -41,7 +41,9 @@ Remember that we also have older Golang output plugins for AWS (no longer recomm
 - `firehose`
 - `kinesis`
 
-Consequently, the AWS team contributed an `auto_retry_requests` config option for each of the core AWS outputs. This will issue an immediate retry for any connection issues. 
+Consequently, the AWS team contributed an `auto_retry_requests` config option for each of the core AWS outputs. This will issue an immediate retry for any connection issues.
+
+Additionally, broken connection may issues appear in Fluent Bit logs with the following format: `[2022/01/27 23:00:17] [error] [http_client] broken connection to logs.us-east-1.amazonaws.com:443`. This error can be resolved with [keepalive](https://docs.fluentbit.io/manual/administration/networking#connection-keepalive) restrictions on connection recycles. Set `net.keepalive_max_recycle` in the problematic output plugin's [config](https://docs.fluentbit.io/manual/administration/networking#example) to 10, 100 or whatever max value resolves connection issues. Higher values trade more broken connection errors for better networking performance. If problems continue, set `net.keepalive` to `off`.
 
 #### Tail Permission Issues in FireLens
 
