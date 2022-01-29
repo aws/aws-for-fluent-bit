@@ -1,17 +1,13 @@
-# Fix return value from tls_net_read (https://github.com/fluent/fluent-bit/pull/4100)
-# Commit 1 -- b0177f53 tls: Issue #4098 Fix error handling for OpenSSL apis
-https://github.com/krispraws/fluent-bit.git aws_tls_fix 8d1cfeb5ba830b360fe6e1228190ed900842a3ea
-
 # Downgrade mbedtls to 2.24.0 to fix the performance regression issue (https://github.com/fluent/fluent-bit/issues/4110)
-# Commit 2 -- eccd4171 downgrade mbedtls to 2.24.0
-https://github.com/zhonghui12/fluent-bit.git custom-1.8.7 30fc6305695623cbc95d51df07ae185dfec8bff2
+# Commit 1 -- eccd4171 downgrade mbedtls to 2.24.0
+https://github.com/zhonghui12/fluent-bit.git immutable-1.8-mbedtls-2.24.0-cherry-pick e4060aaf8c377614484e2ce36fe05542d6e5fd51
 
 # Support timeout on synchronous network calls (https://github.com/fluent/fluent-bit/pull/4184)
-# Commit 3 -- io: revised support timeout on synchronous calls
-# Commit 4 -- io: default to old net_io_read
-https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r3 ccb018b05fd69b1c4aee0de3cf6cb38d5ff29c7c
+# Commit 2 -- io: revised support timeout on synchronous calls
+# Commit 3 -- io: default to old net_io_read
+https://github.com/matthewfala/fluent-bit.git immutable-1.8-sync-timeout-12-r2 b07c5b07573983b78b27e0d48d7a3081aa8c4f3b
 https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r3 7088680dac1059ab39a875630771c0304045ad93
 
 # IMDS graceful fallback from IMDSv2 to IMDSv1 (https://github.com/aws/aws-for-fluent-bit/issues/259)
-# Commit 5 -- aws: revised imds fallback to v1 if token request fails
+# Commit 4 -- aws: revised imds fallback to v1 if token request fails
 https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r3 5a9ad8e43dfbdd93fa5f621f607d9548450eb23a
