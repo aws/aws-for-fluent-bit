@@ -8,7 +8,7 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit 1.6.1
 
 Compared to `2.21.6` this release adds:
-* Feature - The multiline filter now has buffered mode which supports key ECS multiline log use cases [aws-for-fluent-bit:100](https://github.com/aws/aws-for-fluent-bit/issues/100)
+* Feature - The multiline filter now fully supports key ECS multiline log use cases using regular expressions [aws-for-fluent-bit:100](https://github.com/aws/aws-for-fluent-bit/issues/100)
 * Feature - Add support for external_id in AWS output plugins [aws-for-fluent-bit:171](https://github.com/aws/aws-for-fluent-bit/issues/171)
 * Bug - Fix truncation issue after compression [kinesis:183](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/issues/183)
 
