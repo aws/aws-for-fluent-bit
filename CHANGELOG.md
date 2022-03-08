@@ -1,4 +1,23 @@
 # Changelog
+### 2.23.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.13](https://fluentbit.io/announcements/v1.8.13/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.22.0` this release adds:
+* Feature - Add timeout config for AWS SDK Go HTTP calls [kinesis:178](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/issues/178)
+* Enhancement - Migrate AWS plugins to performant 2.25.0-mbedtls base64 implementation [fluentbit:4422](https://github.com/fluent/fluent-bit/pull/4422)
+* Bug - Fix message loss issue using concurrency feature with 0 retries [kinesis:179](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/179)
+
+Compared to `2.22.0` this release deletes the following fix which has been covered in new enhancement:
+* Bug - Downgrade `mbedtls` to 2.24.0 to fix the performance regression issue in `mbedtls` 2.26.0 [fluentbit:4110](https://github.com/fluent/fluent-bit/issues/4110)
+
+Same as `2.22.0`, this release includes the following fix for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
+
 ### 2.22.0
 This release includes:
 * An Amazon Linux 2 Base
