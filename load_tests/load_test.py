@@ -11,7 +11,7 @@ OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
 TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
 PREFIX = os.environ['PREFIX']
 LOGGER_RUN_TIME_IN_SECOND = 600
-BUFFER_TIME_IN_SECOND = 180
+BUFFER_TIME_IN_SECOND = 300
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
 else:
@@ -28,7 +28,7 @@ def get_log_delay(response):
     log_delay_epoch_time = stop_epoch_time - start_epoch_time - LOGGER_RUN_TIME_IN_SECOND
     return datetime.fromtimestamp(log_delay_epoch_time).strftime('%Mm%Ss')
 
-# Set buffer for waiting all logs sent to destinations (~3min)
+# Set buffer for waiting all logs sent to destinations (~5min)
 def set_buffer(response):
     stop_time = response['tasks'][0]['stoppedAt']
     stop_epoch_time = (stop_time - datetime(1970,1,1, tzinfo=timezone.utc)).total_seconds()
