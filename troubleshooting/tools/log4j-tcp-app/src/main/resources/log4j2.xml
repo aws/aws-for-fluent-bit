@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+        </Console>
+        <Socket name="ApplicationTcp" host="127.0.0.1" port="${env:LOGGER_PORT}" ignoreExceptions="false">
+            <!-- Override standard log format with JSON since CloudWatch Log Insights handle this format natively. -->
+            <PatternLayout alwaysWriteExceptions="true">
+                <!-- This all has to go on one line, because log4j interprets the line breaks as part of the pattern.
+                     CloudWatch will assist with pretty printing the log. Note, we omit any values that aren't present
+                     to reduce logging volume. -->
+                <pattern>%d{dd MMM yyyy HH:mm:ss,SSS} %highlight{[%p]} %X{RequestId} (%t) %c: %m %throwable{separator(&#xd;)}%n</pattern>
+            </PatternLayout>
+        </Socket>
+        <Failover name="APPLICATION" primary="ApplicationTcp">
+            <Failovers>
+                <AppenderRef ref="STDOUT"/>
+            </Failovers>
+        </Failover>
+    </Appenders>
+    <Loggers>
+        <Root level="debug">
+            <!-- <AppenderRef ref="STDOUT" /> -->
+            <AppenderRef ref="ApplicationTcp"/>
+        </Root>
+    </Loggers>
+</Configuration>
