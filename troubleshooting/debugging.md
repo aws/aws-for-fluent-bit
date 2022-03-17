@@ -1,5 +1,30 @@
 ## Guide to Debugging Fluent Bit issues
 
+### Understanding Error Messages
+
+Fluent Bit is a very a low level tool, both in terms of the power over its configuration that it gives you, and in the verbosity of its log messages. Thus, it is normal to have errors in your Fluent Bit logs; its important to understand what these errors mean. 
+
+```
+[error] [http_client] broken connection to logs.us-west-2.amazonaws.com:443 ?
+[error] [output:cloudwatch_logs:cloudwatch_logs.0] Failed to send log events
+```
+
+Here we see error messages associated with a single request to send logs. These errors both come from a single http request failure. It is normal for this to happen occasionally; where other tools might silently retry, Fluent Bit tells that a connection was dropped. In this case, the http client logged a connection error, and then this caused the CloudWatch plugin to log an error because the http request failed. **Seeing error messages like these does not mean that you are losing logs; Fluent Bit will retry.**
+
+Retries can be configured: https://docs.fluentbit.io/manual/administration/scheduling-and-retries 
+
+This is an error message indicating a chunk of logs failed and will be retried:
+
+```
+ [ warn] [engine] failed to flush chunk '1-1647467985.551788815.flb', retry in 9 seconds: task_id=0, input=forward.1 > output=cloudwatch_logs.0 (out_id=0)
+```
+
+Even if you see this message, you still have not lost logs yet. Since it will retry. You have lost logs if you see something like the following message:
+
+```
+[2022/02/16 20:11:36] [ warn] [engine] chunk '1-1645042288.260516436.flb' cannot be retried: task_id=0, input=tcp.3 > output=cloudwatch_logs.1
+```
+
 ### Basic Techniques
 
 #### Enable Debug Logging
