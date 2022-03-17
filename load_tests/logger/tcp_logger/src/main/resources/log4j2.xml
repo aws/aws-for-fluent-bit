@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <!-- Console appender configuration -->
+        <!--
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout
+                pattern="%m%n" />
+        </Console>
+        -->
+        <!-- TCP appender configuration -->
+        <Socket name="ApplicationTcp" host="${env:LOGGER_DEST_ADDR}" port="${env:LOGGER_PORT}" ignoreExceptions="false">
+            <PatternLayout alwaysWriteExceptions="true">
+                <pattern>%m%n</pattern>
+            </PatternLayout>
+        </Socket>
+    </Appenders>
+    <Loggers>
+       <!-- Root logger referring to console appender -->
+        <Root level="info">
+            <AppenderRef ref="ApplicationTcp" />
+        </Root>
+    </Loggers>
+</Configuration>

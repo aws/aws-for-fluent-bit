@@ -1,0 +1,5 @@
+docker run -it  -e "LOGGER_THREADS=1" -e "LOGGER_ITERATIONS=1" -e "LOG_SIZE_BYTES=1" -e "LOGGER_SLEEP_MS=1000" -e "LOGGER_PORT=5171" -e "INFINITE=true"  log4j:latest
+
+docker run -d --network host  -e "LOGGER_THREADS=50" -e "LOGGER_ITERATIONS=1" -e "LOG_SIZE_BYTES=1000" -e "LOGGER_SLEEP_MS=10000" -e "LOGGER_PORT=5471" -e "INFINITE=true"  log4j:latest
+
+docker run -d --network host  -e "LOGGER_THREADS=50" -e "LOGGER_ITERATIONS=1" -e "LOG_SIZE_BYTES=25000" -e "LOGGER_SLEEP_MS=10000" -e "LOGGER_PORT=5472" -e "INFINITE=true"  log4j:latest
