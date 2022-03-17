@@ -1,4 +1,19 @@
 # Changelog
+
+### 2.23.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.13](https://fluentbit.io/announcements/v1.8.13/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Same as `2.23.0`, this release includes the following fix for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
+
+Important Note:
+* Two security vulnerability were found in amazonlinux which we use as base image to our `aws-for-fluent-bit` image- [ALAS-2022-1764](https://alas.aws.amazon.com/AL2/ALAS-2022-1764.html) and [ALAS-2022-1766](https://alas.aws.amazon.com/AL2/ALAS-2022-1766.html). This new image will be based on an updated version of amazonlinux that resolves these CVEs.
+
 ### 2.23.0
 This release includes:
 * An Amazon Linux 2 Base
