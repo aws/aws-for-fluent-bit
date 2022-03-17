@@ -2,6 +2,8 @@
 
 ### Understanding Error Messages
 
+#### How do I tell if Fluent Bit is losing logs?
+
 Fluent Bit is a very a low level tool, both in terms of the power over its configuration that it gives you, and in the verbosity of its log messages. Thus, it is normal to have errors in your Fluent Bit logs; its important to understand what these errors mean. 
 
 ```
@@ -24,6 +26,19 @@ Even if you see this message, you still have not lost logs yet. Since it will re
 ```
 [2022/02/16 20:11:36] [ warn] [engine] chunk '1-1645042288.260516436.flb' cannot be retried: task_id=0, input=tcp.3 > output=cloudwatch_logs.1
 ```
+
+#### Tail Permission Errors
+A common error message for ECS FireLens users who are reading log files is the following:
+
+```
+[2022/03/16 19:05:06] [error] [input:tail:tail.5] read error, check permissions: /var/output/logs/service_log*
+```
+
+This happens for one of two reasons:
+
+1. You need to fix your task definition: If you do not add a volume mount between the app container and FireLens container for your logs files, Fluent Bit can't find them and you'll get this error repeatedly.
+
+2. This is normal, ignore the error: If you did set up the volume mount correctly, you will still always get this on startup. This is because ECS will start the FireLens container first, and so that path won't exist until the app container starts up, which is after FireLens. Thus it will always complain about not finding the path on startup. This can either be safely ignored or fixed by creating the full directory path for the log files in your Dockerfile so that it exists before any log files are written. The error will only happen on startup and once the log files exist, Fluent Bit will pick them up and begin reading them.
 
 ### Basic Techniques
 
