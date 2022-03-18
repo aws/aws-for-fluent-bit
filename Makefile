@@ -19,7 +19,7 @@ release:
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
 .PHONY: debug
-release:
+debug:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
 
