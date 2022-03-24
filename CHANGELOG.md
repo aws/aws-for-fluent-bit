@@ -1,4 +1,17 @@
 # Changelog
+### 2.23.2
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.14](https://fluentbit.io/announcements/v1.8.14/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.23.1` this release adds:
+* Enhancement - Mitigate throttling issue on log group in cloudwatch_logs plugin [fluentbit:4826](https://github.com/fluent/fluent-bit/pull/4826)
+
+Same as `2.23.1`, this release includes the following fix for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
 
 ### 2.23.1
 This release includes:
