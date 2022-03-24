@@ -1,0 +1,22 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: load-test-fluent-bit-eks-cluster
+  region: us-west-2
+
+nodeGroups:
+  - name: ng
+    instanceType: c5.24xlarge
+    minSize: 0
+    maxSize: 5
+    volumeSize: 100
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::906394416424:policy/load-test-fluent-bit-eks-policy
+      withAddonPolicies:
+        autoScaler: true
+        imageBuilder: true
