@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: load-test-fluent-bit-eks
+  namespace: load-test-fluent-bit-eks-ns
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: load-test-fluent-bit-eks-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: load-test-fluent-bit-eks-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: load-test-fluent-bit-eks-role
+subjects:
+  - kind: ServiceAccount
+    name: load-test-fluent-bit-eks
+    namespace: load-test-fluent-bit-eks-ns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudwatch-$THROUGHPUT-config
+  namespace: load-test-fluent-bit-eks-ns
+  labels:
+    k8s-app: load-test-fluent-bit-eks
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Grace         30
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+        HTTP_Server   On
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+        
+    @INCLUDE application-log.conf
+  
+  application-log.conf: |
+    [INPUT]
+        Name                tail
+        Tag                 kube.*
+        Path                /var/log/containers/ds-cloudwatch-$THROUGHPUT*
+        Docker_Mode         On
+        Parser              docker
+        DB                  /var/fluent-bit/cloudwatch/$THROUGHPUT/flb_log.db
+        DB.locking          true
+        Mem_Buf_Limit       5GB
+        buffer_chunk_size   80MB
+        buffer_max_size     5GB
+        Skip_Long_Lines     On
+        Skip_Empty_Lines    On
+        Refresh_Interval    10
+        Read_from_Head      On
+        Rotate_Wait         600
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_Tag_Prefix     kube.var.log.containers
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Labels              Off
+        Annotations         Off
+
+    [OUTPUT]
+        Name                cloudwatch_logs
+        Match               kube.*
+        region              us-west-2
+        log_group_name      $CW_LOG_GROUP_NAME
+        log_stream_prefix   load-test-fluent-bit-
+        auto_create_group   false
+        log_key             log
+        workers             1
+        auto_retry_requests true
+        net.keepalive       off
+        retry_limit         5
+
+  parsers.conf: |
+    [PARSER]
+        Name                docker
+        Format              json
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S.%LZ
+
+    [PARSER]
+        Name                syslog
+        Format              regex
+        Regex               ^(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
+        Time_Key            time
+        Time_Format         %b %d %H:%M:%S
+
+    [PARSER]
+        Name                container_firstline
+        Format              regex
+        Regex               (?<log>(?<="log":")\S(?!\.).*?)(?<!\\)".*(?<stream>(?<="stream":").*?)".*(?<time>\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}\.\w*).*(?=})
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S.%LZ
+
+    [PARSER]
+        Name                cwagent_firstline
+        Format              regex
+        Regex               (?<log>(?<="log":")\d{4}[\/-]\d{1,2}[\/-]\d{1,2}[ T]\d{2}:\d{2}:\d{2}(?!\.).*?)(?<!\\)".*(?<stream>(?<="stream":").*?)".*(?<time>\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}\.\w*).*(?=})
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S.%LZ
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ds-cloudwatch-$THROUGHPUT
+  namespace: load-test-fluent-bit-eks-ns
+  labels:
+    k8s-app: load-test-fluent-bit-eks
+    version: v1
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: load-test-fluent-bit-eks
+  template:
+    metadata:
+      labels:
+        k8s-app: load-test-fluent-bit-eks
+        version: v1
+        kubernetes.io/cluster-service: "true"
+    spec:
+      containers:
+      - name: fluent-bit
+        image: $FLUENT_BIT_IMAGE
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 1Gi
+          requests:
+            cpu: 1.0
+            memory: 1Gi
+        volumeMounts:
+        # Please don't change below read-only permissions
+        - name: fluentbitstate
+          mountPath: /var/fluent-bit/state
+        - name: fluentbitcloudwatch$THROUGHPUT
+          mountPath: /var/fluent-bit/cloudwatch/$THROUGHPUT
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: cloudwatch-$THROUGHPUT-config
+          mountPath: /fluent-bit/etc/
+      - name: app-one
+        image: $APP_IMAGE
+        imagePullPolicy: Always
+        env:
+          - name: TIME
+            value: "$TIME"
+          - name: ITERATION
+            value: "$THROUGHPUT"
+        volumeMounts:
+        - mountPath: /var/log
+          name: varlog
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+      - name: app-two
+        image: $APP_IMAGE
+        imagePullPolicy: Always
+        env:
+          - name: TIME
+            value: "$TIME"
+          - name: ITERATION
+            value: "$THROUGHPUT"
+        volumeMounts:
+        - mountPath: /var/log
+          name: varlog
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+      - name: app-third
+        image: $APP_IMAGE
+        imagePullPolicy: Always
+        env:
+          - name: TIME
+            value: "$TIME"
+          - name: ITERATION
+            value: "$THROUGHPUT"
+        volumeMounts:
+        - mountPath: /var/log
+          name: varlog
+        resources:
+          requests:
+            cpu: 1.0
+            memory: 1Gi
+          limits:
+            memory: 1Gi
+      nodeSelector:
+        destination: cloudwatch
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: fluentbitstate
+        hostPath:
+          path: /var/fluent-bit/state
+      - name: fluentbitcloudwatch$THROUGHPUT
+        hostPath:
+          path: /var/fluent-bit/cloudwatch/$THROUGHPUT
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: cloudwatch-$THROUGHPUT-config
+        configMap:
+          name: cloudwatch-$THROUGHPUT-config
+      serviceAccountName: load-test-fluent-bit-eks
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: "NoExecute"
+      - operator: "Exists"
+        effect: "NoSchedule"

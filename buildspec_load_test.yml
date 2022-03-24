@@ -6,6 +6,7 @@ env:
     CW_THROUGHPUT_LIST: '["1m", "2m", "3m"]'
     TESTING_RESOURCES_STACK_NAME: 'load-test-fluent-bit-testing-resources'
     LOG_STORAGE_STACK_NAME: 'load-test-fluent-bit-log-storage'
+    EKS_CLUSTER_NAME: 'load-test-fluent-bit-eks-cluster'
     PREFIX: 'load-test-fluent-bit-'
 
 phases:
@@ -17,13 +18,29 @@ phases:
   pre_build:
     commands:
       - echo Running the load tests
+      # install cdk
       - npm config set prefix /usr/local
       - npm install -g aws-cdk@latest
+      # install eksctl
+      - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+      - mv /tmp/eksctl /usr/local/bin
+      # install kubectl
+      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+      - chmod +x ./kubectl
+      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      # install aws
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       - unzip awscliv2.zip
       - which aws
       - ls -l /root/.pyenv/shims/aws
       - ./aws/install --bin-dir /root/.pyenv/shims --install-dir /root/.pyenv/shims --update
+      # install aws-iam-authenticator
+      - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+      - chmod +x ./aws-iam-authenticator
+      - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
+      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+      # pre-config
       - aws configure set default.region us-west-2
   build:
     commands:
@@ -33,15 +50,15 @@ phases:
       - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
-      # Activate Python virtual environment and install the AWS CDK core dependencies
+      # Activate Python virtual environment, install the AWS CDK core dependencies and update eks config
       - python -m venv venv
       - source venv/bin/activate
       - pip install -r ./load_tests/requirements.txt
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
       # Create and set up related testing resources
       - python ./load_tests/load_test.py create_testing_resources
       - source ./load_tests/setup_test_environment.sh
-      # Run load tests on corresponding platform - ECS only for now
-      # TODO: add EKS load tests
+      # Run load tests on corresponding platform 
       - python ./load_tests/load_test.py ${PLATFORM}
       # Clear up testing resources
       - python ./load_tests/load_test.py delete_testing_resources

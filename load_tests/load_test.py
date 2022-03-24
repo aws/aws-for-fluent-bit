@@ -6,12 +6,14 @@ import boto3
 import subprocess
 from datetime import datetime, timezone
 
-PLATFORM = os.environ['PLATFORM']
+PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
 TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
 PREFIX = os.environ['PREFIX']
+EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
 LOGGER_RUN_TIME_IN_SECOND = 600
 BUFFER_TIME_IN_SECOND = 300
+NUM_OF_EKS_NODES = 4
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
 else:
@@ -19,22 +21,18 @@ else:
 
 # Return the approximate log delay for each ecs load test
 # Estimate log delay = task_stop_time - task_start_time - logger_image_run_time
-def get_log_delay(response):
-    stop_time = response['tasks'][0]['stoppedAt']
-    stop_epoch_time = (stop_time - datetime(1970,1,1, tzinfo=timezone.utc)).total_seconds()
-    start_time = response['tasks'][0]['startedAt']
-    start_epoch_time = (start_time - datetime(1970,1,1, tzinfo=timezone.utc)).total_seconds()
-
-    log_delay_epoch_time = stop_epoch_time - start_epoch_time - LOGGER_RUN_TIME_IN_SECOND
+def get_log_delay(log_delay_epoch_time):
     return datetime.fromtimestamp(log_delay_epoch_time).strftime('%Mm%Ss')
 
 # Set buffer for waiting all logs sent to destinations (~5min)
-def set_buffer(response):
-    stop_time = response['tasks'][0]['stoppedAt']
-    stop_epoch_time = (stop_time - datetime(1970,1,1, tzinfo=timezone.utc)).total_seconds()
+def set_buffer(stop_epoch_time):
     curr_epoch_time = time.time()
     if curr_epoch_time-stop_epoch_time < BUFFER_TIME_IN_SECOND:
         time.sleep(int(BUFFER_TIME_IN_SECOND-curr_epoch_time+stop_epoch_time))
+
+# convert datetime to epoch time
+def parse_time(time):
+    return (time - datetime(1970,1,1, tzinfo=timezone.utc)).total_seconds()
 
 # Check app container exit status for each ecs load test
 # to make sure it generate correct number of logs
@@ -59,7 +57,7 @@ def generate_task_definition(throughput):
         '$TASK_ROLE_ARN': os.environ['LOAD_TEST_TASK_ROLE_ARN'],
         '$TASK_EXECUTION_ROLE_ARN': os.environ['LOAD_TEST_TASK_EXECUTION_ROLE_ARN'],
         '$FLUENT_BIT_IMAGE': os.environ['FLUENT_BIT_IMAGE'],
-        '$APP_IMAGE': os.environ['APP_IMAGE'],
+        '$APP_IMAGE': os.environ['ECS_APP_IMAGE'],
         '$LOGGER_RUN_TIME_IN_SECOND': str(LOGGER_RUN_TIME_IN_SECOND),
         'cloudwatch': {'$CW_LOG_GROUP_NAME': os.environ['CW_LOG_GROUP_NAME']},
         'firehose': {'$DELIVERY_STREAM': os.environ[f'FIREHOSE_TEST_{throughput}']},
@@ -97,8 +95,18 @@ def create_testing_resources():
             StackName=TESTING_RESOURCES_STACK_NAME
         )
     else:
+        # scale up eks cluster 
+        if PLATFORM == 'eks':
+            os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes={NUM_OF_EKS_NODES} ng')
+            while True:
+                time.sleep(90)
+                number_of_nodes = subprocess.getoutput("kubectl get nodes --no-headers=true | wc -l")
+                if(int(number_of_nodes) == NUM_OF_EKS_NODES):
+                    break
+            # create namespace
+            os.system('kubectl apply -f ./load_tests/create_testing_resources/eks/namespace.yaml')
         # Once deployment starts, it will wait until the stack creation is completed
-        os.chdir(f'./load_tests/{sys.argv[1]}')
+        os.chdir(f'./load_tests/{sys.argv[1]}/{PLATFORM}')
         os.system('cdk deploy --require-approval never')
 
 # For tests on ECS, we need to:
@@ -143,8 +151,10 @@ def run_ecs_tests():
         )
         check_app_exit_code(response)
         input_record = calculate_total_input_number(throughput)
-        log_delay = get_log_delay(response)
-        set_buffer(response)
+        start_time = response['tasks'][0]['startedAt']
+        stop_time = response['tasks'][0]['stoppedAt']
+        log_delay = get_log_delay(parse_time(stop_time)-parse_time(start_time)-LOGGER_RUN_TIME_IN_SECOND)
+        set_buffer(parse_time(stop_time))
         # Validate logs
         if OUTPUT_PLUGIN == 'cloudwatch':
             os.environ['LOG_PREFIX'] = throughput
@@ -153,6 +163,53 @@ def run_ecs_tests():
             os.environ['LOG_PREFIX'] = f'{OUTPUT_PLUGIN}-test/ecs/{throughput}/'
             os.environ['DESTINATION'] = 's3'
         processes.add(subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay]))
+    
+    # Wait until all subprocesses for validation completed
+    for p in processes:
+        p.wait()
+
+def generate_daemonset_config(throughput):
+    daemonset_config_dict = {
+        '$THROUGHPUT': throughput,
+        '$FLUENT_BIT_IMAGE': os.environ['FLUENT_BIT_IMAGE'],
+        '$APP_IMAGE': os.environ['EKS_APP_IMAGE'],
+        '$TIME': str(LOGGER_RUN_TIME_IN_SECOND),
+        '$CW_LOG_GROUP_NAME': os.environ['CW_LOG_GROUP_NAME'],
+    }
+    fin = open(f'./load_tests/daemonset/{OUTPUT_PLUGIN}.yaml', 'r')
+    data = fin.read()
+    for key in daemonset_config_dict:
+        data = data.replace(key, daemonset_config_dict[key])  
+    fout = open(f'./load_tests/daemonset/{OUTPUT_PLUGIN}_{throughput}.yaml', 'w')
+    fout.write(data)
+    fout.close()
+    fin.close()
+
+def run_eks_tests():
+    client = boto3.client('logs')
+    processes = set()
+
+    for throughput in THROUGHPUT_LIST:
+        generate_daemonset_config(throughput)
+        os.system(f'kubectl apply -f ./load_tests/daemonset/{OUTPUT_PLUGIN}_{throughput}.yaml')
+    # wait (10 mins run + buffer for setup/log delivery)
+    time.sleep(1000)
+    for throughput in THROUGHPUT_LIST:
+        input_record = calculate_total_input_number(throughput)
+        response = client.describe_log_streams(
+            logGroupName=os.environ['CW_LOG_GROUP_NAME'],
+            logStreamNamePrefix=f'{PREFIX}kube.var.log.containers.ds-cloudwatch-{throughput}',
+            orderBy='LogStreamName'
+        ) 
+        for log_stream in response['logStreams']:
+            if 'app-' not in log_stream['logStreamName']:
+                continue
+            expect_time = log_stream['lastEventTimestamp']
+            actual_time = log_stream['lastIngestionTime']
+            log_delay = get_log_delay(actual_time/1000-expect_time/1000)
+            os.environ['LOG_PREFIX'] = log_stream['logStreamName']
+            os.environ['DESTINATION'] = 'cloudwatch'
+            processes.add(subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay]))
     
     # Wait until all subprocesses for validation completed
     for p in processes:
@@ -168,11 +225,17 @@ def delete_testing_resources():
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
     bucket.objects.all().delete()
+    # scale down eks cluster
+    if PLATFORM == 'eks':
+        os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
+        os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes=0 ng')
 
 if sys.argv[1] == 'create_testing_resources':
     create_testing_resources()
 elif sys.argv[1] == 'ECS':
     run_ecs_tests()
+elif sys.argv[1] == 'EKS':
+    run_eks_tests()
 elif sys.argv[1] == 'delete_testing_resources':
     # testing resources only need to be deleted once
     if OUTPUT_PLUGIN == 'cloudwatch':

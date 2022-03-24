@@ -7,7 +7,7 @@ from aws_cdk import (
     core,
 )
 
-# Create necessary testing resources - cloudwatch log group and ecs cluster 
+# Create necessary ECS load testing resources - cloudwatch log group and ecs cluster 
 class TestingResources(core.Stack):
 
     def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
