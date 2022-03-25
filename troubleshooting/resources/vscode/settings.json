@@ -1,0 +1,10 @@
+{
+    //"editor.formatOnSave": true,
+    "[cmake]": {
+        "editor.tabSize": 2
+    },    
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, BreakBeforeBraces: Stroustrup, IndentWidth: 4, ColumnLimit: 90}",
+    "editor.rulers": [
+        90
+    ]
+}

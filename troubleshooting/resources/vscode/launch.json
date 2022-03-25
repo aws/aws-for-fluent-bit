@@ -1,0 +1,99 @@
+// Fluent Bit Launch Configuration
+{
+    "configurations": [
+        {
+            "name": "Fluent Bit (General Config)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit.conf"],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit (CloudWatch)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit-cloudwatch_logs.conf"],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit (S3)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit-s3.conf"],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit (Kinesis Streams)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit-kinesis_streams.conf"],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit (Kinesis Firehose)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit-kinesis_firehose.conf"],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit (Go Plugins)",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit-go.conf",
+                "-e", "${workspaceFolder}/.vscode/external-plugins/amazon-cloudwatch-logs-for-fluent-bit/bin/cloudwatch.so",
+                "-e", "${workspaceFolder}/.vscode/external-plugins/amazon-kinesis-streams-for-fluent-bit/bin/kinesis.so"
+            ],
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "preLaunchTask": "buildgo",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit -- No Build (General Config)",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "type": "cppdbg",
+            "request": "launch",
+            "args": ["-c", "${workspaceFolder}/.vscode/fluent-bit-config/fluent-bit.conf"],
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "Fluent Bit -- (General Config with Valgrind)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/fluent-bit",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "externalConsole": true,
+            "setupCommands": [
+              {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+              },
+              {
+                "description": "Connect to valgrind",
+                "text": "${command:valgrind-task-integration.valgrindGdbArg}",
+                "ignoreFailures": true
+              }
+            ]
+          }
+    ]
+}
