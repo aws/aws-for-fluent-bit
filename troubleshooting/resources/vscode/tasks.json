@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "sh ${workspaceFolder}/.vscode/scripts/rebuild.sh"
+        },
+        {
+            "label": "buildgo",
+            "type": "shell",
+            "command": "cd ./.vscode/external-plugins && cd amazon-cloudwatch* && make && cd .. && cd amazon-kinesis-streams* && make && cd .. && cd ../../ && sh ./.vscode/Scripts/rebuild.sh"
+
+        },
+        {
+            "label": "make_tests",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/build/ && make"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "listFluentBitPluginArgs",
+            "type": "command",
+            "command": "sh cd ${workspaceFolder}/.vscode/scripts/rebuild.sh"
+        }
+    ]
+}
