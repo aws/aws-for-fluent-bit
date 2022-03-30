@@ -1,4 +1,18 @@
 # Changelog
+### 2.23.3
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.8.15](https://fluentbit.io/announcements/v1.8.15/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Same as `2.23.2`, this release includes the following fix for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
+
+New Tool:
+* [firelens-datajet](https://github.com/aws/firelens-datajet) is a holistic log/metric routing software test tool made to flexibly send test data to Fluent Bit in a repeatable, reliable, and portable manner. Create test configuration JSONs that modularly connect test data generators to data senders, customize data generation rate, send data in parallel over various ingestion routes, and mock log router destinations.
+
 ### 2.23.2
 This release includes:
 * An Amazon Linux 2 Base
