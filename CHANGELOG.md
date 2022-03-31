@@ -1,4 +1,8 @@
 # Changelog
+
+Compared to `2.23.3` this release adds:
+* Go version upgrade to 1.17.8
+
 ### 2.23.3
 This release includes:
 * An Amazon Linux 2 Base
