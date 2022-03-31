@@ -1,6 +1,4 @@
 # Changelog
-
-
 ### 2.23.3
 This release includes:
 * An Amazon Linux 2 Base
