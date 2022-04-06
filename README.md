@@ -205,6 +205,10 @@ Then run `make cloudwatch-dev` or `make kinesis-dev` or `make firehose-dev` to b
 
 To run the integration tests on your code, execute `make integ-cloudwatch-dev` or `make integ-kinesis-dev` or `make integ-firehose-dev`.
 
+#### Sending Test Data to FireLens
+
+Sometimes, an application generates logs at a particular throughput or format that reveals problems with FireLens. It may be difficult to isolate and reproduce the issue, due to sporadic errors, or inconsistent application state that result in varying log content over time. In these cases, the [FireLens Datajet](https://github.com/aws/firelens-datajet) highly configurable mock application can be used to deliver customizable logs at varying throughputs to various Fluent Bit input plugins, helping to reproduce an issue quickly and repeatably. It can be configured via a JSON file, or environment variables, to deliver logs to various input plugins asynchronously, with adjustable content and rates. FireLens Datajet can run locally or be dockized into a container image.
+
 ## Fluent Bit Examples
 Check out Fluent Bit examples from our [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples#fluent-bit-examples) repo.
 
