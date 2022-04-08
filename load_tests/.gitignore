@@ -1,3 +1,4 @@
 create_testing_resources/cdk.out
 create_testing_resources/kinesis_s3_firehose/cdk.out
 task_definitions/*_*m.json
+__pycache__
