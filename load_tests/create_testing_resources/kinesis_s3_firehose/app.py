@@ -1,6 +1,4 @@
 from logging import captureWarnings
-import os
-import json
 from aws_cdk import (
     aws_s3 as s3,
     aws_kinesis as kinesis,
@@ -8,11 +6,9 @@ from aws_cdk import (
     aws_iam as iam,
     core,
 )
+import resource_resolver
 
-DESTINATION_LIST = ["", "std-"] # "" is the destination tag for logs coming from non-stdstream input
-THROUGHPUT_LIST = json.loads(os.environ['THROUGHPUT_LIST'])
-PLATFORM = os.environ['PLATFORM'].lower()
-PREFIX= os.environ['PREFIX']
+PREFIX = resource_resolver.PREFIX
 
 # Create necessary testing resources - s3 bucket, data streams and delivery streams
 class LogStorage(core.Stack):
@@ -32,57 +28,61 @@ class LogStorage(core.Stack):
         )
 
         names = locals()
-        for destination in DESTINATION_LIST:
-          for throughput in THROUGHPUT_LIST:
-              caps_identifier = destination.capitalize().replace("-", "") + throughput.capitalize()
-              identifier = destination + throughput
-              # Data streams and related delivery streams for kinesis test
-              names[PLATFORM+'_kinesis_stream_'+identifier] = kinesis.Stream(self, PLATFORM+'KinesisStream'+caps_identifier,
-                                                                            stream_name=PREFIX+PLATFORM+'-kinesisStream-'+identifier,
-                                                                            shard_count=100)
-              kinesis_policy = iam.Policy(self, 'kinesisPolicyfor'+identifier,
-                                          statements=[iam.PolicyStatement(actions=['kinesis:*'], resources=[names.get(PLATFORM+'_kinesis_stream_'+identifier).stream_arn])],
-                                          roles=[firehose_role],
-              )
-              names[PLATFORM+'_kinesis_test_delivery_stream_'+identifier] = firehose.CfnDeliveryStream(
-                                                                            self, PLATFORM+'KinesisTestDeliveryStream'+caps_identifier,
-                                                                            delivery_stream_name=PREFIX+PLATFORM+'-kinesisTest-deliveryStream-'+identifier,
-                                                                            delivery_stream_type='KinesisStreamAsSource',
-                                                                            kinesis_stream_source_configuration=firehose.CfnDeliveryStream.KinesisStreamSourceConfigurationProperty(
-                                                                              kinesis_stream_arn=names.get(PLATFORM+'_kinesis_stream_'+identifier).stream_arn,
-                                                                              role_arn=firehose_role.role_arn
-                                                                            ),
-                                                                            s3_destination_configuration=firehose.CfnDeliveryStream.S3DestinationConfigurationProperty(
-                                                                              bucket_arn=bucket.bucket_arn,
-                                                                              buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
-                                                                                interval_in_seconds=60,
-                                                                                size_in_m_bs=50
-                                                                            ),
-                                                                            compression_format='UNCOMPRESSED',
-                                                                            role_arn=firehose_role.role_arn,
-                                                                            prefix=f'kinesis-test/{PLATFORM}/{identifier}/'
-                                                                            ))
-              names.get(PLATFORM+'_kinesis_test_delivery_stream_'+identifier).add_depends_on(kinesis_policy.node.default_child)
-              # Delivery streams for firehose test
-              names[PLATFORM+'_firehose_test_delivery_stream_'+identifier] = firehose.CfnDeliveryStream(
-                                                                            self, PLATFORM+'FirehoseTestDeliveryStream'+caps_identifier,
-                                                                            delivery_stream_name=PREFIX+PLATFORM+'-firehoseTest-deliveryStream-'+identifier,
-                                                                            delivery_stream_type='DirectPut',
-                                                                            s3_destination_configuration=firehose.CfnDeliveryStream.S3DestinationConfigurationProperty(
-                                                                              bucket_arn=bucket.bucket_arn,
-                                                                              buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
-                                                                                interval_in_seconds=60,
-                                                                                size_in_m_bs=50
+        for platform in resource_resolver.PLATFORM_LIST:
+          for input_prefix in resource_resolver.INPUT_PREFIX_LIST:
+            for throughput in resource_resolver.THROUGHPUT_LIST:
+
+                input_configuration = resource_resolver.get_input_configuration(platform, input_prefix, throughput)
+
+                caps_identifier = input_prefix.capitalize().replace("-", "") + throughput.capitalize()
+                identifier = input_prefix + throughput
+                # Data streams and related delivery streams for kinesis test
+                names[platform+'_kinesis_stream_'+identifier] = kinesis.Stream(self, platform+'KinesisStream'+caps_identifier,
+                                                                              stream_name=PREFIX+platform+'-kinesisStream-'+identifier,
+                                                                              shard_count=100)
+                kinesis_policy = iam.Policy(self, 'kinesisPolicyfor'+identifier,
+                                            statements=[iam.PolicyStatement(actions=['kinesis:*'], resources=[names.get(platform+'_kinesis_stream_'+identifier).stream_arn])],
+                                            roles=[firehose_role],
+                )
+                names[platform+'_kinesis_test_delivery_stream_'+identifier] = firehose.CfnDeliveryStream(
+                                                                              self, platform+'KinesisTestDeliveryStream'+caps_identifier,
+                                                                              delivery_stream_name=resource_resolver.resolve_kinesis_delivery_stream_name(input_configuration),
+                                                                              delivery_stream_type='KinesisStreamAsSource',
+                                                                              kinesis_stream_source_configuration=firehose.CfnDeliveryStream.KinesisStreamSourceConfigurationProperty(
+                                                                                kinesis_stream_arn=names.get(platform+'_kinesis_stream_'+identifier).stream_arn,
+                                                                                role_arn=firehose_role.role_arn
                                                                               ),
-                                                                            compression_format='UNCOMPRESSED',
-                                                                            role_arn=firehose_role.role_arn,
-                                                                            prefix=f'firehose-test/{PLATFORM}/{identifier}/'
-                                                                            ))
+                                                                              s3_destination_configuration=firehose.CfnDeliveryStream.S3DestinationConfigurationProperty(
+                                                                                bucket_arn=bucket.bucket_arn,
+                                                                                buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
+                                                                                  interval_in_seconds=60,
+                                                                                  size_in_m_bs=50
+                                                                              ),
+                                                                              compression_format='UNCOMPRESSED',
+                                                                              role_arn=firehose_role.role_arn,
+                                                                              prefix=f'kinesis-test/{platform}/{identifier}/'
+                                                                              ))
+                names.get(platform+'_kinesis_test_delivery_stream_'+identifier).add_depends_on(kinesis_policy.node.default_child)
+                # Delivery streams for firehose test
+                names[platform+'_firehose_test_delivery_stream_'+identifier] = firehose.CfnDeliveryStream(
+                                                                              self, platform+'FirehoseTestDeliveryStream'+caps_identifier,
+                                                                              delivery_stream_name=resource_resolver.resolve_firehose_delivery_stream_name(input_configuration),
+                                                                              delivery_stream_type='DirectPut',
+                                                                              s3_destination_configuration=firehose.CfnDeliveryStream.S3DestinationConfigurationProperty(
+                                                                                bucket_arn=bucket.bucket_arn,
+                                                                                buffering_hints=firehose.CfnDeliveryStream.BufferingHintsProperty(
+                                                                                  interval_in_seconds=60,
+                                                                                  size_in_m_bs=50
+                                                                                ),
+                                                                              compression_format='UNCOMPRESSED',
+                                                                              role_arn=firehose_role.role_arn,
+                                                                              prefix=f'firehose-test/{platform}/{identifier}/'
+                                                                              ))
 
         # Add stack outputs
         core.CfnOutput(self, 'S3BucketName', 
-                       value=bucket.bucket_name, 
-                       description='S3 Bucket Name')
+                      value=bucket.bucket_name,
+                      description='S3 Bucket Name')
 
 app = core.App()
 LogStorage(app, 'load-test-fluent-bit-log-storage')

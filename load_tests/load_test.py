@@ -5,6 +5,7 @@ import time
 import boto3
 import subprocess
 from datetime import datetime, timezone
+import create_testing_resources.kinesis_s3_firehose.resource_resolver as resource_resolver
 
 IS_TASK_DEFINITION_PRINTED = False
 PLATFORM = os.environ['PLATFORM'].lower()
@@ -70,8 +71,11 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     if not hasattr(generate_task_definition, "counter"):
         generate_task_definition.counter = 0  # it doesn't exist yet, so initialize it
     generate_task_definition.counter += 1
-    destination_identifier = get_destination_identifier(throughput, input_logger)
-    destination_identifier_firelens = get_destination_identifier_firelens(throughput, input_logger)
+
+    # Generate configuration information for STD and TCP tests
+    std_config      = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.STD_INPUT_PREFIX, throughput)
+    custom_config   = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.CUSTOM_INPUT_PREFIX, throughput)
+
     task_definition_dict = {
 
         # App Container Environment Variables
@@ -86,20 +90,32 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
         '$OUTPUT_PLUGIN': OUTPUT_PLUGIN,
 
         # General Environment Variables
-        '$FIRELENS_DESTINATION_IDENTIFIER': destination_identifier_firelens,
-        '$DESTINATION_IDENTIFIER': destination_identifier,
         '$THROUGHPUT': throughput,
 
         # Task Environment Variables
         '$TASK_ROLE_ARN': os.environ['LOAD_TEST_TASK_ROLE_ARN'],
         '$TASK_EXECUTION_ROLE_ARN': os.environ['LOAD_TEST_TASK_EXECUTION_ROLE_ARN'],
+        '$CUSTOM_S3_OBJECT_NAME':           resource_resolver.resolve_s3_object_name(custom_config),
 
         # Plugin Specific Environment Variables
         '$APP_IMAGE': os.environ['ECS_APP_IMAGE'],
-        'cloudwatch': {'$CW_LOG_GROUP_NAME': os.environ['CW_LOG_GROUP_NAME']},
-        'firehose': {'$DELIVERY_STREAM_PREFIX': f'{PREFIX}{PLATFORM}-firehoseTest-deliveryStream'},
-        'kinesis': {'$STREAM_PREFIX': f'{PREFIX}{PLATFORM}-kinesisStream'},
-        's3': {'$S3_BUCKET_NAME': os.environ['S3_BUCKET_NAME']},
+        'cloudwatch': {
+            '$CW_LOG_GROUP_NAME':               os.environ['CW_LOG_GROUP_NAME'],
+            '$STD_LOG_STREAM_NAME':             resource_resolver.resolve_cloudwatch_logs_stream_name(std_config),
+            '$CUSTOM_LOG_STREAM_NAME':          resource_resolver.resolve_cloudwatch_logs_stream_name(custom_config)
+        },
+        'firehose': {
+            '$STD_DELIVERY_STREAM_PREFIX':      resource_resolver.resolve_firehose_delivery_stream_name(std_config),
+            '$CUSTOM_DELIVERY_STREAM_PREFIX':   resource_resolver.resolve_firehose_delivery_stream_name(custom_config),
+        },
+        'kinesis': {
+            '$STD_STREAM_PREFIX':               resource_resolver.resolve_kinesis_delivery_stream_name(std_config),
+            '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_delivery_stream_name(custom_config),
+        },
+        's3': {
+            '$S3_BUCKET_NAME':                  os.environ['S3_BUCKET_NAME'],
+            '$STD_S3_OBJECT_NAME':              resource_resolver.resolve_s3_object_name(std_config),
+        },
     }
     fin = open(f'./load_tests/task_definitions/{OUTPUT_PLUGIN}.json', 'r')
     data = fin.read()
@@ -210,12 +226,13 @@ def run_ecs_tests():
             # Validate logs
             os.environ['LOG_SOURCE_NAME'] = input_logger["name"]
             os.environ['LOG_SOURCE_IMAGE'] = input_logger["logger_image"]
-            destination_identifier = get_destination_identifier(throughput, input_logger)
+            validated_input_prefix = get_validated_input_prefix(input_logger)
+            input_configuration = resource_resolver.get_input_configuration(PLATFORM, validated_input_prefix, throughput)
             if OUTPUT_PLUGIN == 'cloudwatch':
-                os.environ['LOG_PREFIX'] = destination_identifier
+                os.environ['LOG_PREFIX'] = resource_resolver.get_destination_cloudwatch_prefix(input_configuration)
                 os.environ['DESTINATION'] = 'cloudwatch'
             else:
-                os.environ['LOG_PREFIX'] = f'{OUTPUT_PLUGIN}-test/ecs/' + destination_identifier + '/'
+                os.environ['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(input_configuration, OUTPUT_PLUGIN)
                 os.environ['DESTINATION'] = 's3'
             processes.add(subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay]))
         
@@ -318,20 +335,16 @@ def delete_testing_resources():
         os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
         os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes=0 ng')
 
-def get_destination_identifier(throughput, input_logger):
-    # Destination identifier
+def get_validated_input_prefix(input_logger):
+    # Prefix used to form destination identifier
     # [log source] ----- (stdout) -> std-{{throughput}}/...
     #               \___ (tcp   ) -> {{throughput}}/...
     #
     # All inputs should have throughput as destination identifier
     # except stdstream
-    destination_identifier = throughput
     if (input_logger['name'] == 'stdstream'):
-        destination_identifier = 'std-' + throughput
-    return destination_identifier
-
-def get_destination_identifier_firelens(throughput, input_logger):
-    return 'std-' + throughput
+        return resource_resolver.STD_INPUT_PREFIX
+    return resource_resolver.CUSTOM_INPUT_PREFIX
 
 if sys.argv[1] == 'create_testing_resources':
     create_testing_resources()

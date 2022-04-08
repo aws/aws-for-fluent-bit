@@ -11,14 +11,14 @@
 			"environment": [
 				{ "name": "OUTPUT_PLUGIN", "value": "$OUTPUT_PLUGIN" },
 				{ "name": "LOGGER_PORT", "value": "$LOGGER_PORT" },
-				{ "name": "THROUGHPUT", "value": "$THROUGHPUT" },
 				{ "name": "INPUT_NAME", "value": "$INPUT_NAME" },
-
 				{ "name": "S3_BUCKET_NAME", "value": "$S3_BUCKET_NAME" },
-				{ "name": "DESTINATION_IDENTIFIER", "value": "$DESTINATION_IDENTIFIER" },
-				{ "name": "STREAM_PREFIX", "value": "$STREAM_PREFIX" },
-				{ "name": "DELIVERY_STREAM_PREFIX", "value": "$DELIVERY_STREAM_PREFIX" },
-				{ "name": "CW_LOG_GROUP_NAME", "value": "$CW_LOG_GROUP_NAME" }
+				{ "name": "CW_LOG_GROUP_NAME", "value": "$CW_LOG_GROUP_NAME" },
+
+				{ "name": "CUSTOM_LOG_STREAM_NAME", "value": "$CUSTOM_LOG_STREAM_NAME" },
+				{ "name": "CUSTOM_DELIVERY_STREAM_PREFIX", "value": "$CUSTOM_DELIVERY_STREAM_PREFIX" },
+				{ "name": "CUSTOM_STREAM_PREFIX", "value": "$CUSTOM_STREAM_PREFIX" },
+				{ "name": "CUSTOM_S3_OBJECT_NAME", "value": "$CUSTOM_S3_OBJECT_NAME" }
 			],
 			"firelensConfiguration": {
 				"type": "fluentbit",
@@ -60,7 +60,7 @@
 					"total_file_size": "50M",
 					"upload_timeout": "1m",
 					"use_put_object": "On",
-					"s3_key_format": "/s3-test/ecs/$FIRELENS_DESTINATION_IDENTIFIER/$TAG/%Y/%m/%d/%H/%M/%S",
+					"s3_key_format": "$STD_S3_OBJECT_NAME",
 					"log-driver-buffer-limit": "536870911",
 					"auto_retry_requests": "true",
 					"workers": "1"
