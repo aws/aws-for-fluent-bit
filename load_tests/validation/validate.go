@@ -172,7 +172,7 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 		continuationToken = response.NextContinuationToken
 	}
 
-	fmt.Println("Total object in S3: ", s3ObjectCounter)
+	fmt.Println("total_s3_obj, ", s3ObjectCounter)
 
 	return s3RecordCounter, inputMap
 }
@@ -269,15 +269,17 @@ func get_results(totalInputRecord int, totalRecordFound int, recordMap map[strin
 		}
 	}
 
-	fmt.Println("Total input record: ", totalInputRecord)
-	fmt.Println("Total record in destination: ", totalRecordFound)
-	fmt.Println("Unique record in destination: ", uniqueRecordFound)
-	fmt.Println("Duplicate records: ", (totalRecordFound - uniqueRecordFound))
-	fmt.Println("Log Delay: ", logDelay)
-	fmt.Println("Log Loss: ", (totalInputRecord-uniqueRecordFound)*100/totalInputRecord, "%")
+	fmt.Println("total_input, ", totalInputRecord)
+	fmt.Println("total_destination, ", totalRecordFound)
+	fmt.Println("unique, ", uniqueRecordFound)
+	fmt.Println("duplicate, ", (totalRecordFound - uniqueRecordFound))
+	fmt.Println("delay, ", logDelay)
+	fmt.Println("loss, ", (totalInputRecord-uniqueRecordFound)*100/totalInputRecord) // %
 
 	if totalInputRecord != uniqueRecordFound {
-		fmt.Println("Number of missing log records: ", totalInputRecord-uniqueRecordFound)
+		fmt.Println("missing, ", totalInputRecord-uniqueRecordFound)
+	} else {
+		fmt.Println("missing, ", 0)
 	}
 }
 
