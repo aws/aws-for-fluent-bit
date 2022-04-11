@@ -5,6 +5,7 @@ import time
 import boto3
 import math
 import subprocess
+import validation_bar
 from datetime import datetime, timezone
 import create_testing_resources.kinesis_s3_firehose.resource_resolver as resource_resolver
 
@@ -266,8 +267,15 @@ def run_ecs_tests():
         test_results.extend(parsedValidationOutputs)
 
     # Print output
-    print("\n\nValidation Results:\n")
+    print("\n\nValidation results:\n")
     print(format_test_results_to_markdown(test_results))
+
+    # Bar check
+    if not validation_bar.bar_raiser(test_results):
+        print("Failed validation bar.")
+        sys.exit("Failed to pass the test_results validation bar")
+    else:
+        print("Passed validation bar.")
 
 def parse_validation_output(validationResultString):
     return { x[0]: x[1] for x in list(
@@ -316,7 +324,7 @@ def format_test_results_to_markdown(test_results):
             validation_output = get_validation_output(logger_name, throughput, test_results)
 
             if (int(validation_output["missing"]) != 0):
-                output += (str(validation_output["loss"]) + "%(" + str(validation_output["missing"]) + ")").ljust(colX_len)
+                output += (str(validation_output["percent_loss"]) + "%(" + str(validation_output["missing"]) + ")").ljust(colX_len)
             else:
                 output += (" " + no_problem_cell_character).ljust(colX_len)
 

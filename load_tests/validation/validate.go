@@ -274,7 +274,7 @@ func get_results(totalInputRecord int, totalRecordFound int, recordMap map[strin
 	fmt.Println("unique, ", uniqueRecordFound)
 	fmt.Println("duplicate, ", (totalRecordFound - uniqueRecordFound))
 	fmt.Println("delay, ", logDelay)
-	fmt.Println("loss, ", (totalInputRecord-uniqueRecordFound)*100/totalInputRecord) // %
+	fmt.Println("percent_loss, ", (totalInputRecord-uniqueRecordFound)*100/totalInputRecord) // %
 
 	if totalInputRecord != uniqueRecordFound {
 		fmt.Println("missing, ", totalInputRecord-uniqueRecordFound)
