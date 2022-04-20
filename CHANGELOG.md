@@ -1,4 +1,11 @@
 # Changelog
+<<<<<<< HEAD
+=======
+
+Compared to `2.23.3` this release adds:
+* Go version upgrade to 1.17.9
+
+>>>>>>> d9c72ae... Bump go version to 1.17.9
 ### 2.23.3
 This release includes:
 * An Amazon Linux 2 Base
