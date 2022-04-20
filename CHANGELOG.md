@@ -1,7 +1,7 @@
 # Changelog
 
 Compared to `2.23.3` this release adds:
-* Go version upgrade to 1.17.8
+* Go version upgrade to 1.17.9
 
 ### 2.23.3
 This release includes:
