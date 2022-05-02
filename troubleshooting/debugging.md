@@ -40,6 +40,21 @@ This happens for one of two reasons:
 
 2. This is normal, ignore the error: If you did set up the volume mount correctly, you will still always get this on startup. This is because ECS will start the FireLens container first, and so that path won't exist until the app container starts up, which is after FireLens. Thus it will always complain about not finding the path on startup. This can either be safely ignored or fixed by creating the full directory path for the log files in your Dockerfile so that it exists before any log files are written. The error will only happen on startup and once the log files exist, Fluent Bit will pick them up and begin reading them.
 
+#### Overlimit warnings
+
+Fluent Bit has [storage and memory buffer configuration settings](https://docs.fluentbit.io/manual/administration/buffering-and-storage).
+
+When the storage is full the inputs will be paused and you will get warnings like the following:
+
+```
+[input] tail.1 paused (mem buf overlimit)
+[input] tail.1 paused (storage buf overlimit
+[input] tail.1 resume (mem buf overlimit)
+[input] tail.1 resume (storage buf overlimit
+```
+
+Search for "overlimit" in the Fluent Bit logs to find the paused and resume messages about storage limits. These can be found in the code in [`flb_input_chunk.c`](https://github.com/fluent/fluent-bit/blob/master/src/flb_input_chunk.c#L1267). 
+
 ### Basic Techniques
 
 #### Enable Debug Logging
