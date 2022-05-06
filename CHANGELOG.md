@@ -1,5 +1,23 @@
 # Changelog
 
+### 2.24.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.9.3](https://fluentbit.io/announcements/v1.9.3/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.23.4` this release adds:
+* Bug - Resolve IMDSv1 fallback error introduced in 2.21.0 [aws-for-fluent-bit:259](https://github.com/aws/aws-for-fluent-bit/issues/259)
+* Bug - Cloudwatch Fix integer overflow on 32 bit systems when converting tv_sec to millis [fluentbit:3640](https://github.com/fluent/fluent-bit/issues/3640)
+* Enhancement - Only create Cloudwatch Logs log group if it does not already exist to prevent throttling [fluentbit:4826](https://github.com/fluent/fluent-bit/pull/4826)
+* Enhancement - Implement docker log driver partial message support for multiline buffered mode [fluentbit:4671](https://github.com/fluent/fluent-bit/pull/4671)
+* Enhancement - Gracefully handle Cloudwatch Logs DataAlreadyAcceptedException [fluentbit:4948](https://github.com/fluent/fluent-bit/pull/4948)
+* Feature - Add sigv4 authentication options to HTTP output plugin [fluentbit:5165](https://github.com/fluent/fluent-bit/pull/5165)
+* Feature - Add Firehose compression configuration options [fluentbit:4371](https://github.com/fluent/fluent-bit/pull/4371)
+* New Plugin - [`opensearch` plugin in Fluent Bit core](https://docs.fluentbit.io/manual/pipeline/outputs/opensearch)
+
 ### 2.23.4
 This release includes:
 * An Amazon Linux 2 Base

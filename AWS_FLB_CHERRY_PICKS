@@ -1,9 +1,1 @@
-# Support timeout on synchronous network calls (https://github.com/fluent/fluent-bit/pull/4184)
-# Commit 1 -- io: revised support timeout on synchronous calls
-# Commit 2 -- io: default to old net_io_read
-https://github.com/matthewfala/fluent-bit.git immutable-1.8-sync-timeout-12-r2 b07c5b07573983b78b27e0d48d7a3081aa8c4f3b
-https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r3 7088680dac1059ab39a875630771c0304045ad93
-
-# IMDS graceful fallback from IMDSv2 to IMDSv1 (https://github.com/aws/aws-for-fluent-bit/issues/259)
-# Commit 3 -- aws: revised imds fallback to v1 if token request fails
-https://github.com/matthewfala/fluent-bit.git immutable-1.8-imds-r2-cherry-picks-r3 5a9ad8e43dfbdd93fa5f621f607d9548450eb23a
+# No AWS cherry picks in this release
