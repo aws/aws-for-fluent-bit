@@ -19,6 +19,7 @@
     - [DNS Resolution Issues](#dns-resolution-issues)
     - [Credential Chain Resolution Issues](#credential-chain-resolution-issues)
     - [EC2 IMDSv2 Issues](#ec2-imdsv2-issues)
+    - [Checking Batch sizes](#checking-batch-sizes)
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
@@ -308,6 +309,23 @@ The other way to override the IMDS issue on EKS platform, without making the hop
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
+```
+
+#### Checking Batch sizes
+
+The AWS APIs for CloudWatch, Firehose, and Kinesis have limits on the number of events and number of bytes that can be sent in each request. If you enable debug logging with AWS for Fluent Bit version 2.26.0+, then Fluent Bit will log debug information as follows for each API request:
+
+```
+[2022/05/06 22:43:17] [debug] [output:cloudwatch_logs:cloudwatch_logs.0] cloudwatch:PutLogEvents: events=6, payload=553 bytes
+[2022/05/06 22:43:17] [debug] [output:kinesis_firehose:kinesis_firehose.0] firehose:PutRecordBatch: events=10, payload=666000 bytes
+[2022/05/06 22:43:17] [debug] [output:kinesis_streams:kinesis_streams.0] kinesis:PutRecords: events=4, payload=4000 bytes
+```
+
+You can then experiment with different settings for the [Flush interval](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file) and find the lowest value that leads to efficient batching (so that in general, batches are close to the max allowed size):
+
+```
+[Service]
+    Flush 2
 ```
 
 #### Searching old issues
