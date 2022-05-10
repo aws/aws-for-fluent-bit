@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.25.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.9.3](https://fluentbit.io/announcements/v1.9.3/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.24.0` this release adds the following feature that we are working on getting accepted upstream:
+* Enhancement - Add `kube_token_ttl` option to kubernetes filter to support refreshing the service account token used to talk to the API server. Prior to this change Fluent Bit would only read the token on startup. [fluentbit:5332](https://github.com/fluent/fluent-bit/issues/5332)
+
 ### 2.24.0
 This release includes:
 * An Amazon Linux 2 Base
