@@ -1,1 +1,4 @@
-# No AWS cherry picks in this release
+# kube_token_ttl 
+https://github.com/PettitWesley/fluent-bit.git kube_token_ttl bfce41f48c0f1cc39bf67f7804e6134ccfc3ecb6
+https://github.com/PettitWesley/fluent-bit.git kube_token_ttl c28c5506177beb3b40130b62ac9add243d534e7f
+https://github.com/PettitWesley/fluent-bit.git kube_token_ttl 9d1163cdc133c69e31235c8efd894ea02da1358d
