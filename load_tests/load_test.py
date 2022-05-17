@@ -9,7 +9,7 @@ import validation_bar
 from datetime import datetime, timezone
 import create_testing_resources.kinesis_s3_firehose.resource_resolver as resource_resolver
 
-IS_TASK_DEFINITION_PRINTED = False
+IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
 TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
@@ -76,7 +76,7 @@ def calculate_total_input_number(throughput):
 
 # 1. Configure task definition for each load test based on existing templates
 # 2. Register generated task definition
-def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
+def generate_task_definition(session, throughput, input_logger, s3_fluent_config_arn):
     if not hasattr(generate_task_definition, "counter"):
         generate_task_definition.counter = 0  # it doesn't exist yet, so initialize it
     generate_task_definition.counter += 1
@@ -134,18 +134,26 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
         elif(key == OUTPUT_PLUGIN):
             for sub_key in task_definition_dict[key]:
                 data = data.replace(sub_key, task_definition_dict[key][sub_key])
-    fout = open(f'./load_tests/task_definitions/{OUTPUT_PLUGIN}_{throughput}.json', 'w')
-    fout.write(data)
-    fout.close()
-    fin.close()
 
-    os.system(f'aws ecs register-task-definition --cli-input-json file://load_tests/task_definitions/{OUTPUT_PLUGIN}_{throughput}.json {(">/dev/null", "")[IS_TASK_DEFINITION_PRINTED]}')
+    # Register task definition
+    task_def = json.loads(data)
+    
+    if IS_TASK_DEFINITION_PRINTED:
+        print("Registering task definition:")
+        print(json.dumps(task_def, indent=4))
+        session.client('ecs').register_task_definition(
+            **task_def
+        )
+    else:
+        print("Registering task definition")
 
 # With multiple codebuild projects running parallel,
 # Testing resources only needs to be created once
 def create_testing_resources():
+    session = get_sts_boto_session()
+
     if OUTPUT_PLUGIN != 'cloudwatch':
-        client = boto3.client('cloudformation')
+        client = session.client('cloudformation')
         waiter = client.get_waiter('stack_exists')
         waiter.wait(
             StackName=TESTING_RESOURCES_STACK_NAME,
@@ -179,25 +187,28 @@ def create_testing_resources():
 #  4. validate logs and print the result
 def run_ecs_tests():
     ecs_cluster_name = os.environ['ECS_CLUSTER_NAME']
-    client = boto3.client('ecs')
-    waiter = client.get_waiter('tasks_stopped')
     names = locals()
 
     # Run ecs tests once per input logger type
     test_results = []
     for input_logger in INPUT_LOGGERS:
+        session = get_sts_boto_session()
+
+        client = session.client('ecs')
+        waiter = client.get_waiter('tasks_stopped')
+        
         processes = []
 
         # Delete corresponding testing data for a fresh start
-        delete_testing_data()
+        delete_testing_data(session)
 
         # S3 Fluent Bit extra config data
-        s3_fluent_config_arn = publish_fluent_config_s3(input_logger)
+        s3_fluent_config_arn = publish_fluent_config_s3(session, input_logger)
 
         # Run ecs tasks and store task arns
         for throughput in THROUGHPUT_LIST:
             os.environ['THROUGHPUT'] = throughput
-            generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
+            generate_task_definition(session, throughput, input_logger, s3_fluent_config_arn)
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
@@ -233,6 +244,7 @@ def run_ecs_tests():
             set_buffer(parse_time(stop_time))
             log_delay = get_log_delay(response)
             set_buffer(response)
+
             # Validate logs
             os.environ['LOG_SOURCE_NAME'] = input_logger["name"]
             os.environ['LOG_SOURCE_IMAGE'] = input_logger["logger_image"]
@@ -247,10 +259,21 @@ def run_ecs_tests():
             else:
                 os.environ['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
                 os.environ['DESTINATION'] = 's3'
+
+            # Go script environment with sts cred variables
+            credentials = session.get_credentials()
+            auth_env = {
+                **os.environ.copy(),
+                "AWS_ACCESS_KEY_ID": credentials.access_key,
+                "AWS_SECRET_ACCESS_KEY": credentials.secret_key,
+                "AWS_SESSION_TOKEN": credentials.token
+            }
             processes.append({
                 "input_logger": input_logger,
                 "test_configuration": test_configuration,
-                "process": subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay], stdout=subprocess.PIPE)
+                "process": subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay], stdout=subprocess.PIPE,
+                    env=auth_env
+                )
             })
 
         # Wait until all subprocesses for validation completed
@@ -289,7 +312,7 @@ def get_validation_output(logger_name, throughput, test_results):
 
 def format_test_results_to_markdown(test_results):
     # Configurable success character
-    no_problem_cell_character = "-"
+    no_problem_cell_character = u"\U00002705" # This is a green check mark
 
     # Get table dimensions
     logger_names = list(set(map(lambda p: p["input_logger"]["name"], test_results)))
@@ -352,9 +375,9 @@ def format_test_results_to_markdown(test_results):
     return output
 
 # Returns s3 arn
-def publish_fluent_config_s3(input_logger):
+def publish_fluent_config_s3(session, input_logger):
     bucket_name = os.environ['S3_BUCKET_NAME']
-    s3 = boto3.client('s3')
+    s3 = session.client('s3')
     s3.upload_file(
         input_logger["fluent_config_file_path"],
         bucket_name,
@@ -364,11 +387,11 @@ def publish_fluent_config_s3(input_logger):
 
 # The following method is used to clear data between
 # testing batches
-def delete_testing_data():
+def delete_testing_data(session):
     # All testing data related to the plugin option will be deleted
     if OUTPUT_PLUGIN == 'cloudwatch':
         # Delete associated cloudwatch log streams
-        client = boto3.client('logs')
+        client = session.client('logs')
         response = client.describe_log_streams(
             logGroupName=os.environ['CW_LOG_GROUP_NAME']
         )
@@ -379,7 +402,7 @@ def delete_testing_data():
             )
     else:
         # Delete associated s3 bucket objects
-        s3 = boto3.resource('s3')
+        s3 = session.resource('s3')
         bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
         s3_objects = bucket.objects.filter(Prefix=f'{OUTPUT_PLUGIN}-test/{PLATFORM}/')
         s3_objects.delete()
@@ -432,13 +455,16 @@ def run_eks_tests():
         p.wait()
 
 def delete_testing_resources():
+    # Create sts session
+    session = get_sts_boto_session()
+
     # All related testing resources will be destroyed once the stack is deleted 
-    client = boto3.client('cloudformation')
+    client = session.client('cloudformation')
     client.delete_stack(
         StackName=TESTING_RESOURCES_STACK_NAME
     )
     # Empty s3 bucket
-    s3 = boto3.resource('s3')
+    s3 = session.resource('s3')
     bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
     bucket.objects.all().delete()
     # scale down eks cluster
@@ -456,6 +482,28 @@ def get_validated_input_prefix(input_logger):
     if (input_logger['name'] == 'stdstream'):
         return resource_resolver.STD_INPUT_PREFIX
     return resource_resolver.CUSTOM_INPUT_PREFIX
+
+def get_sts_boto_session():
+    # STS credentials
+    sts_client = boto3.client('sts')
+
+    # Call the assume_role method of the STSConnection object and pass the role
+    # ARN and a role session name.
+    assumed_role_object = sts_client.assume_role(
+        RoleArn=os.environ["LOAD_TEST_CFN_ROLE_ARN"],
+        RoleSessionName="load-test-cfn"
+    )
+
+    # From the response that contains the assumed role, get the temporary 
+    # credentials that can be used to make subsequent API calls
+    credentials=assumed_role_object['Credentials']
+
+    # Create boto session
+    return boto3.Session(
+        aws_access_key_id=credentials['AccessKeyId'],
+        aws_secret_access_key=credentials['SecretAccessKey'],
+        aws_session_token=credentials['SessionToken']
+    )
 
 if sys.argv[1] == 'create_testing_resources':
     create_testing_resources()

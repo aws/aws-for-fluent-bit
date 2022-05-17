@@ -153,7 +153,10 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 
 				decodeError := json.Unmarshal([]byte(d), &message)
 				if decodeError != nil {
-					exitErrorf("[TEST FAILURE] Json Unmarshal Error:", decodeError)
+					fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", decodeError)
+					fmt.Println("             Malform entry: %s", d)
+					// Skip malform log entries (count them as lost logs)
+					continue
 				}
 
 				// First 8 char is the unique record ID
