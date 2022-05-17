@@ -58,7 +58,7 @@
 					"region": "us-west-2",
 					"log_key": "log",
 					"log_group_name": "$CW_LOG_GROUP_NAME",
-					"auto_create_group": "true",
+					"auto_create_group": "false",
 					"log_stream_name": "$STD_LOG_STREAM_NAME",
 					"log-driver-buffer-limit": "536870911",
 					"auto_retry_requests": "true",

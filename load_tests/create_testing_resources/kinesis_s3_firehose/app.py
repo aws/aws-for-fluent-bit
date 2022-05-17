@@ -39,7 +39,7 @@ class LogStorage(core.Stack):
                 # Data streams and related delivery streams for kinesis test
                 names[platform+'_kinesis_stream_'+identifier] = kinesis.Stream(self, platform+'KinesisStream'+caps_identifier,
                                                                               stream_name=PREFIX+platform+'-kinesisStream-'+identifier,
-                                                                              shard_count=100)
+                                                                              shard_count=80)
                 kinesis_policy = iam.Policy(self, 'kinesisPolicyfor'+identifier,
                                             statements=[iam.PolicyStatement(actions=['kinesis:*'], resources=[names.get(platform+'_kinesis_stream_'+identifier).stream_arn])],
                                             roles=[firehose_role],
