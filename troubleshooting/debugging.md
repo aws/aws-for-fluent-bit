@@ -61,7 +61,7 @@ Search for "overlimit" in the Fluent Bit logs to find the paused and resume mess
 
 Many Fluent Bit problems can be easily understood once you have full log output. Also, if you want help from the aws-for-fluent-bit team, we generally request/require debug log output.
 
-The log level for Fluent Bit can be set in the [Service section](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/configuration-file), or by setting the env var `FLB_LOG_LEVEL=debug`.
+The log level for Fluent Bit can be set in the [Service section](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit), or by setting the env var `FLB_LOG_LEVEL=debug`.
 
 #### Searching old issues
 
