@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.25.1
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.9.3](https://fluentbit.io/announcements/v1.9.3/)
+* Amazon CloudWatch Logs for Fluent Bit 1.7.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.24.0` this release adds:
+* Bug - Fix new `kube_token_ttl` option in kubernetes filter to correctly parse TTL as a time value [aws-for-fluent-bit:353](https://github.com/aws/aws-for-fluent-bit/issues/353)
+
 ### 2.25.0
 This release includes:
 * An Amazon Linux 2 Base
