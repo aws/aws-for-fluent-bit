@@ -54,7 +54,10 @@ phases:
       - python -m venv venv
       - source venv/bin/activate
       - pip install -r ./load_tests/requirements.txt
-      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      - |
+        if [ "${PLATFORM}" == "EKS" ]; then
+          aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+        fi
       # Create and set up related testing resources
       - python ./load_tests/load_test.py create_testing_resources
       - source ./load_tests/setup_test_environment.sh
