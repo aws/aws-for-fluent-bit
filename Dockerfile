@@ -73,7 +73,8 @@ RUN cmake -DFLB_RELEASE=On \
           -DFLB_EXAMPLES=Off \
           -DFLB_HTTP_SERVER=On \
           -DFLB_IN_SYSTEMD=On \
-          -DFLB_OUT_KAFKA=On ..
+          -DFLB_OUT_KAFKA=On \
+          -DFLB_ARROW=On ..
 
 RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
