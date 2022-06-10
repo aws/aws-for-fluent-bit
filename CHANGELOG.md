@@ -10,6 +10,7 @@ This release includes:
 
 Compared to `2.25.1` this release adds:
 * Feature - Add `auto_create_stream ` option [cloudwatch:257](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/257)
+* Feature - Enable Apache Arrow support in S3 at compile time [s3:3184](https://github.com/fluent/fluent-bit/pull/3184)
 * Enhancement - Add debug logs to check batch sizes [fluentbit:5428](https://github.com/fluent/fluent-bit/pull/5428)
 * Enhancement - Set 1 worker as default for `cloudwatch_logs` plugin [fluentbit:5417](https://github.com/fluent/fluent-bit/pull/5417)
 * Bug - Allow recovery from a stream being deleted and created by a user [cloudwatch:257](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/257)
