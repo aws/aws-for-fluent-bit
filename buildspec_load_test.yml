@@ -18,6 +18,9 @@ phases:
   pre_build:
     commands:
       - echo Running the load tests
+      # upgrade node version
+      - npm install -g n
+      - n stable
       # install cdk
       - npm config set prefix /usr/local
       - npm install -g aws-cdk@latest
