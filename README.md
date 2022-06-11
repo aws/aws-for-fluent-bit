@@ -4,6 +4,7 @@
 
 - [Versioning FAQ](#versioning-faq)
 - [Debugging Guide](troubleshooting/debugging.md)
+- [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
     - [Using the stable tag](#using-the-stable-tag)
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
@@ -51,6 +52,10 @@ No. We continue to consume Fluent Bit from its main repository. We are not forki
 ### Debugging Guide
 
 [Please read the debugging.md](troubleshooting/debugging.md)
+
+### Use Case Guide
+
+[A set of tutorials on use cases that Fluent Bit can solve](use_cases/).
 
 ### Public Images
 
