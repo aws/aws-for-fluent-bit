@@ -1,5 +1,23 @@
 # Changelog
 
+### 2.26.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.9.4](https://fluentbit.io/announcements/v1.9.4/)
+* Amazon CloudWatch Logs for Fluent Bit 1.8.0
+* Amazon Kinesis Streams for Fluent Bit 1.9.0
+* Amazon Kinesis Firehose for Fluent Bit 1.6.1
+
+Compared to `2.25.1` this release adds:
+* Feature - Add `auto_create_stream ` option [cloudwatch:257](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/257)
+* Feature - Enable Apache Arrow support in S3 at compile time [s3:3184](https://github.com/fluent/fluent-bit/pull/3184)
+* Enhancement - Add debug logs to check batch sizes [fluentbit:5428](https://github.com/fluent/fluent-bit/pull/5428)
+* Enhancement - Set 1 worker as default for `cloudwatch_logs` plugin [fluentbit:5417](https://github.com/fluent/fluent-bit/pull/5417)
+* Bug - Allow recovery from a stream being deleted and created by a user [cloudwatch:257](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/257)
+
+Same as `2.25.1`, this release includes the following enhancement for AWS customers that has been accepted by upstream:
+* Enhancement - Add `kube_token_ttl` option to kubernetes filter to support refreshing the service account token used to talk to the API server. Prior to this change Fluent Bit would only read the token on startup. [fluentbit:5332](https://github.com/fluent/fluent-bit/issues/5332)
+
 ### 2.25.1
 This release includes:
 * An Amazon Linux 2 Base
@@ -8,7 +26,7 @@ This release includes:
 * Amazon Kinesis Streams for Fluent Bit 1.9.0
 * Amazon Kinesis Firehose for Fluent Bit 1.6.1
 
-Compared to `2.24.0` this release adds:
+Compared to `2.25.0` this release adds:
 * Bug - Fix new `kube_token_ttl` option in kubernetes filter to correctly parse TTL as a time value [aws-for-fluent-bit:353](https://github.com/aws/aws-for-fluent-bit/issues/353)
 
 ### 2.25.0

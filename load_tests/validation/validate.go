@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -226,8 +227,14 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 		}
 
 		response, err := cwClient.GetLogEvents(input)
-		if err != nil {
-			exitErrorf("[TEST FAILURE] Error occured to get the log events from log group: %q., %v", logGroup, err)
+		for err != nil {
+			// retry for throttling exception
+			if strings.Contains(err.Error(), "ThrottlingException: Rate exceeded") {
+				time.Sleep(1 * time.Second)
+				response, err = cwClient.GetLogEvents(input)
+			} else {
+				exitErrorf("[TEST FAILURE] Error occured to get the log events from log group: %q., %v", logGroup, err)
+			}
 		}
 
 		for _, event := range response.Events {
