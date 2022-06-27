@@ -10,6 +10,7 @@
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
     - [DNS Resolution Issues](#dns-resolution-issues)
+    - [Credential Chain Resolution Issues](#credential-chain-resolution-issues)
     - [EC2 IMDSv2 Issues](#ec2-imdsv2-issues)
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
@@ -140,6 +141,12 @@ And here is an example with `UDP`:
 ```
 
 This setting works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
+
+#### Credential Chain Resolution Issues
+
+The same as other AWS tools, Fluent Bit has a standard chain of resolution for credentials. It checks a series of sources for credentails and uses the first one that returns valid credentials. If you enable debug logging (further up in this guide), then it will print verbose information on the sources of credentials that it checked and why the failed. 
+
+See our [documentation on the credential sources Fluent Bit supports and the order of resolution](https://github.com/fluent/fluent-bit-docs/blob/43c4fe134611da471e706b0edb2f9acd7cdfdbc3/administration/aws-credentials.md).
 
 #### EC2 IMDSv2 Issues
 
