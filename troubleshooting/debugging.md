@@ -8,6 +8,7 @@
     - [Overlimit warnings](#overlimit-warnings)
 - [Basic Techniques](#basic-techniques)
     - [Enable Debug Logging](#enable-debug-logging)
+    - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
@@ -93,6 +94,14 @@ Search for "overlimit" in the Fluent Bit logs to find the paused and resume mess
 Many Fluent Bit problems can be easily understood once you have full log output. Also, if you want help from the aws-for-fluent-bit team, we generally request/require debug log output.
 
 The log level for Fluent Bit can be set in the [Service section](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit), or by setting the env var `FLB_LOG_LEVEL=debug`.
+
+#### Enabling Monitoring for Fluent Bit
+
+Kubernetes users should use the Fluent Bit [prometheus endpoint](https://docs.fluentbit.io/manual/administration/monitoring) and their preferred prometheus compatible agent to scrape the endpoint. 
+
+FireLens users should check out the FireLens example for sending Fluent Bit internal metrics to CloudWatch: [amazon-ecs-firelens-examples/send-fb-metrics-to-cw](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw).
+
+The FireLens example technique shown in the link above can also be used outside of FireLens if desired. 
 
 #### Searching old issues
 
