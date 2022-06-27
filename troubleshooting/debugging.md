@@ -9,6 +9,7 @@
 - [Basic Techniques](#basic-techniques)
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
+    - [DNS Resolution Issues](#dns-resolution-issues)
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
@@ -102,6 +103,42 @@ Kubernetes users should use the Fluent Bit [prometheus endpoint](https://docs.fl
 FireLens users should check out the FireLens example for sending Fluent Bit internal metrics to CloudWatch: [amazon-ecs-firelens-examples/send-fb-metrics-to-cw](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw).
 
 The FireLens example technique shown in the link above can also be used outside of FireLens if desired. 
+
+#### DNS Resolution Issues
+
+Fluent Bit has network settings that can be used with all official upstream output plugins: [Fluent Bit networking](https://docs.fluentbit.io/manual/administration/networking).
+
+If you experience network issues, try setting the `net.dns.mode` setting to both `TCP` and `UDP`. That is, try both, and see which one resolves your issues. We have found that in different cases, one setting will work better than the other. 
+
+Here is an example of what this looks like with `TCP`:
+
+```
+[OUTPUT]
+    Name cloudwatch_logs
+    Match   *
+    region us-east-1
+    log_group_name fluent-bit-cloudwatch
+    log_stream_prefix from-fluent-bit-
+    auto_create_group On
+    workers 1
+    net.dns.mode TCP
+```
+
+And here is an example with `UDP`:
+
+```
+[OUTPUT]
+    Name cloudwatch_logs
+    Match   *
+    region us-east-1
+    log_group_name fluent-bit-cloudwatch
+    log_stream_prefix from-fluent-bit-
+    auto_create_group On
+    workers 1
+    net.dns.mode
+```
+
+This setting works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
 
 #### Searching old issues
 
