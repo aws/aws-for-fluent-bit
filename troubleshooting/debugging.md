@@ -11,7 +11,7 @@
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
-    - [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
+- [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
     - [High Memory usage does not always mean there is a leak/bug](#high-memory-usage-does-not-always-mean-there-is-a-leakbug)
     - [FireLens OOMKill Prevention Guide](#firelens-oomkill-prevention-guide)
     - [Testing for real memory leaks using Valgrind](#testing-for-real-memory-leaks-using-valgrind)
