@@ -13,6 +13,7 @@
     - [Network Connection Issues](#network-connection-issues)
     - [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
     - [High Memory usage does not always mean there is a leak/bug](#high-memory-usage-does-not-always-mean-there-is-a-leakbug)
+    - [FireLens OOMKill Prevention Guide](#firelens-oomkill-prevention-guide)
     - [Testing for real memory leaks using Valgrind](#testing-for-real-memory-leaks-using-valgrind)
 - [Segfaults and crashes (SIGSEGV)](#segfaults-and-crashes-sigsegv)
 - [Log Loss](#log-loss)
@@ -138,6 +139,10 @@ Fluent Bit is efficient and performant, but it isn't magic. Here are common/norm
 - Retries. This is the most common cause of complaints of high memory usage. When an output issues a retry, the Fluent Bit pipeline must buffer that data until it is successfully sent or the configured retries expire. Since retries have exponential backoff, a series of retries can very quickly lead to a large number of logs being buffered for a long time. 
 
 Please see the Fluent Bit buffering documentation: https://docs.fluentbit.io/manual/administration/buffering-and-storage
+
+#### FireLens OOMKill Prevention Guide
+
+Check out the FireLens example for preventing/reducing out of memory exceptions: [amazon-ecs-firelens-examples/oomkill-prevention](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention)
 
 #### Testing for real memory leaks using Valgrind
 
