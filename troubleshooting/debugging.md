@@ -1,4 +1,30 @@
-## Guide to Debugging Fluent Bit issues
+# Guide to Debugging Fluent Bit issues
+
+## Table of Contents
+
+- [Understanding Error Messages](#understanding-error-messages)
+    - [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs)
+    - [Tail Permission Errors](#tail-permission-errors)
+    - [Overlimit warnings](#overlimit-warnings)
+- [Basic Techniques](#basic-techniques)
+    - [Enable Debug Logging](#enable-debug-logging)
+    - [Searching old issues](#searching-old-issues)
+    - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
+    - [Network Connection Issues](#network-connection-issues)
+    - [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
+    - [High Memory usage does not always mean there is a leak/bug](#high-memory-usage-does-not-always-mean-there-is-a-leakbug)
+    - [Testing for real memory leaks using Valgrind](#testing-for-real-memory-leaks-using-valgrind)
+- [Segfaults and crashes (SIGSEGV)](#segfaults-and-crashes-sigsegv)
+- [Log Loss](#log-loss)
+- [Scaling](#scaling)
+- [Throttling, Log Duplication & Ordering](#throttling-log-duplication--ordering)
+    - [Recommendations for throttling](#recommendations-for-throttling)
+- [Plugin Specific Issues](#plugin-specific-issues)
+    - [rewrite_tag filter and cycles in the log pipeline](#rewritetag-filter-and-cycles-in-the-log-pipeline)
+    - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
+
+
+
 
 ### Understanding Error Messages
 
@@ -34,7 +60,11 @@ A common error message for ECS FireLens users who are reading log files is the f
 [2022/03/16 19:05:06] [error] [input:tail:tail.5] read error, check permissions: /var/output/logs/service_log*
 ```
 
-This happens for one of two reasons:
+This error will happen in many cases on startup when you use the tail input. If you are running Fluent Bit under FireLens, then remember that it alters the container ordering so that the Fluent Bit container starts first. This means that if it is supposed to scan a file path for logs on a volume mounted from another container- at startup the path might not exist. 
+
+This error is recoverable and Fluent Bit will keep retrying to scan the path. 
+
+There are two cases which might apply to you if you experience this error:
 
 1. You need to fix your task definition: If you do not add a volume mount between the app container and FireLens container for your logs files, Fluent Bit can't find them and you'll get this error repeatedly.
 
@@ -97,18 +127,6 @@ Remember that we also have older Golang output plugins for AWS (no longer recomm
 - `kinesis`
 
 Consequently, the AWS team contributed an `auto_retry_requests` config option for each of the core AWS outputs. This will issue an immediate retry for any connection issues. 
-
-#### Tail Permission Issues in FireLens
-
-```
-[2021/11/23 16:14:15] [debug] [input:tail:tail.5] scanning path /workspace/env/<Service>/var/output/logs/service_log*
-[2021/11/23 16:14:15] [error] [input:tail:tail.5] read error, check permissions: /workspace/env/<Service>/var/output/logs/service_log*
-[2021/11/23 16:14:15] [ warn] [input:tail:tail.5] error scanning path: /workspace/env/<Service>/var/output/logs/service_log*
-```
-
-This error will happen in many cases on startup when you use the tail input. If you are running Fluent Bit under FireLens, then remember that it alters the container ordering so that the Fluent Bit container starts first. This means that if it is supposed to scan a file path for logs on a volume mounted from another container- at startup the path might not exist. 
-
-This error is recoverable and Fluent Bit will keep retrying to scan the path. 
 
 ### Memory Leaks or high memory usage
 
@@ -177,7 +195,9 @@ If you find that you are losing logs and failed retries do not seem to be the is
 
 We have uploaded some tools that we have used for past log loss investigations in the [troubleshooting/tools](tools) directory. 
 
-Finally, we should note that the AWS plugins go through log loss testing as part of our release pipeline, and log loss will block releases. We are working on improving our test framework; you can find it in the [integ/](integ/) directory. 
+Finally, we should note that the AWS plugins go through log loss testing as part of our release pipeline, and log loss will block releases. We are working on improving our test framework; you can find it in the [integ/](integ/) directory.
+
+We also now have log loss and throughput benchmarks as part of our release notes.
 
 ### Scaling
 
@@ -222,6 +242,6 @@ The [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag)
 
 However, with great power comes great responsibility... a common mistake that causes confusing issues is for the rewrite_tag filter to match the logs that it re-emits. This will make the log pipeline circular, and Fluent Bit will just get stuck. Your rewrite_tag filter should never match "*" and you must think very carefully about how you are configuring the Fluent Bit pipeline. 
 
-#### Use Rubular site to test regex's
+#### Use Rubular site to test regex
 
 To experiment with regex for parsers, the Fluentd and Fluent Bit community recommends using this site: https://rubular.com/
