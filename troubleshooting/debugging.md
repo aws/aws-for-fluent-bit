@@ -27,7 +27,7 @@
 - [Plugin Specific Issues](#plugin-specific-issues)
     - [rewrite_tag filter and cycles in the log pipeline](#rewritetag-filter-and-cycles-in-the-log-pipeline)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
-
+    - [TCP Input: Chunk_Size and Buffer_Size for large logs](#tcp-input-chunksize-and-buffersize-for-large-logs)
 
 
 
@@ -325,3 +325,19 @@ However, with great power comes great responsibility... a common mistake that ca
 #### Use Rubular site to test regex
 
 To experiment with regex for parsers, the Fluentd and Fluent Bit community recommends using this site: https://rubular.com/
+
+#### TCP Input: Chunk_Size and Buffer_Size for large logs
+
+Many users will have seen our [tutorial on sending logs over the Fluent Bit TCP input](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection). 
+
+It should be noted that if your logs are very large, they can be dropped by the TCP input unless the appropriate settings are set. 
+
+For the TCP input, the Buffer_Size is the max size of single event sent to the TCP input that can be accepted. Chunk_size is for rounds of memory allocation, this must be set based on the customer’s average/median log size. This setting is for performance and exposes the low level memory allocation strategy. https://docs.fluentbit.io/manual/pipeline/inputs/tcp
+
+The following configuration may be more efficient in terms of memory consumption, if logs are normally smaller than Chunk_Size and TCP connections are reused to send logs many times. It uses smaller amounts of memory by default for the TCP buffer, and reallocates the buffer in increments of Chunk_Size if the current buffer size is not sufficient. It will be slightly less computationally efficient if logs are consistently larger than Chunk_Size, as reallocation will be needed with each new TCP connection. If the same TCP connection is reused, the expanded buffer will also be reused. (TCP connections are probably kept open for a long time so this is most likely not an issue).
+
+```
+    Buffer_Size 64 # KB, this is the max log event size that can be accepted
+    Chunk_Size 32 # allocation size each time buffer needs to be increased
+```
+
