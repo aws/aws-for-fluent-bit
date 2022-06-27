@@ -10,6 +10,7 @@
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
     - [DNS Resolution Issues](#dns-resolution-issues)
+    - [EC2 IMDSv2 Issues](#ec2-imdsv2-issues)
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
@@ -139,6 +140,27 @@ And here is an example with `UDP`:
 ```
 
 This setting works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
+
+#### EC2 IMDSv2 Issues
+
+If you use EC2 instance role as your source for credentials you might run into issues with the new IMDSv2 system. Check out the [EC2 docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html). 
+
+If you run Fluent Bit in a container, you most likely will need to set the hop limit to two if you have tokens required (IMDSv2 style):
+
+```
+aws ec2 modify-instance-metadata-options \
+     --instance-id <my-instance-id> \
+     --http-put-response-hop-limit 2
+```
+
+The AWS cli can also be used to require IMDSv2 for security purposes:
+
+```
+aws ec2 modify-instance-metadata-options \
+     --instance-id <my-instance-id> \
+     --http-tokens required \
+     --http-endpoint enabled
+```
 
 #### Searching old issues
 
