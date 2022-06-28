@@ -1,0 +1,17 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+RUN chmod +x /bin/gimme
+RUN yum upgrade -y && yum install -y tar gzip git make gcc
+ENV HOME /home
+RUN /bin/gimme 1.17.9
+ENV PATH ${PATH}:/home/.gimme/versions/go1.17.9.linux.arm64/bin:/home/.gimme/versions/go1.17.9.linux.amd64/bin
+RUN go version
+ENV GO111MODULE on
+RUN go env -w GOPROXY=direct
+
+RUN go version
+
+COPY init_process.go  /
+RUN go mod init init_process_fluent_bit
+RUN go mod tidy
+RUN go build init_process.go

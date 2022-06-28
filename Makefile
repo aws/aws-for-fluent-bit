@@ -13,6 +13,12 @@
 
 all: release
 
+.PHONY: init
+init:
+	docker build -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins --platform=linux/amd64  .
+	docker build -t aws-fluent-bit-initprocess:latest -f Dockerfile.initprocess --platform=linux/amd64  .
+	docker build -t amazon/aws-for-fluent-bit-withinit:latest -f Dockerfile.fbwithinit --platform=linux/amd64  .
+
 .PHONY: release
 release:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
