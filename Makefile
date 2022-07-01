@@ -13,6 +13,12 @@
 
 all: release
 
+.PHONY: init
+init:
+	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	docker build --no-cache -t aws-fluent-bit-initprocess:latest -f Dockerfile.build_init_process .
+	docker build --no-cache -t amazon/aws-for-fluent-bit-init:latest -f Dockerfile.init .
+
 .PHONY: release
 release:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
