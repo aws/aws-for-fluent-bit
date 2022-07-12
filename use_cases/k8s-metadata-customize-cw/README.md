@@ -2,7 +2,7 @@
 
 ### Option 1: Use the high performance cloudwatch_logs plugin
 
-To use the [recommended AWS CloudWatch Plugin](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch/), please see the main [Customize the tag based on Kubernetes metadata](k8s-metadata-customize-tag/) example, which demonstrates the technique with the cloudwatch_logs plugin. 
+To use the [recommended AWS CloudWatch Plugin](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch/), please see the main [Customize the tag based on Kubernetes metadata](../k8s-metadata-customize-tag/) example, which demonstrates the technique with the cloudwatch_logs plugin. 
 
 ### Option 2: Use templating in the older Golang cloudwatch plugin
 
