@@ -1,0 +1,12 @@
+{
+  "windows": [
+    {
+      "version": "2.26.1",
+      "build": "1",
+      "fluent-bit": "1.9.4",
+      "kinesis-plugin": "1.9.0",
+      "firehose-plugin": "1.6.1",
+      "cloudwatch-plugin": "1.8.0"
+    }
+  ]
+}
