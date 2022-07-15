@@ -1,7 +1,8 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/lts/ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y tar gzip git make gcc curl gcc-multilib gcc-mingw-w64
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
-RUN yum upgrade -y && yum install -y tar gzip git make gcc
 ENV HOME /home
 RUN /bin/gimme 1.17.9
 ENV PATH ${PATH}:/home/.gimme/versions/go1.17.9.linux.arm64/bin:/home/.gimme/versions/go1.17.9.linux.amd64/bin
@@ -27,6 +28,7 @@ RUN if [ -n "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all && git checkout $KIN
 RUN if [ -z "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
 RUN make release
+RUN make windows-release
 
 # Firehose
 
@@ -36,6 +38,7 @@ RUN if [ -n "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all && git checkout $FI
 RUN if [ -z "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$FIREHOSE_PLUGIN_TAG -b $FIREHOSE_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
 RUN make release
+RUN make windows-release
 
 # CloudWatch
 
@@ -45,3 +48,15 @@ RUN if [ -n "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all && git checkout $
 RUN if [ -z "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
 RUN make release
+RUN make windows-release
+
+# Add all the built artifacts to an output folder and create an archive
+# We can copy this to the host for saving the artifacts
+
+RUN mkdir -p /plugins/linux
+RUN mkdir -p /plugins/windows
+RUN cp /kinesis-streams/bin/*.so /kinesis-firehose/bin/*.so /cloudwatch/bin/*.so /plugins/linux
+RUN cp /kinesis-streams/bin/*.dll /kinesis-firehose/bin/*.dll /cloudwatch/bin/*.dll /plugins/windows
+
+RUN tar -C /plugins/linux -cvf /plugins_linux.tar .
+RUN tar -C /plugins/windows -cvf /plugins_windows.tar .
