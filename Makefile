@@ -19,6 +19,19 @@ release:
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 	docker build -t amazon/aws-for-fluent-bit:init-latest -f Dockerfile.init .
 
+.PHONY: windows-plugins
+windows-plugins:
+	./scripts/build_windows_plugins.sh \
+    	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
+    	--KINESIS_PLUGIN_TAG=${KINESIS_PLUGIN_TAG} \
+    	--KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
+    	--FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
+    	--FIREHOSE_PLUGIN_TAG=${FIREHOSE_PLUGIN_TAG} \
+    	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
+    	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
+    	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
+    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
+
 .PHONY: debug
 debug:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
@@ -96,3 +109,10 @@ integ:
 .PHONY: delete-resources
 delete-resources:
 	./integ/integ.sh delete
+
+.PHONY: clean
+clean:
+	rm -rf ./build
+	docker image remove -f aws-fluent-bit-plugins:latest
+	docker image remove -f amazon/aws-for-fluent-bit:latest
+	docker image prune -f
