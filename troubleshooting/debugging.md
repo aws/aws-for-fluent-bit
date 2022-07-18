@@ -27,7 +27,7 @@
 - [Plugin Specific Issues](#plugin-specific-issues)
     - [rewrite_tag filter and cycles in the log pipeline](#rewritetag-filter-and-cycles-in-the-log-pipeline)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
-    - [TCP Input: Chunk_Size and Buffer_Size for large logs](#tcp-input-chunksize-and-buffersize-for-large-logs)
+    - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
 
 
 
@@ -345,7 +345,7 @@ However, with great power comes great responsibility... a common mistake that ca
 
 To experiment with regex for parsers, the Fluentd and Fluent Bit community recommends using this site: https://rubular.com/
 
-#### TCP Input: Chunk_Size and Buffer_Size for large logs
+#### Chunk_Size and Buffer_Size for large logs in TCP Input
 
 Many users will have seen our [tutorial on sending logs over the Fluent Bit TCP input](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection). 
 
