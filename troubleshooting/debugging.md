@@ -169,6 +169,14 @@ aws ec2 modify-instance-metadata-options \
      --http-endpoint enabled
 ```
 
+The other way to override the IMDS issue on EKS platform, without making the hop-limit to 2 will be setting up the hostNetwork to true, with the dnsPolicy as 'ClusterFirstWithHostNet':
+
+```
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+```
+
 #### Searching old issues
 
 When you first see an issue that you don't understand, the best option is to check *open and closed* issues in both repos:
