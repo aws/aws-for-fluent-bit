@@ -137,7 +137,7 @@ And here is an example with `UDP`:
     log_stream_prefix from-fluent-bit-
     auto_create_group On
     workers 1
-    net.dns.mode
+    net.dns.mode UDP
 ```
 
 This setting works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
