@@ -24,18 +24,31 @@ phases:
       - docker tag amazon/aws-for-fluent-bit:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
       - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
       - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $architecture'
+      # Image with Init Process
+      - docker tag amazon/aws-for-fluent-bit:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
+      - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
+      - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test init-$architecture'
 
        # Create manifest list
       - export DOCKER_CLI_EXPERIMENTAL=enabled
       - docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
       - docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 || true
       - docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
-
+      # Image with Init Process
+      - docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-amd64 || true
+      - docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-arm64 || true
+      - docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-amd64 || true
+      
       # Sanity check for the debug log
       - docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true
+      # Image with Init Process
+      - docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest || true
 
       # Push manifest list
       - docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true
+      # Image with Init Process
+      - docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest || true
+
 artifacts:
   files:
     - '**/*'
