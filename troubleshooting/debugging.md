@@ -267,6 +267,8 @@ docker run --ulimit core=-1 -v /somehostpath:/cores ...
 
 When the debug mode enabled Fluent Bit crashes, a core file should be outputted to `/somehostpath`. 
 
+If you are running the container in EKS/Kubernetes, then you can not set the ulimit at container launch time. This must be set in the Docker systemd unit settings in `/usr/lib/systemd/system/docker.service`. Check that this file has `LimitCORE=infinity` under the `[Service]` section. In Kubernetes, you will still need to make sure the `/cores` directory in Fluent Bit is mounted to some host path to ensure any generated core dump is saved permanently. 
+
 ### Log Loss
 
 The most common cause of log loss is failed retries. Check your Fluent Bit logs for those error messages. Figure out why retries are failing, and then solve that issue.
