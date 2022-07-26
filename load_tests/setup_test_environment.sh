@@ -21,8 +21,8 @@ for i in "${ThroughputArray[@]}"; do
 done
 # Set necessary images as env vars
 export FLUENT_BIT_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest"
-export ECS_APP_IMAGE="075490442118.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-app-image:latest"
-export EKS_APP_IMAGE="075490442118.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-eks-logger:latest"
+export ECS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image:latest"
+export EKS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-eks-app-image:latest"
 # Label EKS nodes
 if [ $PLATFORM == "EKS" ]
 then
