@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.27.0
+This release includes:
+* An Amazon Linux 2 Base
+* Fluent Bit [1.9.6](https://fluentbit.io/announcements/v1.9.6/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
+
+Compared to `2.26.0` this release adds:
+* Feature - Add support for record accessor on `cloudwatch_logs` plugin [fluentbit:3246](https://github.com/fluent/fluent-bit/issues/3246)
+* Enhancement - Update S3 PutObject size to 1GB [s3:5688](https://github.com/fluent/fluent-bit/pull/5688)
+* Bug - Clear last recently used parser to match next parser for multiline filter [fluentbit:5524](https://github.com/fluent/fluent-bit/issues/5524)
+
 ### 2.26.0
 This release includes:
 * An Amazon Linux 2 Base
