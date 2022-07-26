@@ -122,6 +122,17 @@ publish_to_docker_hub() {
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			create_manifest_list ${1} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
+
+		docker pull ${1}:"$init"-stable || echo "0"
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${1}:"$init"-stable || echo "0")
+		docker pull ${1}:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${1}:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+
+		match_two_sha $sha1_init $sha2_init
+
+		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
+			create_manifest_list_init ${1} ""$init"-stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		fi
 	else
 		for arch in "${ARCHITECTURES[@]}"
 		do
@@ -154,6 +165,18 @@ publish_to_public_ecr() {
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		fi
+
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-stable || echo "0"
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-stable || echo "0")
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+
+		match_two_sha $sha1_init $sha2_init
+
+		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-"stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
@@ -197,6 +220,10 @@ publish_stable_ssm() {
 	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
 		--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
 		--type String --region ${1} --value ${2}:${3}
+
+   	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"stable --overwrite \
+		--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image with Init Process' \
+		--type String --region ${1} --value ${2}:${3}
 }
 
 rollback_ssm() {
@@ -217,18 +244,16 @@ check_parameter() {
 	repo_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
 	docker pull $repo_uri
 
-	if [ "${2}" != "stable"]; then 
-		repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
-		IFS='.' read -r -a array <<<"$repo_uri_init"
-		region="${array[3]}"
-		if [ "${1}" != "${region}" ]; then
-			echo "${1}: Region found in repo URI does not match SSM Parameter region: ${repo_uri}"
-			exit 1
-		fi
-		# remove leading and trailing quotes from repo_uri
-		repo_uri_init=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
-		docker pull $repo_uri_init
+	repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
+	IFS='.' read -r -a array <<<"$repo_uri_init"
+	region="${array[3]}"
+	if [ "${1}" != "${region}" ]; then
+		echo "${1}: Region found in repo URI does not match SSM Parameter region: ${repo_uri}"
+		exit 1
 	fi
+	# remove leading and trailing quotes from repo_uri
+	repo_uri_init=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
+	docker pull $repo_uri_init
 }
 
 sync_latest_image() {
@@ -301,6 +326,8 @@ sync_latest_image() {
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 	create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
+
+	create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
 
 	make_repo_public ${region}
 
@@ -437,6 +464,14 @@ verify_ecr() {
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 
+
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-stable || echo "0"
+		stableSha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-stable || echo "0")
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
+		stableSha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0")
+
+		verify_sha $stableSha1_init $stableSha2_init
+
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
 	else
@@ -503,6 +538,13 @@ verify_dockerhub() {
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		verify_sha $sha1 $sha2
+
+		docker pull amazon/aws-for-fluent-bit:"$init"-stable
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-stable)
+		docker pull amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+
+		verify_sha $sha1_init $sha2_init
 	else
 		# Get the image SHA's
 		docker pull amazon/aws-for-fluent-bit:latest
@@ -532,6 +574,13 @@ verify_public_ecr() {
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		verify_sha $sha1 $sha2
+
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-stable
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-stable)
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+
+		verify_sha $sha1_init $sha2_init
 	else
 		# Get the image SHA's
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
