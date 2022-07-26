@@ -262,12 +262,29 @@ Alternatively, if you don't want the overhead of Valgrind, change the entrypoint
 
 And then run Fluent Bit with ulimit unlimited and with the `/cores` directory mounted onto your host:
 ```
-docker run --ulimit core=-1 -v /somehostpath:/cores ...
+docker run --privileged --ulimit core=-1 -v /somehostpath:/cores ...
 ```
 
 When the debug mode enabled Fluent Bit crashes, a core file should be outputted to `/somehostpath`. 
 
 If you are running the container in EKS/Kubernetes, then you can not set the ulimit at container launch time. This must be set in the Docker systemd unit settings in `/usr/lib/systemd/system/docker.service`. Check that this file has `LimitCORE=infinity` under the `[Service]` section. In Kubernetes, you will still need to make sure the `/cores` directory in Fluent Bit is mounted to some host path to ensure any generated core dump is saved permanently. 
+
+The changes to your deployment yaml might be include the following:
+```
+        image: 111111111111.dkr.ecr.us-west-2.amazonaws.com/core-file-build:latest
+          securityContext:
+            privileged: true
+...
+        volumeMounts:
+        - name: coredump
+          mountPath: /cores/
+          readOnly: false
+...
+      volumes:
+      - name: coredump
+        hostPath:
+          path: /var/fluent-bit/core
+```
 
 ### Log Loss
 
