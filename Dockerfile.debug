@@ -3,7 +3,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:latest as builder
 # Fluent Bit version; update these for each release
 ENV FLB_VERSION 1.9.6
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
-ENV FLB_DOCKER_BRANCH 1.9
+ENV FLB_DOCKER_BRANCH master
 
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
@@ -14,6 +14,7 @@ RUN yum upgrade -y
 RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
 RUN yum install -y  \
       glibc-devel \
+      libyaml-devel \
       cmake3 \
       gcc \
       gcc-c++ \
@@ -109,6 +110,7 @@ RUN yum upgrade -y \
           systemd-devel \
           zlib-devel \
           valgrind \
+          libyaml \
           nc && rm -fr /var/cache/yum
 
 COPY --from=builder /fluent-bit /fluent-bit
