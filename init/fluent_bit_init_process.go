@@ -110,7 +110,7 @@ func setECSTaskMetadata(metadata ECSTaskMetadata, filePath string) {
 	defer invokeFile.Close()
 
 	// set the FLB_AWS_USER_AGENT env var as "init" to get the image usage
-	initUsage := "export FLB_AWS_USER_AGENT=init\n"
+	initUsage := "export FLB_AWS_USER_AGENT=ecs-init\n"
 	_, err := invokeFile.WriteString(initUsage)
 	if err != nil {
 		logrus.Errorln(err)
