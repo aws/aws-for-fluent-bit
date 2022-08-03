@@ -1,0 +1,42 @@
+# escape=`
+
+ARG TAG=ltsc2019
+ARG AWS_FOR_FLUENT_BIT_VERSION
+
+#
+# Runtime Image - Windows Server Core
+#
+FROM mcr.microsoft.com/windows/servercore:$TAG as runtime
+
+WORKDIR C:/
+
+ADD fluent-bit /fluent-bit
+
+ADD fluent-bit-plugins /fluent-bit
+
+ADD ecs /ecs
+
+ADD AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
+
+ADD entrypoint.ps1 /entrypoint.ps1
+
+# Set the environment variable
+RUN setx /M PATH "%PATH%;C:\fluent-bit\bin"
+
+# Metadata as defined in OCI image spec annotations
+# https://github.com/opencontainers/image-spec/blob/master/annotations.md
+LABEL org.opencontainers.image.title="AWS for Fluent Bit" `
+      org.opencontainers.image.description="Fluent Bit is an open source and multi-platform Log Processor and Forwarder which allows you to collect data/logs from different sources, unify and send them to multiple destinations. It's fully compatible with Docker and Kubernetes environments." `
+      org.opencontainers.image.version=$AWS_FOR_FLUENT_BIT_VERSION `
+      org.opencontainers.image.authors="FireLens Team <aws-firelens@amazon.com>" `
+      org.opencontainers.image.url="https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit" `
+      org.opencontainers.image.documentation="https://github.com/aws/aws-for-fluent-bit" `
+      org.opencontainers.image.vendor="Amazon Web Services" `
+      org.opencontainers.image.licenses="Apache-2.0" `
+      org.opencontainers.image.source="https://github.com/aws/aws-for-fluent-bit"
+
+# Optional Metrics endpoint
+EXPOSE 2020
+
+# Entry point
+CMD Powershell.exe -Command C:\entrypoint.ps1

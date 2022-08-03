@@ -1,0 +1,27 @@
+version: 0.2
+
+env:
+  exported-variables:
+    - PLUGINS_BUILD_VERSION
+phases:
+  build:
+    commands:
+      # Switch to powershell.
+      - powershell
+      # Obtain CODEBUILD_SRC_DIR from environment variables.
+      - $CODEBUILD_SRC_DIR = [System.Environment]::GetEnvironmentVariable('CODEBUILD_SRC_DIR')
+      # Set the required variables
+      - $FLB_VERSION = [System.Environment]::GetEnvironmentVariable('FLB_VERSION')
+      - $AWS_FOR_FLUENT_BIT_VERSION = [System.Environment]::GetEnvironmentVariable('AWS_FOR_FLUENT_BIT_VERSION')
+      - $BUILD_NUMBER = [System.Environment]::GetEnvironmentVariable('BUILD_NUMBER')
+      # Invoke the build script
+      - Invoke-Expression -Command "${CODEBUILD_SRC_DIR}/scripts/build_windows_fluent_bit.ps1 -FLB_VERSION ${FLB_VERSION}"
+  post_build:
+    commands:
+      - $PLUGINS_BUILD_VERSION="${AWS_FOR_FLUENT_BIT_VERSION}/${BUILD_NUMBER}"
+artifacts:
+  name: $PLUGINS_BUILD_VERSION
+  base-directory: $CODEBUILD_SRC_DIR
+  files:
+    - 'build/windows/*'
+  discard-paths: yes

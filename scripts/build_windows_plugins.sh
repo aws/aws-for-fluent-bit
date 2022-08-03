@@ -102,8 +102,3 @@ docker create -ti --name plugin-build-container aws-fluent-bit-plugins:latest ba
 docker cp plugin-build-container:/plugins_windows.tar ./build/windows/plugins_windows.tar
 docker rm -f plugin-build-container
 echo "Copied plugin archive to the build output folder"
-
-# Extract the plugin tar into the output folder
-tar -xvf ./build/windows/plugins_windows.tar -C ./build/windows/
-rm ./build/windows/plugins_windows.tar
-echo "Extracted Windows plugins in the build output folder"
