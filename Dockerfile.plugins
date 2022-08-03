@@ -60,10 +60,20 @@ RUN make windows-release
 # Add all the built artifacts to an output folder and create an archive
 # We can copy this to the host for saving the artifacts
 
-RUN mkdir -p /plugins/linux
-RUN mkdir -p /plugins/windows
+RUN mkdir -p /plugins/linux/licenses/kinesis /plugins/linux/licenses/firehose /plugins/linux/licenses/cloudwatch
+RUN mkdir -p /plugins/windows/licenses/kinesis /plugins/windows/licenses/firehose /plugins/windows/licenses/cloudwatch
+
+# Copy binaries
 RUN cp /kinesis-streams/bin/*.so /kinesis-firehose/bin/*.so /cloudwatch/bin/*.so /plugins/linux
 RUN cp /kinesis-streams/bin/*.dll /kinesis-firehose/bin/*.dll /cloudwatch/bin/*.dll /plugins/windows
+
+# Copy licenses
+RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/linux/licenses/kinesis
+RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/linux/licenses/firehose
+RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/linux/licenses/cloudwatch
+RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/windows/licenses/kinesis
+RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/windows/licenses/firehose
+RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/windows/licenses/cloudwatch
 
 RUN tar -C /plugins/linux -cvf /plugins_linux.tar .
 RUN tar -C /plugins/windows -cvf /plugins_windows.tar .
