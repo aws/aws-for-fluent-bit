@@ -89,9 +89,16 @@ switch ($Platform) {
 
 Write-Host ("Using tag {0} for the platform {1}" -f $BASEIMAGETAG, $Platform)
 
+# All the certificate URLs
+$AmazonRootCA1 = "https://www.amazontrust.com/repository/AmazonRootCA1.cer"
+$AmazonRootCA2 = "https://www.amazontrust.com/repository/AmazonRootCA2.cer"
+$AmazonRootCA3 = "https://www.amazontrust.com/repository/AmazonRootCA3.cer"
+$AmazonRootCA4 = "https://www.amazontrust.com/repository/AmazonRootCA4.cer"
+
 # Define Variables
 $WorkingDir = "C:\build"
 $StagingDir = "C:\staging"
+$CertsDir = "${StagingDir}\certs"
 $FLBStagingLocationOnHost = "${StagingDir}\fluent-bit"
 $FLBPluginsStagingLocationOnHost = "${StagingDir}\fluent-bit-plugins"
 $ECSConfigStagingLocationOnHost = "${StagingDir}\ecs"
@@ -108,6 +115,7 @@ $ecrImageName = "${AccountId}.dkr.ecr.${Region}.amazonaws.com/aws-for-fluent-bit
 Write-Host "Creating all the required directories"
 New-Item -Path $WorkingDir -ItemType Directory -Force
 New-Item -Path $StagingDir -ItemType Directory -Force
+New-Item -Path $CertsDir -ItemType Directory -Force
 New-Item -Path $FLBStagingLocationOnHost -ItemType Directory -Force
 New-Item -Path $FLBPluginsStagingLocationOnHost -ItemType Directory -Force
 New-Item -Path $ECSConfigStagingLocationOnHost -ItemType Directory -Force
@@ -128,6 +136,11 @@ Read-S3Object -BucketName "${S3BaseBucket}" -Key "${S3StagingKey}/${ECSConfigArc
 Read-S3Object -BucketName "${S3BaseBucket}" -Key "${S3StagingKey}/${AWSForFluentBitVersionFilename}" -File "${StagingDir}\${AWSForFluentBitVersionFilename}"
 Read-S3Object -BucketName "${S3BaseBucket}" -Key "${S3StagingKey}/${EntrypointScriptName}" -File "${StagingDir}\${EntrypointScriptName}"
 Read-S3Object -BucketName "${S3BaseBucket}" -Key "${S3StagingKey}/${Dockerfile}" -File "${StagingDir}\${Dockerfile}"
+# Download the Amazon Root CA Certs.
+Invoke-WebRequest -URI $AmazonRootCA1 -OutFile "${CertsDir}\AmazonRootCA1.cer"
+Invoke-WebRequest -URI $AmazonRootCA2 -OutFile "${CertsDir}\AmazonRootCA2.cer"
+Invoke-WebRequest -URI $AmazonRootCA3 -OutFile "${CertsDir}\AmazonRootCA3.cer"
+Invoke-WebRequest -URI $AmazonRootCA4 -OutFile "${CertsDir}\AmazonRootCA4.cer"
 
 # Extract them into the required folders.
 Write-Host "Extracting the archives into the required folders"
