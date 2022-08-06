@@ -16,12 +16,20 @@ ADD fluent-bit-plugins /fluent-bit
 
 ADD ecs /ecs
 
+ADD certs /certs
+
 ADD AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
 
 ADD entrypoint.ps1 /entrypoint.ps1
 
 # Set the environment variable
 RUN setx /M PATH "%PATH%;C:\fluent-bit\bin"
+
+# Import the Amazon Root CA certificates
+RUN Powershell -Command Import-Certificate -FilePath C:\certs\AmazonRootCA1.cer -CertStoreLocation Cert:\LocalMachine\Root\
+RUN Powershell -Command Import-Certificate -FilePath C:\certs\AmazonRootCA2.cer -CertStoreLocation Cert:\LocalMachine\Root\
+RUN Powershell -Command Import-Certificate -FilePath C:\certs\AmazonRootCA3.cer -CertStoreLocation Cert:\LocalMachine\Root\
+RUN Powershell -Command Import-Certificate -FilePath C:\certs\AmazonRootCA4.cer -CertStoreLocation Cert:\LocalMachine\Root\
 
 # Metadata as defined in OCI image spec annotations
 # https://github.com/opencontainers/image-spec/blob/master/annotations.md
