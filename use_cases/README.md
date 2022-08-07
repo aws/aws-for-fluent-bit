@@ -4,6 +4,9 @@ The goal of this guide is a central location for all tutorials on solving use ca
 
 ## Troubleshooting errors and issues
 
+## ECS FireLens New Features
+* [Source multiple configs from S3 or files](init-process-for-fluent-bit/README.md)
+
 ## ECS FireLens Examples
 
 All FireLens (side-car) examples for ECS are housed in their own repo: [aws-samples/amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples)

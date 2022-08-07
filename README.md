@@ -7,6 +7,7 @@
 - [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
     - [Using the stable tag](#using-the-stable-tag)
+    - [Using the init tag](#using-the-init-tag)
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
     - [Using SSM Parameters in CloudFormation Templates](#using-ssm-parameters-in-cloudFormation-templates)
     - [Using image tags](#using-image-tags)
@@ -66,6 +67,10 @@ Each release updates the `latest` tag and adds a tag for the version of the imag
 A `stable` tag can be trusted that it is the latest version in which there are no high impact bugs in Fluent Bit. A release may be marked as stable if the following rules are all met:
 * It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes
 * No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs of the tail input
+
+#### Using the init tag
+
+The `init` tags indicate that an image contains init process and supports multi-config. Init tag is used in addition to our other tags, e.g. `aws-for-fluent-bit:init-latest` means this is a latest released image supports multi-config. For more information about the usage of multi-config please see our [use case guide](https://github.com/aws/aws-for-fluent-bit/blob/mainline/use_cases/init-process-for-fluent-bit/README.md) and [FireLens example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/multi-config-support).
 
 #### Using SSM to find available versions
 
