@@ -1,4 +1,16 @@
 # Changelog
+### 2.28.0
+This release includes:
+* Fluent Bit [1.9.7](https://fluentbit.io/announcements/v1.9.7/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
+
+Compared to `2.27.0` this release adds:
+* Feature - Add gzip compression support for multipart uploads in [S3 Output plugin](https://docs.fluentbit.io/manual/pipeline/outputs/s3/)
+* Bug - S3 output key formatting inconsistent rendering of `$TAG[n]` [aws-for-fluent-bit:376](https://github.com/aws/aws-for-fluent-bit/issues/376)
+* Bug - fix concurrency issue in S3 key formatting
+* Bug - `cloudwatch_logs` plugin fix skip counting empty events
 
 ### 2.27.0
 This release includes:
