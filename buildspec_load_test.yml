@@ -13,7 +13,7 @@ phases:
   install:
     runtime-versions:
       golang: 1.13
-      python: 3.x
+      python: 3.9
       nodejs: 12
   pre_build:
     commands:
