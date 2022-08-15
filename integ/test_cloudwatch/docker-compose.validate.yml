@@ -12,4 +12,4 @@ services:
             - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
             - "EMF_METRIC_NAME_PATH=/out/expected-metric-name"
         volumes:
-            - ${PROJECT_ROOT}/integ/out:/out
+            - ${PROJECT_ROOT}/integ/out:${VOLUME_MOUNT_CONTAINER}
