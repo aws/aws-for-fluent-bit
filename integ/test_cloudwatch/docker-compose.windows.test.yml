@@ -1,0 +1,71 @@
+services:
+    fluent-bit:
+        container_name: ${AWS_FOR_FLUENT_BIT_CONTAINER_NAME}
+        image: ${FLUENT_BIT_IMAGE}
+        environment:
+            - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+            - FLB_LOG_LEVEL=debug
+            - "LOG_GROUP_NAME=${LOG_GROUP_NAME}"
+            - "CW_PLUGIN_UNDER_TEST=${CW_PLUGIN_UNDER_TEST}"
+        healthcheck:
+            test: CMD Powershell -C Get-Process fluent-bit
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        networks:
+            fluent-net:
+                ipv4_address: ${DockerNetworkStaticIP}
+        volumes:
+            - ${PROJECT_ROOT}/integ/test_cloudwatch/windows-config:C:/fluent-bit/etc/
+        profiles:
+            - core
+    logger-basic-test:
+        build: ${PROJECT_ROOT}/integ/logger
+        logging:
+            driver: fluentd
+            options:
+                tag: "basic-test-${TAG}"
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        networks:
+            - fluent-net
+        profiles:
+            - test
+    logger-log-key:
+        build: ${PROJECT_ROOT}/integ/logger
+        logging:
+            driver: fluentd
+            options:
+                tag: "log-key-test-${TAG}"
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        networks:
+            - fluent-net
+        profiles:
+            - test
+    logger-emf:
+        build: ${PROJECT_ROOT}/integ/emf_logger
+        environment:
+            - "EMF_METRIC_NAME_PATH=C:/out/expected-metric-name"
+            - "FLUENT_CONTAINER_IP=${FLUENT_CONTAINER_IP}"
+        logging:
+            driver: fluentd
+            options:
+                tag: "log-emf-test-${TAG}"
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        # this volume is used for synchronization between the test
+        # and the validator
+        volumes:
+            - ${PROJECT_ROOT}/integ/out:C:/out
+        networks:
+            - fluent-net
+        profiles:
+            - test
+networks:
+    fluent-net:
+        driver: nat
+        ipam:
+            config:
+                - subnet: ${DockerNetworkSubnet}
+                  gateway: ${DockerNetworkGateway}
