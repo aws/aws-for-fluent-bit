@@ -6,6 +6,7 @@
 - [Debugging Guide](troubleshooting/debugging.md)
 - [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
+    - [arm64 and x86 images](#arm64-and-amd64-images)
     - [Using the stable tag](#using-the-stable-tag)
     - [Using the init tag](#using-the-init-tag)
     - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
@@ -61,6 +62,10 @@ No. We continue to consume Fluent Bit from its main repository. We are not forki
 ### Public Images
 
 Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version. Deploying `latest` to prod without going through a test stage first is not recommended.
+
+#### arm64 and amd64 images
+
+AWS for Fluent Bit currently distributes container images for arm64 and amd64 CPU architectures. Our images all use [mutli-archictecture tags](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html). For example, this means that if you pull the `latest` tag on a Graviton instance, you would get the arm64 image build. 
 
 #### Using the stable tag
 
