@@ -1,0 +1,40 @@
+services:
+    fluent-bit:
+        container_name: ${AWS_FOR_FLUENT_BIT_CONTAINER_NAME}
+        image: ${FLUENT_BIT_IMAGE}
+        environment:
+            - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+            - "FIREHOSE_STREAM=${FIREHOSE_STREAM}"
+            - FLB_LOG_LEVEL=debug
+        volumes:
+            - ${PROJECT_ROOT}/integ/test_firehose/${FluentBitConfigDir}/:C:/fluent-bit/etc/
+        healthcheck:
+            test: CMD Powershell -C Get-Process fluent-bit
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        networks:
+            fluent-net:
+                ipv4_address: ${DockerNetworkStaticIP}
+        profiles:
+            - core
+    logger-test:
+        build: ${PROJECT_ROOT}/integ/logger
+        logging:
+            driver: fluentd
+            options:
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        networks:
+            - fluent-net
+        profiles:
+            - test
+networks:
+    fluent-net:
+        driver: nat
+        ipam:
+            config:
+                - subnet: ${DockerNetworkSubnet}
+                  gateway: ${DockerNetworkGateway}

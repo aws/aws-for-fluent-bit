@@ -1,0 +1,53 @@
+services:
+    fluent-bit:
+        container_name: ${AWS_FOR_FLUENT_BIT_CONTAINER_NAME}
+        image: ${FLUENT_BIT_IMAGE}
+        environment:
+            - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+            - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+            - "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+            - "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+            - "ARCHITECTURE=${ARCHITECTURE}"
+            - FLB_LOG_LEVEL=debug
+        volumes:
+            - ${PROJECT_ROOT}/integ/test_s3/windows-config/:C:/fluent-bit/etc/
+        healthcheck:
+            test: CMD Powershell -C Get-Process fluent-bit
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 10s
+        networks:
+            fluent-net:
+                ipv4_address: ${DockerNetworkStaticIP}
+        profiles:
+            - core
+    logger-multipart-test:
+        build: ${PROJECT_ROOT}/integ/s3-logger
+        logging:
+            driver: fluentd
+            options:
+                tag: "multipart-upload-test-${TAG}"
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        networks:
+            - fluent-net
+        profiles:
+            - test
+    logger-put-object-test:
+        build: ${PROJECT_ROOT}/integ/s3-logger
+        logging:
+            driver: fluentd
+            options:
+                tag: "put-object-test-${TAG}"
+                fluentd-address: tcp://${FLUENT_CONTAINER_IP}:24542
+        networks:
+            - fluent-net
+        profiles:
+            - test
+networks:
+    fluent-net:
+        driver: nat
+        ipam:
+            config:
+                - subnet: ${DockerNetworkSubnet}
+                  gateway: ${DockerNetworkGateway}
