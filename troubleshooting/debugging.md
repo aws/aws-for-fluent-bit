@@ -191,7 +191,7 @@ If you're running on an old version, it may have been fixed in the latest releas
 
 Or, you may be facing an unresolved or not-yet-discovered issue in a newer version. Downgrading to our latest stable version may work: https://github.com/aws/aws-for-fluent-bit#using-the-stable-tag
 
-In the AWS for Fluent Bit repo, we always attempt to tag bug reports with which versions are affected, for example see [this query](https://github.com/aws/aws-for-fluent-bit/issues?q=is%3Aissue+is%3Aopen+label%3Aaws-2.28.0).  
+In the AWS for Fluent Bit repo, we always attempt to tag bug reports with which versions are affected, for example see [this query](https://github.com/aws/aws-for-fluent-bit/issues?q=is%3Aissue+is%3Aopen+label%3Aaws-2.21.0).  
 
 #### Network Connection Issues
 
@@ -235,10 +235,10 @@ There are some caveats when using Valgrind. Its a debugging tool, and so it sign
 
 ##### Option 1: Build from prod release (Easier but less robust)
 
-Use the Dockerfile below to create a new container image that will invoke your Fluent Bit version using Valgrind. Replace the "builder" image with whatever AWS for Fluent Bit release you are using, in this case, we are testing 2.28.0. The Dockerfile here will copy the original binary into a new image with Valgrind. Valgrind is a little bit like a mini-VM that will run the Fluent Bit binary and inspect the code at runtime. When you terminate the container, Valgrind will output diagnostic information on shutdown, with summary of memory leaks it detected. This output will allow us to determine which part of the code caused the leak. Valgrind can also be used to find the source of segmentation faults
+Use the Dockerfile below to create a new container image that will invoke your Fluent Bit version using Valgrind. Replace the "builder" image with whatever AWS for Fluent Bit release you are using, in this case, we are testing the latest image. The Dockerfile here will copy the original binary into a new image with Valgrind. Valgrind is a little bit like a mini-VM that will run the Fluent Bit binary and inspect the code at runtime. When you terminate the container, Valgrind will output diagnostic information on shutdown, with summary of memory leaks it detected. This output will allow us to determine which part of the code caused the leak. Valgrind can also be used to find the source of segmentation faults
 
 ```
-FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.0 as builder
+FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:latest as builder
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum upgrade -y \
