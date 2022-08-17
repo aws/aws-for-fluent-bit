@@ -235,10 +235,10 @@ There are some caveats when using Valgrind. Its a debugging tool, and so it sign
 
 ##### Option 1: Build from prod release (Easier but less robust)
 
-Use the Dockerfile below to create a new container image that will invoke your Fluent Bit version using Valgrind. Replace the "builder" image with whatever AWS for Fluent Bit release you are using, in this case, we are testing 2.21.0. The Dockerfile here will copy the original binary into a new image with Valgrind. Valgrind is a little bit like a mini-VM that will run the Fluent Bit binary and inspect the code at runtime. When you terminate the container, Valgrind will output diagnostic information on shutdown, with summary of memory leaks it detected. This output will allow us to determine which part of the code caused the leak. Valgrind can also be used to find the source of segmentation faults
+Use the Dockerfile below to create a new container image that will invoke your Fluent Bit version using Valgrind. Replace the "builder" image with whatever AWS for Fluent Bit release you are using, in this case, we are testing the latest image. The Dockerfile here will copy the original binary into a new image with Valgrind. Valgrind is a little bit like a mini-VM that will run the Fluent Bit binary and inspect the code at runtime. When you terminate the container, Valgrind will output diagnostic information on shutdown, with summary of memory leaks it detected. This output will allow us to determine which part of the code caused the leak. Valgrind can also be used to find the source of segmentation faults
 
 ```
-FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:2.21.0 as builder
+FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:latest as builder
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum upgrade -y \
@@ -247,11 +247,12 @@ RUN yum upgrade -y \
           pkgconfig \
           systemd-devel \
           zlib-devel \
+          libyaml \
           valgrind \
           nc && rm -fr /var/cache/yum
 
 COPY --from=builder /fluent-bit /fluent-bit
-CMD valgrind --leak-check=full /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
+CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
 ```
 
 ##### Option 2: Debug Build (More robust)

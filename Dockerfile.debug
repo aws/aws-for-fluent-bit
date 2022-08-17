@@ -140,7 +140,7 @@ EXPOSE 2020
 # Default: Run under valgrind
 # alternatively, you can change this to run FB directly and try
 # to get a core file instead
-CMD valgrind --leak-check=full /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
+CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
 
 # Alternate: Run directly and get core file
 # make sure you run with `docker run --ulimit core=-1`
