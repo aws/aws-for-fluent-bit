@@ -28,12 +28,14 @@ INPUT_LOGGERS = [
     {
         "name": "stdstream",
         "logger_image": "075490442118.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-app-image:latest",
-        "fluent_config_file_path": "./load_tests/logger/stdout_logger/fluent.conf"
+        "fluent_config_file_path": "./load_tests/logger/stdout_logger/fluent.conf",
+        "log_configuration_path": "./load_tests/logger/stdout_logger/log_configuration"
     },
     {
         "name": "tcp",
         "logger_image": "826489191740.dkr.ecr.us-west-2.amazonaws.com/amazon/tcp-logger:latest",
-        "fluent_config_file_path": "./load_tests/logger/tcp_logger/fluent.conf"
+        "fluent_config_file_path": "./load_tests/logger/tcp_logger/fluent.conf",
+        "log_configuration_path": "./load_tests/logger/tcp_logger/log_configuration"
     },
 ]
 
@@ -67,6 +69,7 @@ def check_app_exit_code(response):
         sys.exit('[TEST_FAILURE] Error occured to get task container list')
     for container in containers:
         if container['name'] == 'app' and container['exitCode'] != 0:
+            print('[TEST_FAILURE] Logger failed to generate all logs with exit code: ' + str(container['exitCode']))
             sys.exit('[TEST_FAILURE] Logger failed to generate all logs with exit code: ' + str(container['exitCode']))
 
 # Return the total number of input records for each load test
@@ -126,17 +129,20 @@ def generate_task_definition(session, throughput, input_logger, s3_fluent_config
             '$STD_S3_OBJECT_NAME':              resource_resolver.resolve_s3_object_name(std_config),
         },
     }
+
+    # Add log configuration to dictionary
+    log_configuration_data = open(f'{input_logger["log_configuration_path"]}/{OUTPUT_PLUGIN}.json', 'r')
+    log_configuration_raw = log_configuration_data.read()
+    log_configuration = parse_json_template(log_configuration_raw, task_definition_dict)
+    task_definition_dict["$LOG_CONFIGURATION"] = log_configuration
+
+    # Parse task definition template
     fin = open(f'./load_tests/task_definitions/{OUTPUT_PLUGIN}.json', 'r')
     data = fin.read()
-    for key in task_definition_dict:
-        if(key[0] == '$'):
-            data = data.replace(key, task_definition_dict[key])
-        elif(key == OUTPUT_PLUGIN):
-            for sub_key in task_definition_dict[key]:
-                data = data.replace(sub_key, task_definition_dict[key][sub_key])
+    task_def_formatted = parse_json_template(data, task_definition_dict)
 
     # Register task definition
-    task_def = json.loads(data)
+    task_def = json.loads(task_def_formatted)
     
     if IS_TASK_DEFINITION_PRINTED:
         print("Registering task definition:")
@@ -373,6 +379,16 @@ def format_test_results_to_markdown(test_results):
             output += "|"
         output += "\n"
     return output
+
+def parse_json_template(template, dict):
+    data = template
+    for key in dict:
+            if(key[0] == '$'):
+                data = data.replace(key, dict[key])
+            elif(key == OUTPUT_PLUGIN):
+                for sub_key in dict[key]:
+                    data = data.replace(sub_key, dict[key][sub_key])
+    return data
 
 # Returns s3 arn
 def publish_fluent_config_s3(session, input_logger):

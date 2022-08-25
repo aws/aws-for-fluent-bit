@@ -12,9 +12,9 @@ env:
 phases:
   install:
     runtime-versions:
-      golang: 1.13
+      golang: 1.16
       python: 3.x
-      nodejs: 12
+      nodejs: 14
   pre_build:
     commands:
       - echo Running the load tests
@@ -23,7 +23,7 @@ phases:
       - n stable
       # install cdk
       - npm config set prefix /usr/local
-      - npm install -g aws-cdk@latest
+      - npm install -g aws-cdk@2.38.1
       # install eksctl
       - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
       - mv /tmp/eksctl /usr/local/bin
@@ -36,8 +36,8 @@ phases:
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       - unzip awscliv2.zip
       - which aws
-      - ls -l /root/.pyenv/shims/aws
-      - ./aws/install --bin-dir /root/.pyenv/shims --install-dir /root/.pyenv/shims --update
+      - ls -l /usr/local/bin/aws
+      - ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/bin --update
       # install aws-iam-authenticator
       - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
       - chmod +x ./aws-iam-authenticator
@@ -68,6 +68,7 @@ phases:
       - rm ~/.aws/credentials
       # Run load tests on corresponding platform
       - python ./load_tests/load_test.py ${PLATFORM}
+    finally:
       # Clear up testing resources
       - python ./load_tests/load_test.py delete_testing_resources
 artifacts:
