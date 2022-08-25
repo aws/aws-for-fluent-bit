@@ -44,6 +44,12 @@
 			"image": "$APP_IMAGE",
 			"name": "app",
 			"links": ["log_router"],
+			"dependsOn": [
+				{
+					"condition": "START",
+					"containerName": "log_router"
+				}
+			],
 			"environment" : [ 
 				{ "name" : "ITERATION", "value" : "$THROUGHPUT" },
 				{ "name" : "TIME", "value" : "$LOGGER_RUN_TIME_IN_SECOND" },
@@ -51,17 +57,7 @@
 				{ "name" : "LOGGER_DEST_ADDR", "value": "log_router" },
 				{ "name" : "DEBUG_TCP_LOGGER", "value": "false" }
 			],
-			"logConfiguration": {
-				"logDriver":"awsfirelens",
-				"options": {
-					"Name": "kinesis_firehose",
-					"region": "us-west-2",
-					"delivery_stream": "$STD_DELIVERY_STREAM_PREFIX",
-					"log-driver-buffer-limit": "536870911",
-					"auto_retry_requests": "true",
-					"workers": "5"
-				}
-			},
+			"logConfiguration": $LOG_CONFIGURATION,
 			"memoryReservation": 100
 		}
 	]

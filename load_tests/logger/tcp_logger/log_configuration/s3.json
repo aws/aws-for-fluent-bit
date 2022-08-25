@@ -1,0 +1,15 @@
+{
+	"logDriver":"awsfirelens",
+	"options": {
+		"Name": "cloudwatch_logs",
+		"region": "us-west-2",
+		"log_key": "log",
+		"log_group_name": "load-test-fluent-bit-logger",
+		"auto_create_group": "true",
+		"log_stream_name": "tcp-$OUTPUT_PLUGIN-$STD_LOG_STREAM_NAME",
+		"log-driver-buffer-limit": "536870911",
+		"auto_retry_requests": "true",
+		"workers": "1",
+		"Retry_Limit": "5"
+	}
+}

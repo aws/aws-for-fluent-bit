@@ -1,0 +1,11 @@
+{
+	"logDriver":"awsfirelens",
+	"options": {
+		"Name": "kinesis_firehose",
+		"region": "us-west-2",
+		"delivery_stream": "$STD_DELIVERY_STREAM_PREFIX",
+		"log-driver-buffer-limit": "536870911",
+		"auto_retry_requests": "true",
+		"workers": "5"
+	}
+}
