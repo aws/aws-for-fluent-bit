@@ -33,7 +33,7 @@ INPUT_LOGGERS = [
     },
     {
         "name": "tcp",
-        "logger_image": "826489191740.dkr.ecr.us-west-2.amazonaws.com/amazon/tcp-logger:latest",
+        "logger_image": os.getenv('ECS_APP_IMAGE_TCP'), # TCP Logs Java App
         "fluent_config_file_path": "./load_tests/logger/tcp_logger/fluent.conf",
         "log_configuration_path": "./load_tests/logger/tcp_logger/log_configuration"
     },
