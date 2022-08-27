@@ -27,7 +27,7 @@ else:
 INPUT_LOGGERS = [
     {
         "name": "stdstream",
-        "logger_image": "075490442118.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-app-image:latest",
+        "logger_image": os.getenv('ECS_APP_IMAGE'), # STDOUT Logs
         "fluent_config_file_path": "./load_tests/logger/stdout_logger/fluent.conf",
         "log_configuration_path": "./load_tests/logger/stdout_logger/log_configuration"
     },
@@ -110,7 +110,6 @@ def generate_task_definition(session, throughput, input_logger, s3_fluent_config
         '$CUSTOM_S3_OBJECT_NAME':           resource_resolver.resolve_s3_object_name(custom_config),
 
         # Plugin Specific Environment Variables
-        '$APP_IMAGE': os.environ['ECS_APP_IMAGE'],
         'cloudwatch': {
             '$CW_LOG_GROUP_NAME':               os.environ['CW_LOG_GROUP_NAME'],
             '$STD_LOG_STREAM_NAME':             resource_resolver.resolve_cloudwatch_logs_stream_name(std_config),
@@ -248,8 +247,6 @@ def run_ecs_tests():
             stop_time = response['tasks'][0]['stoppedAt']
             log_delay = get_log_delay(parse_time(stop_time)-parse_time(start_time)-LOGGER_RUN_TIME_IN_SECOND)
             set_buffer(parse_time(stop_time))
-            log_delay = get_log_delay(response)
-            set_buffer(response)
 
             # Validate logs
             os.environ['LOG_SOURCE_NAME'] = input_logger["name"]
@@ -294,6 +291,9 @@ def run_ecs_tests():
         }, processes))
 
         test_results.extend(parsedValidationOutputs)
+
+        # Wait for task resources to free up
+        time.sleep(60)
 
     # Print output
     print("\n\nValidation results:\n")
