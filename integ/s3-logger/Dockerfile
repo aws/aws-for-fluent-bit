@@ -1,8 +1,7 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/docker/library/python:latest
 
-RUN yum upgrade -y
-RUN yum install -y openssl
+WORKDIR /
 
-COPY logscript.sh /
+COPY logscript.py .
 
-CMD ["bash", "/logscript.sh"]
+CMD ["python", "logscript.py"]
