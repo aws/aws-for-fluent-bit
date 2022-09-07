@@ -2,7 +2,9 @@ version: "2"
 
 services:
     validate-s3:
-        build: ${PROJECT_ROOT}/integ/s3
+        build:
+            context: ${PROJECT_ROOT}/integ/s3
+            dockerfile: ${ValidateS3Dockerfile}
         environment:
             - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
             - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
@@ -14,4 +16,4 @@ services:
             - "TEST_FILE=${TEST_FILE}"
             - "EXPECTED_EVENTS_LEN=${EXPECTED_EVENTS_LEN}"
         volumes:
-            - ${PROJECT_ROOT}/integ/out:/out
+            - ${PROJECT_ROOT}/integ/out:${VOLUME_MOUNT_CONTAINER}

@@ -13,8 +13,8 @@ COPY . .
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
 
-# Build the Go app
-RUN go build -o s3ValidateAndClean .
+# Build the Go executable for Windows.
+RUN go build -o s3ValidateAndClean.exe .
 
 # Command to run the executable
-CMD ["./s3ValidateAndClean"]
+CMD .\s3ValidateAndClean.exe

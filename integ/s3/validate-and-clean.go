@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -140,6 +141,11 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 			decodeError := json.Unmarshal([]byte(d), &message)
 			if decodeError != nil {
 				exitErrorf("[TEST FAILURE] Json Unmarshal Error:", decodeError)
+			}
+
+			if runtime.GOOS == "windows" {
+				// On Windows, we would have additional \r which needs to be stripped.
+				message.Log = strings.ReplaceAll(message.Log, "\r", "")
 			}
 
 			number, convertionError := strconv.Atoi(message.Log)
