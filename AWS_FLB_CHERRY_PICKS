@@ -1,1 +1,2 @@
-# No AWS cherry picks in this release
+# Resolve long tag segfault issue. Without this patch, Fluent Bit may segfault if it encounters tags over 256 characters in length. [fluentbit:5753](https://github.com/fluent/fluent-bit/issues/5753). Patch commit - https://github.com/matthewfala/fluent-bit/commits/immutable-1.9-long-tag
+https://github.com/matthewfala/fluent-bit immutable-1.9-long-tag a74f095d0974d13e7a0539f7721f0b6a4e6b1e63
