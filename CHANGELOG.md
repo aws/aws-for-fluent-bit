@@ -1,4 +1,14 @@
 # Changelog
+### 2.28.1
+This release includes:
+* Fluent Bit [1.9.8](https://fluentbit.io/announcements/v1.9.8/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
+
+Compared to `2.28.0` this release adds the following feature that we are working on getting accepted upstream:
+* Bug - Resolve long tag segfault issue. Without this patch, Fluent Bit may segfault if it encounters tags over 256 characters in length. [fluentbit:5753](https://github.com/fluent/fluent-bit/issues/5753)
+
 ### 2.28.0
 This release includes:
 * Fluent Bit [1.9.7](https://fluentbit.io/announcements/v1.9.7/)
