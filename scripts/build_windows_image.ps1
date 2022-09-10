@@ -109,7 +109,7 @@ $ECSConfigArchiveName = "ecs.zip"
 $AWSForFluentBitVersionFilename = "AWS_FOR_FLUENT_BIT_VERSION"
 $EntrypointScriptName = "entrypoint.ps1"
 $Dockerfile = "Dockerfile.windows"
-$ecrImageName = "${AccountId}.dkr.ecr.${Region}.amazonaws.com/aws-for-fluent-bit:${AWSForFluentBitVersion}-${BASEIMAGETAG}"
+$ecrImageName = "${AccountId}.dkr.ecr.${Region}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${AWSForFluentBitVersion}-${BASEIMAGETAG}"
 
 # Create all the directories
 Write-Host "Creating all the required directories"
