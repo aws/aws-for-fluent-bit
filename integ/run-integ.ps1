@@ -250,7 +250,7 @@ Function Clean-Test {
     )
 
     # Run "docker-compose down" once the tests have been ran.
-    docker-compose --file $DockerComposeFilePath --profile $CoreProfile --profile $TestProfile down -v --rmi all --remove-orphans
+    docker-compose --file $DockerComposeFilePath --profile $CoreProfile --profile $TestProfile down
     Test-Command -TestMethod "$($MyInvocation.MyCommand): ${PluginUnderTest}"
 }
 
