@@ -3,6 +3,7 @@
 ### Contents
 
 - [Versioning FAQ](#versioning-faq)
+- [Compliance and Patching](#compliance-and-patching)
 - [Debugging Guide](troubleshooting/debugging.md)
 - [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
@@ -50,6 +51,24 @@ Thus, we moved to the a new versioning scheme. Because customers already are rel
 **Does this mean you are diverging from fluent/fluent-bit?**
 
 No. We continue to consume Fluent Bit from its main repository. We are not forking Fluent Bit.
+
+### Compliance and Patching
+
+**Q: Is AWS for Fluent Bit HIPAA Compliant?**
+
+Fluent Bit can be used in a HIPAA compliant matter to send logs to AWS, even if the logs contain PHI. Please see the call outs in the [AWS HIPAA white paper for ECS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/amazon-ecs.html).  
+
+**Q: What is the policy for patching AWS for Fluent Bit for vulnerabilities, CVEs and image scan findings?**
+
+AWS for Fluent Bit uses ECR image scanning in its release pipeline and any scan that finds high or critical vulnerabilities will block a release: [scripts/publish.sh](https://github.com/aws/aws-for-fluent-bit/blob/mainline/scripts/publish.sh#L487)
+
+If you find an issue from a scan on our latest images please follow the reporting guidelines below and we will work quickly to introduce a new release. To be clear, we do not patch existing images, we just will release a new image without the issue. The team uses ECR image scan as the main source of truth for whether or not the image contains a vulnerability in a dependency. 
+
+If your concern is about a vulnerability in the Fluent Bit upstream ([github.com/fluent/fluent-bit](https://github.com/fluent/fluent-bit/) open source code), please let us know as well. However, fixing upstream issues requires additional work and time because we must work closely with upstream maintainers to commit a fix and cut an upstream release, and then we can cut an AWS for Fluent Bit release. 
+
+**Q: How do I report security disclosures?**
+
+If you think you’ve found a potentially sensitive security issue, please do not post it in the Issues on GitHub.  Instead, please follow the instructions [here](https://aws.amazon.com/security/vulnerability-reporting/) or email AWS security directly at [aws-security@amazon.com](mailto:aws-security@amazon.com).
 
 ### Debugging Guide
 
