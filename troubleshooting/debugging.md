@@ -265,16 +265,24 @@ The best option, which is most likely to catch any leak or segfault is to create
 
 ### Segfaults and crashes (SIGSEGV)
 
-Use the Option 2 shown above for memory leak checking with Valgrind. It can also find the source of segmentation faults; when Fluent Bit crashes Valgrind will output a stack trace that shows which line of code caused the crash. That information will allow us to fix the issue. This requires the use of **Option 2** where you re-build AWS for Fluent Bit in debug mode. 
+You can use the Option 2 shown above for memory leak checking with Valgrind. It can also find the source of segmentation faults; when Fluent Bit crashes Valgrind will output a stack trace that shows which line of code caused the crash. That information will allow us to fix the issue. This requires the use of **Option 2** where you re-build AWS for Fluent Bit in debug mode. 
 
-Alternatively, if you don't want the overhead of Valgrind, change the entrypoint in the `Dockerfile.debug` to the core file option by un-commenting the lines at the end of the file. 
+#### Debugging with core files and gdb
+
+Alternatively, if you don't want the overhead of Valgrind, change the entrypoint in the `Dockerfile.debug` to the core file option by un-commenting the lines at the end of the file. Then build that Dockerfile with:
+
+```
+docker build -t aws-for-fluent-bit:debug --file Dockerfile.debug .
+```
 
 And then run Fluent Bit with ulimit unlimited and with the `/cores` directory mounted onto your host:
 ```
-docker run --privileged --ulimit core=-1 -v /somehostpath:/cores ...
+docker run --privileged --ulimit core=-1 -v /somehostpath:/cores aws-for-fluent-bit:debug
 ```
 
-When the debug mode enabled Fluent Bit crashes, a core file should be outputted to `/somehostpath`. 
+(You may want to modify the above command to mount a config file and your credentials share folder and etc, what is show here is what is required to get the core dump.)
+
+When the debug mode enabled Fluent Bit crashes, a core file should be outputted to `/somehostpath`. This of course means you must be able to reproduce the crash. 
 
 If you are running the container in EKS/Kubernetes, then you can not set the ulimit at container launch time. This must be set in the Docker systemd unit settings in `/usr/lib/systemd/system/docker.service`. Check that this file has `LimitCORE=infinity` under the `[Service]` section. In Kubernetes, you will still need to make sure the `/cores` directory in Fluent Bit is mounted to some host path to ensure any generated core dump is saved permanently. 
 
@@ -294,6 +302,29 @@ The changes to your deployment yaml might be include the following:
         hostPath:
           path: /var/fluent-bit/core
 ```
+
+Once you have a core file, then you can use `gdb` to read it:
+
+```
+gdb path/to/the/binary path/to/the/core/dump/file
+```
+
+It's important that the binary be the same as the one used to generate the core file. So, you can pull the binary out of the compile debug image:
+
+```
+docker create -ti --name tmp aws-for-fluent-bit:debug
+docker cp tmp:/fluent-bit/bin/fluent-bit .
+docker stop tmp
+docker rm tmp
+```
+
+So then run:
+
+```
+gdb fluent-bit your-core-file
+```
+
+Once you are in `gdb` you can use the `bt` (backtrace) command to see the stack trace from the time of the crash. Or, you can run `thread apply all bt full` to page through the stack for each thread. 
 
 ### Log Loss
 
