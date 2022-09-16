@@ -1,6 +1,6 @@
 # Bar Constants
 BAR_ACCEPTED_PERCENT_DUPLICATION = 40
-BAR_ACCEPTED_PERCENT_LOSS = 10
+BAR_ACCEPTED_PERCENT_LOSS = 50
 
 # The following function will assess the test results
 # If the test results are below standard, return false,
