@@ -8,46 +8,6 @@ phases:
       - yum install jq -y
   build:
     commands:
-      - |
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        declare -A os_releases=( ["windows2019"]="ltsc2019" ["windows2022"]="ltsc2022")
-        
-        # Push the image to ECR with corresponding architecture as the tag.
-        aws ecr get-login-password --region ${AWS_REGION}| docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
-        
-        # Find the applicable windows versions.
-        cd $CODEBUILD_SRC_DIR
-        versions=$(cat windows.versions | jq -c -r '.windows[].version')
-        latest_version=""
-        
-        # Create and push the image manifests.
-        while read -r version; do
-          if [[ "$latest_version" < "$version" ]]; then
-            latest_version=$version
-          fi
-          
-          docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${version}-windowsservercore \
-          ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${version}-${os_releases[windows2019]} \
-          ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${version}-${os_releases[windows2022]}
-        
-          # Sanity check the manifest.
-          docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${version}-windowsservercore
-          
-          # Push manifest to ECR.
-          docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${version}-windowsservercore
-        done <<< "$(echo "$versions")"
-        
-        # Create and push manifest for latest image.
-        docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:windowsservercore-latest \
-        ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${latest_version}-${os_releases[windows2019]} \
-        ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${latest_version}-${os_releases[windows2022]}
-        
-        docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:windowsservercore-latest
-        
-        # Create and push manifest for stable image.
-        stable_version=$(cat AWS_FOR_FLUENT_BIT_STABLE_VERSION)
-        docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:windowsservercore-stable \
-        ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${stable_version}-${os_releases[windows2019]} \
-        ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${stable_version}-${os_releases[windows2022]}
-        
-        docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-windows:windowsservercore-stable
+      # Create and push Windows manifest.
+      # The required variables would be passed on via CodeBuild Environment variables.
+      - './scripts/create_windows_manifest.sh'
