@@ -21,6 +21,10 @@
     .PARAMETER Action
     Specifies the Action to be performed. Should be amongst "Create","Setup" or "Delete".
 
+    .PARAMETER Platform
+    [Optional] Specifies the Windows version to be used in the stack name. Should be amongst "windows2019" or "windows2022".
+    Defaults to windows2019.
+
     .INPUTS
     None. You cannot pipe objects to this script.
 
@@ -29,7 +33,7 @@
 
     .EXAMPLE
     PS> .\manage_test_resources.ps1 -Action Create
-    Creates the CFN stack for the test resources.
+    Creates the CFN stack for the test resources with stack name corresponding to WS2019.
 
     .EXAMPLE
     PS> .\manage_test_resources.ps1 -Action Setup
@@ -42,7 +46,11 @@
 Param(
     [Parameter(Mandatory=$true)]
     [ValidateSet("Create","Setup","Delete")]
-    [string]$Action
+    [string]$Action,
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("windows2019","windows2022")]
+    [string]$Platform = "windows2019"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -51,7 +59,7 @@ $ErrorActionPreference = 'Stop'
 $ResourcesRoot = "${PSScriptRoot}"
 $Region = "us-west-2"
 $Architecture = "x86-64"
-$StackName = "integ-test-fluent-bit-windows-${Architecture}"
+$StackName = "integ-test-fluent-bit-${Platform}-${Architecture}"
 $MaxRetries = 10
 
 Function Create-TestResources {
