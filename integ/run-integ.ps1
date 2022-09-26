@@ -24,6 +24,9 @@
     .PARAMETER FluentBitImage
     [Optional] Specifies the fluent-bit image which needs to be validated. Defaults to "amazon/aws-for-fluent-bit:windowsservercore-latest"
 
+    .PARAMETER Platform
+    [Optional] Specifies the WindowsVersion for which we are running integration tests. Defaults to "windows2019".
+
     .INPUTS
     None. You cannot pipe objects to this script.
 
@@ -32,7 +35,11 @@
 
     .EXAMPLE
     PS> .\run-integ.ps1 -TestPlugin cicd
-    Runs all the integration tests as would be required in CICD.
+    Runs all the integration tests as would be required in CICD for Windows Server 2019.
+
+    .EXAMPLE
+    PS> .\run-integ.ps1 -TestPlugin cicd -Platform windows2022
+    Runs all the integration tests as would be required in CICD for Windows Server 2022.
 
     .EXAMPLE
     PS> .\run-integ.ps1 -TestPlugin cloudwatch_logs
@@ -49,7 +56,11 @@ Param(
 
     [Parameter(Mandatory=$false)]
     [ValidateNotNullOrEmpty()]
-    [string]$FluentBitImage = "amazon/aws-for-fluent-bit:windowsservercore-latest"
+    [string]$FluentBitImage = "amazon/aws-for-fluent-bit:windowsservercore-latest",
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("windows2019","windows2022")]
+    [string]$Platform = "windows2019"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -67,6 +78,7 @@ $env:AWS_FOR_FLUENT_BIT_CONTAINER_NAME = "aws-for-fluent-bit-$($env:TAG)"
 
 # Windows specific settings.
 $env:ARCHITECTURE= "x86-64"
+$env:LOG_GROUP_NAME="fluent-bit-integ-test-$Platform-$env:ARCHITECTURE"
 $env:VOLUME_MOUNT_CONTAINER="C:/out"
 $env:ValidateS3Dockerfile = "Dockerfile.windows"
 # For Windows, we need to specify a static IP address for the fluent-bit container.
@@ -267,8 +279,6 @@ Function Test-CloudWatch {
         [ValidateNotNullOrEmpty()]
         [switch]$CorePlugin
     )
-
-    $env:LOG_GROUP_NAME="fluent-bit-integ-test-amd64"
     $DockerComposeTestFilePath = "${IntegTestRoot}/test_cloudwatch/docker-compose.windows.test.yml"
     $DockerComposeValidateFilePath = "${IntegTestRoot}/test_cloudwatch/docker-compose.validate.yml"
 
@@ -293,8 +303,6 @@ Function Clean-CloudWatch {
     .SYNOPSIS
     Cleans the cloudwatche resources used during the integration tests.
     #>
-
-    $env:LOG_GROUP_NAME="fluent-bit-integ-test-amd64"
     $DockerComposeTestFilePath = "${IntegTestRoot}/test_cloudwatch/docker-compose.clean.yml"
 
     # Run the tests which would clean Cloudwatch logs. Once this ends, perform "docker-compose down".
@@ -465,8 +473,8 @@ switch ($TestPlugin) {
 
     "kinesis" {
         # Create and setup test environment.
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-Kinesis
@@ -474,8 +482,8 @@ switch ($TestPlugin) {
 
     "kinesis_streams" {
         # Create and setup test environment.
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-Kinesis -CorePlugin
@@ -483,8 +491,8 @@ switch ($TestPlugin) {
 
     "firehose" {
         # Create and setup test environment.
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-Firehose
@@ -492,8 +500,8 @@ switch ($TestPlugin) {
 
     "kinesis_firehose" {
         # Create and setup test environment.
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-Firehose -CorePlugin
@@ -501,15 +509,15 @@ switch ($TestPlugin) {
 
     "s3" {
         # Create and setup test environment.
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-S3
     }
 
     "clean-s3" {
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
         Clean-S3
     }
 
@@ -520,8 +528,8 @@ switch ($TestPlugin) {
         Test-CloudWatch -CorePlugin
         Clean-CloudWatch
 
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create"
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Create -Platform $Platform"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
 
         Clean-S3
         Test-Kinesis
@@ -542,8 +550,8 @@ switch ($TestPlugin) {
     }
 
     "delete" {
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Setup -Platform $Platform"
         Clean-S3
-        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Delete"
+        Invoke-Expression "$IntegTestRoot\resources\manage_test_resources.ps1 -Action Delete -Platform $Platform"
     }
 }
