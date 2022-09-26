@@ -71,7 +71,11 @@ Param(
 
     [Parameter(Mandatory=$false)]
     [ValidateNotNullOrEmpty()]
-    [string]$BuildNumber = "1"
+    [string]$BuildNumber = "1",
+
+    [Parameter(Mandatory=$false)]
+    [ValidateNotNullOrEmpty()]
+    [string]$RepositoryName = "amazon/aws-for-fluent-bit"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -109,7 +113,7 @@ $ECSConfigArchiveName = "ecs.zip"
 $AWSForFluentBitVersionFilename = "AWS_FOR_FLUENT_BIT_VERSION"
 $EntrypointScriptName = "entrypoint.ps1"
 $Dockerfile = "Dockerfile.windows"
-$ecrImageName = "${AccountId}.dkr.ecr.${Region}.amazonaws.com/amazon/aws-for-fluent-bit-windows:${AWSForFluentBitVersion}-${BASEIMAGETAG}"
+$ecrImageName = "${AccountId}.dkr.ecr.${Region}.amazonaws.com/${RepositoryName}:${AWSForFluentBitVersion}-${BASEIMAGETAG}"
 
 # Create all the directories
 Write-Host "Creating all the required directories"
