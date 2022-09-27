@@ -40,7 +40,7 @@ class TestingResources(core.Stack):
         )
         capacity_provider = ecs.AsgCapacityProvider(self, "asgCapacityProvider",
             auto_scaling_group=asg,
-            enable_managed_termination_protection=False
+            enable_managed_termination_protection=True
         )
         cluster.add_asg_capacity_provider(capacity_provider)
         cluster.apply_removal_policy(core.RemovalPolicy.DESTROY)
