@@ -1,0 +1,61 @@
+{
+    "family": "remote-core-file-ec2",
+    "taskRoleArn": "arn:aws:iam::111111111111:role/ecs_task_role",
+    "executionRoleArn": "arn:aws:iam::111111111111:role/ecsTaskExecutionRole",
+    "containerDefinitions": [{
+            "essential": true,
+            "image": "111111111111.dkr.ecr.us-west-2.amazonaws.com/aws-for-fluent-bit:debug",
+            "name": "log_router",
+            "firelensConfiguration": {
+                "type": "fluentbit"
+            },
+            "mountPoints": [{
+                "containerPath": "/cores",
+                "sourceVolume": "core-dump"
+            }],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "firelens-container",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "firelens"
+                }
+            },
+            "memoryReservation": 50,
+            "linuxParameters": {
+                "initProcessEnabled": true
+            }
+        },
+        {
+            "essential": true,
+            "image": "111111111111.dkr.ecr.us-west-2.amazonaws.com/app-image:latest",
+            "name": "app",
+            "logConfiguration": {
+                "logDriver": "awsfirelens",
+                "options": {
+                    "Name": "cloudwatch_logs",
+                    "region": "us-west-2",
+                    "log_group_name": "remote-core-dump",
+                    "auto_create_group": "true",
+                    "log_stream_prefix": "firelens-container-",
+                    "retry_limit": "2"
+                }
+            },
+            "memoryReservation": 100,
+            "ulimits": [
+                {
+                    "hardLimit": -1,
+                    "softLimit": -1,
+                    "name": "core"
+                }
+            ]
+        }
+    ],
+    "volumes": [{
+        "name": "core-dump",
+        "host": {
+            "sourcePath": "/var/fluentbit/cores"
+        }
+    }]
+}
