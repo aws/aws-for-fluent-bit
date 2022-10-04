@@ -1,4 +1,14 @@
 # Changelog
+### 2.28.2
+This release includes:
+* Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
+
+Compared to `2.28.1` this release adds:
+* Bug - Stop trace_error from truncating the OpenSearch API call response [fluentbit:5788](https://github.com/fluent/fluent-bit/pull/5788)
+
 ### 2.28.1
 This release includes:
 * Fluent Bit [1.9.8](https://fluentbit.io/announcements/v1.9.8/)
