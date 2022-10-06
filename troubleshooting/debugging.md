@@ -6,6 +6,7 @@
     - [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs)
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
+    - [invalid JSON message, skipping](#invalid-json-message)
 - [Basic Techniques](#basic-techniques)
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
@@ -89,6 +90,41 @@ When the storage is full the inputs will be paused and you will get warnings lik
 ```
 
 Search for "overlimit" in the Fluent Bit logs to find the paused and resume messages about storage limits. These can be found in the code in [`flb_input_chunk.c`](https://github.com/fluent/fluent-bit/blob/master/src/flb_input_chunk.c#L1267). 
+
+#### invalid JSON message
+
+Users who followed [this tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection) or similar to send logs to the TCP input often see message like:
+
+```
+invalid JSON message, skipping
+```
+
+Or:
+
+```
+[debug] [input:tcp:tcp.0] JSON incomplete, waiting for more data...
+```
+
+These are caused by setting `Format json` in the TCP input. If you see these errors, then your logs are not actually being sent as JSON. Change the format to `none`. 
+
+For example:
+
+```
+[INPUT]
+    Name          tcp
+    Listen        0.0.0.0
+    Port          5170
+# please read docs on Chunk_Size and Buffer_Size: https://docs.fluentbit.io/manual/pipeline/inputs/tcp
+    Chunk_Size    32
+# this number of kilobytes is the max size of single log message that can be accepted
+    Buffer_Size   64
+# If you set this to json you might get error: "invalid JSON message, skipping" if your logs are not actually JSON
+    Format        none
+    Tag           tcp-logs
+# input will stop using memory and only use filesystem buffer after 50 MB
+    Mem_Buf_Limit 50MB
+    storage.type  filesystem 
+```
 
 ### Basic Techniques
 
