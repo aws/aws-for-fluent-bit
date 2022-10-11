@@ -18,6 +18,16 @@ Following this instruction, you will take the integration test for init process 
 
 * Upload config files to S3 and get ARNs.
 
+* Change the integ test CDK python stack to deploy your Fluent Bit init image or a specific tag. If you are testing a custom build, push your image to Amazon ECR. Reference the image you want to test in the stack:
+
+  **example:**
+
+  ```python
+        task_definition.add_container("log_router",
+            # replace with your custom build of init or a specific version
+            image=ecs.ContainerImage.from_registry("public.ecr.aws/aws-observability/aws-for-fluent-bit:init-latest"),
+  ```
+
 * Replace your ARNs in the `/integ_test/integ_test/integ_test_stack.py`.
 
   **example:**
