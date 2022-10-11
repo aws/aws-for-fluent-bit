@@ -38,8 +38,13 @@ RUN yum install -y  \
       --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
       --family cmake
 ENV HOME /home
-RUN /bin/gimme 1.17.6
-ENV PATH ${PATH}:/home/.gimme/versions/go1.17.6.linux.arm64/bin:/home/.gimme/versions/go1.17.6.linux.amd64/bin
+
+# Lock Go Lang version to stable
+RUN /bin/gimme stable; \
+      export GO_STABLE_VERSION=`cat /home/.gimme/versions/stable`; \
+      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.arm64 /home/.gimme/versions/gostable.linux.arm64; \
+      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.amd64 /home/.gimme/versions/gostable.linux.amd64
+ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/versions/gostable.linux.amd64/bin
 RUN go version
 
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
