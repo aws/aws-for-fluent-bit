@@ -1,4 +1,15 @@
 # Changelog
+
+### 2.28.3
+This release includes:
+* Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
+
+Important Note:
+* A security vulnerability was found in [golang](https://alas.aws.amazon.com/ALAS-2022-1635.html) which we use to build our go plugins. This new image builds the go plugins with latest golang and resolves the CVE.
+
 ### 2.28.2
 This release includes:
 * Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
