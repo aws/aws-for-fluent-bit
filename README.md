@@ -89,8 +89,8 @@ AWS for Fluent Bit currently distributes container images for arm64 and amd64 CP
 #### Using the stable tag
 
 A `stable` tag can be trusted that it is the latest version in which there are no high impact bugs in Fluent Bit. A release may be marked as stable if the following rules are all met:
-* It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes
-* No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs of the tail input
+* It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image; we bump stable for CVE fixes in dependencies in the image if the underlying Fluent Bit code is already designated as stable.
+* No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
 
 #### Using the init tag
 
