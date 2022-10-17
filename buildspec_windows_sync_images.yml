@@ -1,0 +1,22 @@
+version: 0.2
+
+# This variable is used to determine if the Sync workflow needs to copy image into the regional ECR.
+# Ensure that first exported variable is always SYNC_IMAGES as that is validated in the Step Function workflow.
+env:
+  exported-variables:
+    - SYNC_IMAGES
+
+phases:
+  install:
+    commands:
+      - echo "Verifies if the Windows images need to be synced from public ECR"
+      - yum update -y && yum upgrade -y
+      - yum install jq -y
+  build:
+    commands:
+      # Validates that the images present in regional ECR are in sync with the images present in public ECR.
+      # It would export a variable SYNC_IMAGES which would be read by subsequent stages.
+      # The execution of those stages (publish-image-to-regional-ecr) depend upon this variable.
+      - cd ./scripts
+      - './sync_windows_images.sh'
+      - SYNC_IMAGES=$(cat SYNC_IMAGES)

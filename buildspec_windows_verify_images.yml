@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Verifies the Windows images in the required registry"
+      - yum update -y && yum upgrade -y
+      - yum install jq -y
+  build:
+    commands:
+      # Validates that the images are present in the registries with the required manifest.
+      # The required variables would be passed on via CodeBuild Environment variables.
+      - cd ./scripts
+      - './verify_windows_images.sh'
