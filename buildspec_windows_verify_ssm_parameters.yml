@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.x
+    commands:
+      - echo "Verifies the SSM parameters for Windows"
+      - yum update -y && yum upgrade -y
+      - yum install jq -y
+  build:
+    commands:
+      # Validates that the SSM parameters are published as required.
+      # The required variables would be passed on via CodeBuild Environment variables.
+      - cd ./scripts
+      - './verify_windows_ssm_parameters.sh'
