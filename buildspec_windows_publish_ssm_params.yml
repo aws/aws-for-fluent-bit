@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.x
+    commands:
+      - echo "Publishing SSM Parameters for Windows"
+      - yum update -y && yum upgrade -y
+      - yum install jq -y
+  build:
+    commands:
+      # Create and push Windows manifest.
+      # The required variables would be passed on via CodeBuild Environment variables.
+      - cd ./scripts
+      - './publish_windows_ssm_parameter.sh'
