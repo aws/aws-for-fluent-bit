@@ -10,4 +10,5 @@ phases:
     commands:
       # Create and push Windows manifest.
       # The required variables would be passed on via CodeBuild Environment variables.
-      - './scripts/create_windows_manifest.sh'
+      - cd ./scripts
+      - './create_windows_manifest.sh'

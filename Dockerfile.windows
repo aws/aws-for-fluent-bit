@@ -47,4 +47,4 @@ LABEL org.opencontainers.image.title="AWS for Fluent Bit" `
 EXPOSE 2020
 
 # Entry point
-CMD Powershell.exe -Command C:\entrypoint.ps1
+CMD ["Powershell.exe", "-Command", "C:\\entrypoint.ps1"]
