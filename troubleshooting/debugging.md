@@ -61,6 +61,8 @@ Even if you see this message, you still have not lost logs yet. Since it will re
 [2022/02/16 20:11:36] [ warn] [engine] chunk '1-1645042288.260516436.flb' cannot be retried: task_id=0, input=tcp.3 > output=cloudwatch_logs.1
 ```
 
+When you see this message, you have lost logs. The other case that indicates log loss is when an input is paused, which is covered in the [overlimit error section](#overlimit-warnings).
+
 #### Tail Permission Errors
 A common error message for ECS FireLens users who are reading log files is the following:
 
