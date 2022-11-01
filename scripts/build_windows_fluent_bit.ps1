@@ -54,7 +54,7 @@ $ErrorActionPreference = 'Stop'
 
 # Constants
 $FlexBisonVersion = "2.5.22"
-$OpenSSLVersion = "3.0.5"
+$OpenSSLVersion = "3.0.7"
 
 # Directory paths
 $BaseDir = "C:\build"
