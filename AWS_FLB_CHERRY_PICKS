@@ -1,2 +1,11 @@
 # Different User Agent for Windows vs Linux
 https://github.com/PettitWesley/fluent-bit.git aws-windows-metrics d6d8c964b2814fe9c631b4f6a01ca4af4409779c
+# Add ECS Filter
+https://github.com/PettitWesley/fluent-bit.git filter-ecs-1_9 be080bd404e372a93a3e654c299690b999249ac8
+# Make ECS Agent introspection API host and port configurable
+https://github.com/PettitWesley/fluent-bit.git filter-ecs-1_9 ddcd65b71d62c4f72af798378de7c6b0a1a2ce42
+# Usability enhancement to prevent filter from continuously outputting errors/warns in the case where there is a container running on a node that is not part of an ECS task
+https://github.com/PettitWesley/fluent-bit.git filter-ecs-1_9 8214007ae2a1b0557f2eca93b70793836f2725fe
+# CMake: Enable ECS Filter On Windows
+https://github.com/PettitWesley/fluent-bit.git aws-filter-windows-1_9 e1805a3329a41a202d20b9bca33c742f89779fd6
+
