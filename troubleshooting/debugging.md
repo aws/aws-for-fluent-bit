@@ -7,6 +7,8 @@
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
     - [invalid JSON message, skipping](#invalid-json-message)
+    - [engine caught signal SIGTERM](#caught-signal-sigterm)
+    - [engine caught signal SIGSEGV](#caught-signal-sigsegv)
 - [Basic Techniques](#basic-techniques)
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
@@ -135,6 +137,30 @@ For example:
     Mem_Buf_Limit 50MB
     storage.type  filesystem 
 ```
+
+#### caught signal SIGTERM
+
+You may see that Fluent Bit exited with one of its last logs as:
+
+```
+[engine] caught signal (SIGTERM)
+```
+
+This means that Fluent Bit received a SIGTERM. This means that Fluent Bit was requested to stop; SIGTERM is associated with graceful shutdown. Fluent Bit will be sent a SIGTERM when your container orchestrator/runtime wants to stop its container/task/pod. 
+
+If you see this in your logs and you are troubleshooting a stopped task/pod, this log indicates that Fluent Bit did not cause the shutdown. If there is another container in your task/pod check if it exited unexpectedly. 
+
+If you are an Amazon ECS FireLens user and you see your task status as:
+
+```
+STOPPED (Essential container in task exited)
+```
+
+And Fluent Bit logs show this SIGTERM message, then this indicates that Fluent Bit did not cause the task to stop. One of the other containers exited (and was essential), thus ECS chose to stop the task and sent a SIGTERM to the remaining containers in the task. 
+
+#### caught signal SIGSEGV
+
+If you see a `SIGSEGV` in your Fluent Bit logs, then unfortunately you have encountered a bug! This means that Fluent Bit crashed due to a segmentation fault, an internal memory access issue. Please cut us an issue on GitHub, and consider checking out the [SIGSEGV debugging section](#segfaults-and-crashes-sigsegv) of this guide. 
 
 ### Basic Techniques
 
