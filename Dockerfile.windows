@@ -1,12 +1,13 @@
 # escape=`
 
 ARG TAG=ltsc2019
-ARG AWS_FOR_FLUENT_BIT_VERSION
 
 #
 # Runtime Image - Windows Server Core
 #
 FROM mcr.microsoft.com/windows/servercore:$TAG as runtime
+
+ARG AWS_FOR_FLUENT_BIT_VERSION
 
 WORKDIR C:/
 
@@ -14,13 +15,14 @@ ADD fluent-bit /fluent-bit
 
 ADD fluent-bit-plugins /fluent-bit
 
-ADD ecs /ecs
+ADD ecs_windows_forward_daemon /ecs_windows_forward_daemon
 
 ADD certs /certs
 
-ADD AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
-
 ADD entrypoint.ps1 /entrypoint.ps1
+
+# Add the version file.
+RUN Powershell -Command New-Item -Path C:/ -Name AWS_FOR_FLUENT_BIT_VERSION -ItemType "file" -Value $env:AWS_FOR_FLUENT_BIT_VERSION
 
 # Set the environment variable
 RUN setx /M PATH "%PATH%;C:\fluent-bit\bin"
