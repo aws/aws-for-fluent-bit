@@ -21,10 +21,6 @@ IMAGE_SHA_MATCHED="FALSE"
 AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
-docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
-tag_array=(`echo ${docker_hub_image_tags}`)
-AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
-
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
 
@@ -90,6 +86,19 @@ ARCHITECTURES=("amd64" "arm64")
 
 # This variable is used in the image tag
 init="init"
+
+# Sets AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB variable with the latest version available in dockerhub.
+get_latest_dockerhub_version() {
+    username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region ${1} | jq -r '.SecretString | fromjson.username')"
+    password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region ${1} | jq -r '.SecretString | fromjson.password')"
+    payload="{\"username\": \"${username}\",\"password\": \"${password}\"}"
+    token=$(curl -s -X POST -H "Content-Type: application/json" -d "${payload}"  https://hub.docker.com/v2/users/login | jq -r '.token')
+    auth="Authorization: Bearer ${token}"
+    docker_hub_image_tags=$(curl -s -S -H "${auth}" 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
+    tag_array=(`echo ${docker_hub_image_tags}`)
+    AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
+    export AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB
+}
 
 docker_hub_login() {
 	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
@@ -235,6 +244,8 @@ sync_latest_image() {
 	region=${1}
 	account_id=${2}
 
+	get_latest_dockerhub_version ${region}
+
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
@@ -326,6 +337,8 @@ sync_latest_image() {
 
 verify_ssm() {
 	is_sync_task=${2:-false}
+
+	get_latest_dockerhub_version ${1}
 
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
@@ -419,6 +432,8 @@ verify_ecr() {
 	region=${1}
 	account_id=${2}
 	is_sync_task=${3:-false}
+
+	get_latest_dockerhub_version ${1}
 
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
