@@ -269,8 +269,8 @@ Copy-Item -Path "${AWSForFluentBitRootDir}\THIRD-PARTY" -Destination "${StagingD
 # Compress the folder
 Compress-Archive -Path "${StagingDirectory}\*" -Destination "${AWSForFluentBitRootDir}\build\windows\fluent-bit.zip"
 
-# Compress ecs folder which needs to be added to the image
-Compress-Archive -Path "${AWSForFluentBitRootDir}\ecs\*" -Destination "${AWSForFluentBitRootDir}\build\windows\ecs.zip"
+# Compress ecs_windows_forward_daemon folder which needs to be added to the image
+Compress-Archive -Path "${AWSForFluentBitRootDir}\ecs_windows_forward_daemon\*" -Destination "${AWSForFluentBitRootDir}\build\windows\ecs_windows_forward_daemon.zip"
 
 # Copy the version of aws-for-fluent-bit
 Copy-Item -Path "${AWSForFluentBitRootDir}\AWS_FOR_FLUENT_BIT_VERSION" -Destination "${AWSForFluentBitRootDir}\build\windows\AWS_FOR_FLUENT_BIT_VERSION"
