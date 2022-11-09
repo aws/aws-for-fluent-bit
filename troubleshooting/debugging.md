@@ -31,6 +31,8 @@
     - [rewrite_tag filter and cycles in the log pipeline](#rewrite_tag-filter-and-cycles-in-the-log-pipeline)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
     - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
+    - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
+    - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
 
 
 
@@ -418,3 +420,36 @@ The following configuration may be more efficient in terms of memory consumption
     Chunk_Size 32 # allocation size each time buffer needs to be increased
 ```
 
+#### kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records
+
+As noted in the [duplication section of this guide](#throttling-log-duplication--ordering), unfortunately Fluent Bit can sometimes upload the same record multiple times due to retries that partially succeeded. While this is a problem with Fluent Bit outputs in general, it is especially a problem for Firehose and Kinesis since their service APIs allow a request to upload data to partially succeed:
+- [PutRecords](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_PutRecords.html)
+- [PutRecordBatch](https://docs.aws.amazon.com/firehose/latest/APIReference/API_PutRecordBatch.html)
+
+Each API accepts 500 records in a request, and some of these records may be uploaded to the stream and some may fail. As noted in the [duplication section of this guide](#throttling-log-duplication--ordering), when a chunk partially succeeds, Fluent Bit must retry the entire chunk. That retry could again fail with partial success, leading to another retry (up to your configured `Retry_Limit`). Thus, log duplication can be common with these outputs. 
+
+When a batch partially fails, you will get a message like:
+
+```
+[error] [output:kinesis_streams:kinesis_streams.0] 132 out of 500 records failed to be delivered, will retry this batch, {stream name}
+```
+
+Or:
+
+```
+[error] [output:kinesis_firehose:kinesis_firehose.0] 6 out of 500 records failed to be delivered, will retry this batch, {stream name}
+```
+
+To see the reason why each individual record failed, please [enable debug logging](#enable-debug-logging). These outputs will print the exact error message for each record as a debug log:
+- [kinesis_firehose API response processing code](https://github.com/fluent/fluent-bit/blob/1.8/plugins/out_kinesis_firehose/firehose_api.c#L702)
+- [kinesis_streams API response processing code](https://github.com/fluent/fluent-bit/blob/1.8/plugins/out_kinesis_streams/kinesis_api.c#L767)
+
+The most common cause of failures for kinesis and firehose is a `Throughput Exceeded Exception`. This means you need to increase the limits/number of streams for your Firehose or Kinesis stream. 
+- [Kinesis Service Throttling](https://aws.amazon.com/premiumsupport/knowledge-center/kinesis-data-stream-throttling/)
+- [Firehose Service FAQ](https://aws.amazon.com/kinesis/data-firehose/faqs/)
+
+#### Always use multiline in the tail input
+
+Fluent Bit supports a [multiline filter](https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace) which can concat logs. 
+
+However, Fluent Bit also supports [multiline parsers in the tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail#multiline-core-v1.8) directly. If your logs are ingested via tail, you should always use the multiple settings in the tail input. That will be much more performant. Fluent Bit can concat the log lines as it reads them. This is more efficient than ingesting them as individual records and then using the filter to re-concat them. 
