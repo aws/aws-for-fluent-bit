@@ -33,7 +33,7 @@
     - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
     - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
-
+    - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
 
 
 ### Understanding Error Messages
@@ -388,6 +388,8 @@ The AWS team understands that the current behavior of the core log pipeline is n
 * [Allow output plugins to configure a max chunk size: fluent-bit#1938](https://github.com/fluent/fluent-bit/issues/1938)
 * [FLB_THROTTLE return for outputs: fluent-bit#4293](https://github.com/fluent/fluent-bit/issues/4293)
 
+NOTE: If you are using the tail input and your `Path` pattern matches rotated log files, [this misconfiguration can lead to duplicated logs](#tail-input-duplicates-logs-because-of-rotation). 
+
 #### Recommendations for throttling
 
 * If you are using Kinesis Streams of Kinesis Firehose, scale your stream to handle your max required throughput
@@ -453,3 +455,27 @@ The most common cause of failures for kinesis and firehose is a `Throughput Exce
 Fluent Bit supports a [multiline filter](https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace) which can concat logs. 
 
 However, Fluent Bit also supports [multiline parsers in the tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail#multiline-core-v1.8) directly. If your logs are ingested via tail, you should always use the multiple settings in the tail input. That will be much more performant. Fluent Bit can concat the log lines as it reads them. This is more efficient than ingesting them as individual records and then using the filter to re-concat them. 
+
+#### Tail input duplicates logs because of rotation
+
+As noted in the [Fluent Bit upstream docs](https://docs.fluentbit.io/manual/pipeline/inputs/tail#file-rotation), your tail `Path` patterns can not match rotated log files. If it does, the contents of the log file may be read a second time once its name is changed.
+
+For example, if you have this tail input:
+
+```
+[INPUT]
+    Name                tail
+    Tag                 RequestLogs
+    Path                /logs/request.log*
+    Refresh_Interval    1
+```
+
+Assume that after the `request.log` file reaches its max size it is rotated to `request.log1` and then new logs are written to a new file called `request.log`. This is the behavior of the [log4j DefaultRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DefaultRolloverStrategy).
+
+If this is how your app writes log files, then you will get duplicate log events with this configuration. Because the `Path` pattern matches the same log file both before and after it is rotated. Fluent Bit may read the `request.log1` as a new log file and thus its contents can be sent twice. In this case, the solution is to change to:
+
+```
+Path                /logs/request.log
+```
+
+In other cases, the original config would be correct. For example, assume your app produces first a log file `request.log` and then next creates and writes new logs to a new file named `request.log1` and then next `request.log2`. And then when the max number of files are reached, the original `request.log` is deleted and then a new `request.log` is written. If that is the scenario, then the original Path pattern with a wildcard at the end is correct since it is necessary to match all log files where new logs are written. This method of log rotation is the behavior of the [log4j DirectWriteRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DirectWriteRolloverStrategy) where there is no file renaming. 
