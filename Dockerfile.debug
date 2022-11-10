@@ -118,6 +118,7 @@ RUN yum upgrade -y \
           valgrind \
           libyaml \
           gdb \
+          yum-utils \
           nc && rm -fr /var/cache/yum
 
 COPY --from=builder /fluent-bit /fluent-bit

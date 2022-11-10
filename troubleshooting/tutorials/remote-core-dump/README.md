@@ -313,3 +313,34 @@ Once inside of gdb, the following commands will be useful:
 These are the commands that our team typically uses to pull information out of a core file. Once you know the state of the stack in each thread, you can cross reference this with the code and generally determine what caused the crash.
 
 For a full reference for GDB, see its [man page](https://linux.die.net/man/1/gdb).
+
+### [Optional] Missing Separate debuginfos
+
+On startup gdb may report `Missing separate debuginfos, use ...` to indicate that debug symbols are not present, but can be made available. The command after "use" can be executed to install those missing debug symbols to provide additional context while browsing the core file.
+
+Example
+
+```
+gdb <binary-file> <core-dump-file>
+...
+Missing separate debuginfos, use: debuginfo-install bzip2-libs-1.0.6-13.amzn2.0.3.aarch64 elfutils-libelf-0.176-2.amzn2.aarch64
+(gdb) q
+bash 4.2# debuginfo-install bzip2-libs-1.0.6-13.amzn2.0.3.aarch64 elfutils-libelf-0.176-2.amzn2.aarch64
+...
+Transaction Summary
+=============================================================================
+Install  5 Packages
+
+Total download size: 25 M
+Installed size: 156 M
+Is this ok [y/d/N]: y
+...
+Installed:
+  bzip2-debuginfo.aarch64 0:1.0.6-13.amzn2.0.3                               
+  elfutils-debuginfo.aarch64 0:0.176-2.amzn2                                 
+  glibc-debuginfo.aarch64 0:2.26-62.amzn2                                    
+  yum-plugin-auto-update-debug-info.noarch 0:1.1.31-46.amzn2.0.1             
+  zlib-debuginfo.aarch64 0:1.2.7-19.amzn2.0.2                                
+
+Complete!
+```
