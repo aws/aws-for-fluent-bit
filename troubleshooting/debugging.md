@@ -9,6 +9,10 @@
     - [invalid JSON message, skipping](#invalid-json-message)
     - [engine caught signal SIGTERM](#caught-signal-sigterm)
     - [engine caught signal SIGSEGV](#caught-signal-sigsegv)
+    - [Log4j TCP Appender Write Failure](#log4j-tcp-appender-write-failure)
+        - [Mitigation 1: Enable Workers for all outputs](#mitigation-1-enable-workers-for-all-outputs)
+        - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
+        - [Mitigation 3: Log4J Failover to a File](#mitigation-3-log4j-failover-to-a-file)
 - [Basic Techniques](#basic-techniques)
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
@@ -162,6 +166,59 @@ And Fluent Bit logs show this SIGTERM message, then this indicates that Fluent B
 #### caught signal SIGSEGV
 
 If you see a `SIGSEGV` in your Fluent Bit logs, then unfortunately you have encountered a bug! This means that Fluent Bit crashed due to a segmentation fault, an internal memory access issue. Please cut us an issue on GitHub, and consider checking out the [SIGSEGV debugging section](#segfaults-and-crashes-sigsegv) of this guide. 
+#### Log4j TCP Appender Write Failure
+
+Many customers use [log4j](https://logging.apache.org/log4j/2.x/manual/cloud.html) to emit logs, and use the TCP appender to write to a [Fluent Bit TCP input](https://docs.fluentbit.io/manual/pipeline/inputs/tcp). ECS customers can follow this [ECS Log Collection Tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection). 
+
+Unfortunately, log4j can sometimes fail to write to the TCP socket and you may get an error like:
+
+```
+2022-09-05 14:18:49,694 Log4j2-TF-1-AsyncLogger[AsyncContext@6fdb1f78]-1 ERROR Unable to write to stream TCP:localhost:5170 for appender ApplicationTcp org.apache.logging.log4j.core.appender.AppenderLoggingException: Error writing to TCP:localhost:5170 after reestablishing connection for localhost/127.0.0.1:5170
+```
+
+Or:
+
+```
+Caused by: java.net.SocketException: Connection reset by peer (Write failed)
+```
+
+If this occurs, your first step is to check if it is simply a misconfiguration. Ensure you have configured a Fluent Bit TCP input for the same port that log4j is using. 
+
+Unfortunately, AWS has received occasional reports that log4j TCP appender will fail randomly in a previously working setup. AWS is tracking reports of this problem here: https://github.com/aws/aws-for-fluent-bit/issues/294
+
+While we can not prevent connection failures from occurring, we have found several mitigations.
+
+##### Mitigation 1: Enable Workers for all outputs
+
+AWS testing has found that TCP input throughput is maximized when Fluent Bit is performing well. If you enable at least one worker for all outputs, this ensures your outputs each have their own thread(s). This frees up the main Fluent Bit scheduler/input thread to focus on the inputs. 
+
+It should be noted that starting in Fluent Bit 1.9+ most outputs have [1 worker enabled by default](https://github.com/fluent/fluent-bit/commit/08e90f54d3b1dbfedcb963e9a293386dd682addf). This means that if you do not specify `workers` in your output config you will still get 1 worker enabled. You must set `workers 0` to disable workers. All AWS outputs have 1 worker enabled by default since v1.9.4.
+
+##### Mitigation 2: Log4J Failover to STDOUT with Appender Pattern
+
+If the TCP plugin fails for Fluent Bit, you can configure a failover appender. The Log4J XML below configures logs to be retried to STDOUT failover. It is difficult to search stdout for these failed logs if/because STDOUT is cluttered with other non log4j logs. You might prefer to have a special pattern for logs that failover and go to stdout:
+
+```
+<Console name="STDOUT" target="SYSTEM_OUT" ignoreExceptions="false">
+    <PatternLayout>
+    <Pattern> {"logtype": "tcpfallback", "message": "%d %p %c{1.} [%t] %m%n" }</Pattern>
+    </PatternLayout>
+</Console>
+```
+
+You can then configure this appender as the [failover appender](https://logging.apache.org/log4j/2.x/manual/appenders.html#FailoverAppender):
+
+```
+<Failover name="Failover" primary="RollingFile">
+    <Failovers>
+        <AppenderRef ref="Console"/>
+    </Failovers>
+</Failover>
+```
+
+##### Mitigation 3: Log4J Failover to a File
+
+Alternatively, you can use a [failover appender](https://logging.apache.org/log4j/2.x/manual/appenders.html#FailoverAppender) which just writes failed logs to a file. A Fluent Bit [Tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) can then collect the failed logs.
 
 ### Basic Techniques
 
