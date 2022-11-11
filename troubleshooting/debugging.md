@@ -34,6 +34,8 @@
     - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
+- [Fluent Bit Windows containers](#fluent-bit-windows-containers)
+    - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 
 
 ### Understanding Error Messages
@@ -479,3 +481,15 @@ Path                /logs/request.log
 ```
 
 In other cases, the original config would be correct. For example, assume your app produces first a log file `request.log` and then next creates and writes new logs to a new file named `request.log1` and then next `request.log2`. And then when the max number of files are reached, the original `request.log` is deleted and then a new `request.log` is written. If that is the scenario, then the original Path pattern with a wildcard at the end is correct since it is necessary to match all log files where new logs are written. This method of log rotation is the behavior of the [log4j DirectWriteRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DirectWriteRolloverStrategy) where there is no file renaming. 
+
+### Fluent Bit Windows containers
+
+#### Networking issue with Windows containers when using `async` DNS resolution by plugins
+There are Fluent Bit core plugins which are using the default [async mode for performance improvement](https://github.com/fluent/fluent-bit/blob/master/DEVELOPER_GUIDE.md#concurrency). Ideally when there are multiple nameservers present in a network namespace, the DNS resolver should retry with other nameservers if it receives failure response from the first one. However, Fluent Bit version 1.9 had a bug wherein the DNS resolution failed after first failure. The Fluent Bit Github issue link is [here](https://github.com/fluent/fluent-bit/issues/5862).
+
+This is an issue for Windows containers running in `default` network where the first DNS server is the one used only for DNS resolution within container network i.e. resolving other containers connected on the network. Therefore, all other DNS queries fail with the first nameserver.
+
+To work around this issue, we suggest using the following option so that system DNS resolver is used by Fluent Bit which works as expected.
+```
+net.dns.mode LEGACY
+```

@@ -18,6 +18,7 @@
         - [Amazon ECR](#amazon-ecr)
 - [Plugins](#plugins)
 - [Using the AWS Plugins outside of a container](#using-the-aws-plugins-outside-of-a-container)
+- [Running aws-for-fluent-bit Windows containers](#running-aws-for-fluent-bit-windows-containers)
 - [Development](#development)
     - [Releasing](#releasing)
     - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
@@ -34,7 +35,7 @@ The version of the AWS for Fluent Bit image is not linked to the version of Flue
 We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. An update to the patch version indicates backwards compatible bug fixes, a minor version change indicates new backwards compatible functionality, and a major version change indicates backwards incompatible changes.
 
 The AWS for Fluent Bit image includes the following contents:
-* A base linux image (currently Amazon Linux)
+* A base image (currently Amazon Linux or Windows Server Core 2019 or Windows Server Core 2022)
 * Fluent Bit
 * Several Fluent Bit Go Plugins
 
@@ -80,21 +81,34 @@ If you think you’ve found a potentially sensitive security issue, please do no
 
 ### Public Images
 
-Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version. Deploying `latest` to prod without going through a test stage first is not recommended.
+#### Linux Images
+Each release updates the `latest` tag and adds a tag for the version of the image. The `stable` tag is also available which marks a release as the latest stable version.
 
+#### Windows Images
+For Windows images, we update the `windowsservercore-latest` tag and add a tag as `<VERSION>-windowsservercore`. The stable tag is available as `windowsservercore-stable`. We update all the supported versions each month when [Microsoft releases the latest security
+patches for Windows](https://support.microsoft.com/en-gb/topic/windows-server-container-update-history-23c939c5-3ca5-3a16-27b8-d18e00d2408a).  
+
+
+**Note:** Deploying `latest`/`windowsservercore-latest` to prod without going through a test stage first is not recommended.
 #### arm64 and amd64 images
 
 AWS for Fluent Bit currently distributes container images for arm64 and amd64 CPU architectures. Our images all use [mutli-archictecture tags](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html). For example, this means that if you pull the `latest` tag on a Graviton instance, you would get the arm64 image build. 
 
+For Windows, [we release images](#windows-images) only for amd64 CPU architecture of the following Windows releases-
+- Windows Server 2019
+- Windows Server 2022
+
 #### Using the stable tag
 
-A `stable` tag can be trusted that it is the latest version in which there are no high impact bugs in Fluent Bit. A release may be marked as stable if the following rules are all met:
+A `stable`/`windowsservercore-stable` tag can be trusted that it is the latest version in which there are no high impact bugs in Fluent Bit. A release may be marked as stable if the following rules are all met:
 * It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image; we bump stable for CVE fixes in dependencies in the image if the underlying Fluent Bit code is already designated as stable.
 * No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
 
 #### Using the init tag
 
 The `init` tags indicate that an image contains init process and supports multi-config. Init tag is used in addition to our other tags, e.g. `aws-for-fluent-bit:init-latest` means this is a latest released image supports multi-config. For more information about the usage of multi-config please see our [use case guide](https://github.com/aws/aws-for-fluent-bit/blob/mainline/use_cases/init-process-for-fluent-bit/README.md) and [FireLens example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/multi-config-support).
+
+Note: Windows images with init tag are not available at the moment.
 
 #### Using SSM to find available versions
 
@@ -111,7 +125,9 @@ Example output:
 ```
 [
     "/aws/service/aws-for-fluent-bit/latest"
+    "/aws/service/aws-for-fluent-bit/windowsservercore-latest"
     "/aws/service/aws-for-fluent-bit/2.0.0"
+    "/aws/service/aws-for-fluent-bit/2.0.0-windowsservercore"
 ]
 ```
 
@@ -145,7 +161,9 @@ Parameters:
 
 #### Using image tags
 
-You should lock your deployments to a specific version tag. We guarantee that these tags will be immutable- once they are released the will not change.
+You should lock your deployments to a specific version tag. We guarantee that these tags will be immutable- once they are released the will not change. 
+Windows images will be updated each month to include the latest security patches in the base layers but the contents of the image will not change in a tag. 
+
 
 ##### Amazon ECR Public Gallery
 
@@ -197,6 +215,15 @@ We currently bundle the following projects in this image:
 You can use the AWS Fluent Bit plugins with [td-agent-bit](https://docs.fluentbit.io/manual/installation/supported-platforms).
 
 We provide a [tutorial](examples/fluent-bit/systems-manager-ec2/) on using SSM to configure instances with td-agent-bit and the plugins.
+
+### Running `aws-for-fluent-bit` Windows containers
+You can run `aws-for-fluent-bit` Windows containers using the image tags as specified under [Windows Images section](#windows-images). These are distributed as multi-arch images with the manifests for the supported Windows releases as specified above.
+
+For more details about running Fluent Bit Windows containers in Amazon EKS, please visit our [blog post](https://aws.amazon.com/blogs/containers/centralized-logging-for-windows-containers-on-amazon-eks-using-fluent-bit/).
+
+For more details about running Fluent Bit Windows containers in Amazon ECS, please visit our [blog post](https://aws.amazon.com/blogs/containers/centralized-logging-for-windows-containers-on-amazon-ecs-using-fluent-bit/). For running Fluent Bit as a Amazon ECS Service using `daemon` scheduling strategy, please visit our Amazon ECS [tutorial](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/tutorial-deploy-fluentbit-on-windows.html). For more details about using the AWS provided default configurations for Amazon ECS, please visit our [documentation](ecs_windows_forward_daemon/README.md).
+
+**Note**: There is a known issue with networking failure when running Fluent Bit in Windows containers on `default` container network. Check out the guidance in our debugging guide for a [workaround to this issue](troubleshooting/debugging.md#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins).
 
 ### Development
 
