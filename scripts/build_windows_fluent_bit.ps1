@@ -21,6 +21,12 @@
     .PARAMETER FLB_VERSION
     Specifies the fluent bit version to be used for the build
 
+    .PARAMETER OPENSSL_VERSION
+    Specifies the OpenSSL version to be used for the build
+
+    .PARAMETER FLEX_BISON_VERSION
+    Specifies the Flex Bison version to be used for the build
+
     .PARAMETER FLB_REPOSITORY_URL
     [Optional] Specifies the fluent bit repository to be used for the build. Defaults to 'https://github.com/fluent/fluent-bit'.
 
@@ -35,8 +41,9 @@
     Builds the Windows artifacts based on fluent bit 1.9.4.
 
     .EXAMPLE
-    PS> .\build_windows_fluent_bit.ps1 -FLB_VERSION "1.9.4" -FLB_REPOSITORY_URL "https://github.com/xxxxx/fluent-bit"
+    PS> .\build_windows_fluent_bit.ps1 -FLB_VERSION "1.9.4" -OPENSSL_VERSION 3.0.7 -FLEX_BISON_VERSION 2.5.22 -FLB_REPOSITORY_URL "https://github.com/xxxxx/fluent-bit"
     Builds the Windows artifacts based on fluent bit 1.9.4 from the xxxxx fork of fluent-bit.
+    OpenSSL version used in the build would be 3.0.7 and the FlexBison version would be 2.5.22.
     Beneficial for dev testing.
 #>
 
@@ -45,16 +52,20 @@ Param(
     [ValidateNotNullOrEmpty()]
     [string]$FLB_VERSION,
 
+    [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$OPENSSL_VERSION,
+
+    [Parameter(Mandatory=$true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$FLEX_BISON_VERSION,
+
     [Parameter(Mandatory=$false)]
     [ValidateNotNullOrEmpty()]
     [string]$FLB_REPOSITORY_URL = "https://github.com/fluent/fluent-bit"
 )
 
 $ErrorActionPreference = 'Stop'
-
-# Constants
-$FlexBisonVersion = "2.5.22"
-$OpenSSLVersion = "3.0.7"
 
 # Directory paths
 $BaseDir = "C:\build"
@@ -75,7 +86,7 @@ $OpenSSLInstallationPath = "${env:ProgramFiles}\OpenSSL"
 # All the URLS.
 $VisualStudioDownloadURL = "https://aka.ms/vs/16/release/vs_buildtools.exe"
 $VisualStudioChannelURL = "https://aka.ms/vs/16/release/channel"
-$FlexBisonDownloadURL = "https://github.com/lexxmark/winflexbison/releases/download/v${FlexBisonVersion}/win_flex_bison-${FlexBisonVersion}.zip"
+$FlexBisonDownloadURL = "https://github.com/lexxmark/winflexbison/releases/download/v${FLEX_BISON_VERSION}/win_flex_bison-${FLEX_BISON_VERSION}.zip"
 
 # Create working directories
 Write-Host "Creating the build directory"
@@ -184,7 +195,7 @@ cd openssl
 
 # Fetch the required version
 git fetch --all --tags
-git checkout tags/"openssl-${OpenSSLVersion}" -b "openssl-${OpenSSLVersion}"
+git checkout tags/"openssl-${OPENSSL_VERSION}" -b "openssl-${OPENSSL_VERSION}"
 git describe --tags
 
 # Run perl configure as mentioned in the docs

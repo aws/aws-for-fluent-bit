@@ -6,7 +6,9 @@
       "fluent-bit": "1.9.9",
       "kinesis-plugin": "v1.10.0",
       "firehose-plugin": "v1.7.0",
-      "cloudwatch-plugin": "v1.9.0"
+      "cloudwatch-plugin": "v1.9.0",
+      "openssl": "3.0.7",
+      "flexBison": "2.5.22"
     }
   ]
 }
