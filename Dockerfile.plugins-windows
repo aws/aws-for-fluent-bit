@@ -17,14 +17,16 @@ RUN go version
 ENV GO111MODULE on
 RUN go env -w GOPROXY=direct
 
+# The TAG args should always be set to ""
+# The build_plugins.sh will set them from the windows.versions and linux.version files
 ARG KINESIS_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-streams-for-fluent-bit.git
-ARG KINESIS_PLUGIN_TAG=v1.10.0
+ARG KINESIS_PLUGIN_TAG=""
 ARG KINESIS_PLUGIN_BRANCH=""
 ARG FIREHOSE_PLUGIN_CLONE_URL=https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit.git
-ARG FIREHOSE_PLUGIN_TAG=v1.7.0
+ARG FIREHOSE_PLUGIN_TAG=""
 ARG FIREHOSE_PLUGIN_BRANCH=""
 ARG CLOUDWATCH_PLUGIN_CLONE_URL=https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit.git
-ARG CLOUDWATCH_PLUGIN_TAG=v1.9.0
+ARG CLOUDWATCH_PLUGIN_TAG=""
 ARG CLOUDWATCH_PLUGIN_BRANCH=""
 
 # Kinesis Streams
@@ -57,16 +59,12 @@ RUN make windows-release
 # Add all the built artifacts to an output folder and create an archive
 # We can copy this to the host for saving the artifacts
 
-RUN mkdir -p /plugins/linux/licenses/kinesis /plugins/linux/licenses/firehose /plugins/linux/licenses/cloudwatch
 RUN mkdir -p /plugins/windows/licenses/kinesis /plugins/windows/licenses/firehose /plugins/windows/licenses/cloudwatch
 
 # Copy binaries
 RUN cp /kinesis-streams/bin/*.dll /kinesis-firehose/bin/*.dll /cloudwatch/bin/*.dll /plugins/windows
 
 # Copy licenses
-RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/linux/licenses/kinesis
-RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/linux/licenses/firehose
-RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/linux/licenses/cloudwatch
 RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/windows/licenses/kinesis
 RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/windows/licenses/firehose
 RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/windows/licenses/cloudwatch

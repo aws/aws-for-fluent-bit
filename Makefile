@@ -14,14 +14,32 @@
 all: release
 
 .PHONY: release
-release:
-	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+release: linux-plugins
+	docker system prune -f
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
+	docker system prune -f
 	docker build -t amazon/aws-for-fluent-bit:init-latest -f Dockerfile.init .
+
+#TODO: the bash script opts does not work on developer Macs
+windows-plugins: export OS_TYPE = windows
+linux-plugins: export OS_TYPE = linux
 
 .PHONY: windows-plugins
 windows-plugins:
-	./scripts/build_windows_plugins.sh \
+	./scripts/build_plugins.sh \
+    	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
+    	--KINESIS_PLUGIN_TAG=${KINESIS_PLUGIN_TAG} \
+    	--KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
+    	--FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
+    	--FIREHOSE_PLUGIN_TAG=${FIREHOSE_PLUGIN_TAG} \
+    	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
+    	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
+    	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
+    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
+
+.PHONY: linux-plugins
+linux-plugins:
+	./scripts/build_plugins.sh \
     	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
     	--KINESIS_PLUGIN_TAG=${KINESIS_PLUGIN_TAG} \
     	--KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \

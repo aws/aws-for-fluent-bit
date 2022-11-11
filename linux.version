@@ -1,0 +1,10 @@
+{
+  "linux": {
+    "version": "2.28.4",
+    "build": "1",
+    "fluent-bit": "1.9.9",
+    "kinesis-plugin": "v1.10.1",
+    "firehose-plugin": "v1.7.1",
+    "cloudwatch-plugin": "v1.9.1"
+  }
+}
