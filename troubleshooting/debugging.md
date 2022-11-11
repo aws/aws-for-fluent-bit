@@ -40,6 +40,7 @@
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 - [FAQ]
+    - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
 
 
 ### Understanding Error Messages
@@ -557,3 +558,37 @@ However, these plugins were not as performant as the core Fluent Bit C plugins f
 - [Name opensearch](https://docs.fluentbit.io/manual/pipeline/outputs/opensearch/)
 
 AWS debuted these plugins at KubeCon North America 2020; some [discussion of the improvement in performance can be found in our session](https://youtu.be/F73MgV_c2MM). 
+
+#### FireLens Tag and Match Pattern and generated config
+
+If you use Amazon ECS FireLens to deploy Fluent Bit, then please be aware that some of the Fluent Bit configuration is managed by AWS. ECS will add a log input for your stdout/stderr logs. This single input captures all of the logs from each container that uses the `awsfirelens` log driver. 
+
+See this repo for [an example of a FireLens generated config](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf). See the [FireLens Under the Hood](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) blog for more on how FireLens works.
+
+In Fluent Bit, each log ingested is given a [Tag](https://docs.fluentbit.io/manual/concepts/key-concepts). FireLens assigns tags to stdout/stderr logs from each container in your task with the following pattern:
+
+```
+{container name in task definition}-firelens-{task ID}
+```
+
+So for example, if your container name is `web-app` and then your Task ID is `4444-4444-4444-4444` then the tag assigned to stdout/stderr logs from the `web-app` container will be:
+
+```
+web-app-firelens-4444-4444-4444-4444
+```
+
+If you use a custom config file with FireLens, then you would want to set a `Match` pattern for these logs like:
+
+```
+Match web-app-firelens*
+```
+
+The `*` is a wildcard and thus this will match any tag prefixed with `web-app-firelens` which will work for any task with this configuration.
+
+It should be noted that `Match` patterns are not just for prefix matching; for example, if you want to match all stdout/stderr logs from any container with the `awsfirelens` log driver:
+
+```
+Match *firelens*
+```
+
+This may be useful if you have other streams of logs that are not stdout/stderr, for example as shown in the [ECS Log Collection Tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection).
