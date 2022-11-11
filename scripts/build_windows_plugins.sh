@@ -97,7 +97,7 @@ mkdir -p ./build/windows
 echo "Created build output folder"
 
 # Build plugin image and then copy the windows plugins
-docker build $PLUGIN_BUILD_ARGS --no-cache -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins .
+docker build $PLUGIN_BUILD_ARGS --no-cache -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins-windows .
 docker create -ti --name plugin-build-container aws-fluent-bit-plugins:latest bash
 docker cp plugin-build-container:/plugins_windows.tar ./build/windows/plugins_windows.tar
 docker rm -f plugin-build-container

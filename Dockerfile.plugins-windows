@@ -1,7 +1,8 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/lts/ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y tar gzip git make gcc curl gcc-multilib gcc-mingw-w64
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
-RUN yum upgrade -y && yum install -y tar gzip git make gcc
 ENV HOME /home
 
 # Lock Go Lang version to stable
@@ -33,7 +34,7 @@ WORKDIR /kinesis-streams
 RUN if [ -n "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all && git checkout $KINESIS_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
-RUN make release
+RUN make windows-release
 
 # Firehose
 
@@ -42,7 +43,7 @@ WORKDIR /kinesis-firehose
 RUN if [ -n "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all && git checkout $FIREHOSE_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$FIREHOSE_PLUGIN_TAG -b $FIREHOSE_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
-RUN make release
+RUN make windows-release
 
 # CloudWatch
 
@@ -51,4 +52,23 @@ WORKDIR /cloudwatch
 RUN if [ -n "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all && git checkout $CLOUDWATCH_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags;fi
 RUN go mod download
-RUN make release
+RUN make windows-release
+
+# Add all the built artifacts to an output folder and create an archive
+# We can copy this to the host for saving the artifacts
+
+RUN mkdir -p /plugins/linux/licenses/kinesis /plugins/linux/licenses/firehose /plugins/linux/licenses/cloudwatch
+RUN mkdir -p /plugins/windows/licenses/kinesis /plugins/windows/licenses/firehose /plugins/windows/licenses/cloudwatch
+
+# Copy binaries
+RUN cp /kinesis-streams/bin/*.dll /kinesis-firehose/bin/*.dll /cloudwatch/bin/*.dll /plugins/windows
+
+# Copy licenses
+RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/linux/licenses/kinesis
+RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/linux/licenses/firehose
+RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/linux/licenses/cloudwatch
+RUN cp /kinesis-streams/THIRD-PARTY /kinesis-streams/LICENSE /plugins/windows/licenses/kinesis
+RUN cp /kinesis-firehose/THIRD-PARTY /kinesis-firehose/LICENSE /plugins/windows/licenses/firehose
+RUN cp /cloudwatch/THIRD-PARTY /cloudwatch/LICENSE /plugins/windows/licenses/cloudwatch
+
+RUN tar -C /plugins/windows -cvf /plugins_windows.tar .
