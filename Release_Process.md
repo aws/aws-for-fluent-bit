@@ -50,7 +50,8 @@ _Example Change Log Entry_
 
 #### Version Bump and Change Log for AWS For Fluent Bit
 
-Submit a PR to update the version file (https://github.com/aws/aws-for-fluent-bit/blob/master/AWS_FOR_FLUENT_BIT_VERSION), and add an entry to the Changelog (https://github.com/aws/aws-for-fluent-bit/blob/master/CHANGELOG.md).
+Submit a PR to update the version file (https://github.com/aws/aws-for-fluent-bit/blob/master/AWS_FOR_FLUENT_BIT_VERSION), along with Windows
+version file (https://github.com/aws/aws-for-fluent-bit/blob/mainline/windows.versions). Then add an entry to the Changelog (https://github.com/aws/aws-for-fluent-bit/blob/master/CHANGELOG.md).
 
 For the AWS for Fluent Bit Change log, you will copy the “Enhancement”, “Feature” and “Bug” items from the releases for each of the plugins. This is a convenience for customers- they only need to go to one place to see what is new with each release.
 
@@ -59,11 +60,21 @@ _Example Change Log Entry_
 ## 2.0.1
 
 This release includes:
+
+For Linux images:
 * An Amazon Linux 2 Base
 * Fluent Bit 1.3.2
 * Amazon CloudWatch Logs for Fluent Bit 1.1.0
 * Amazon Kinesis Streams for Fluent Bit 1.0.0
 * Amazon Kinesis Firehose for Fluent Bit 1.0.0
+
+For Windows images:
+* Windows Server Core 2019 Base 
+* Windows Server Core 2022 Base 
+* Fluent Bit 1.9.9
+* Amazon CloudWatch Logs for Fluent Bit 1.9.0
+* Amazon Kinesis Streams for Fluent Bit 1.10.0
+* Amazon Kinesis Firehose for Fluent Bit 1.7.0
 
 Compared to 2.0.0 this release adds:
 * Feature - add `log_group_key` in CloudWatch Plugin
