@@ -57,9 +57,6 @@ opts=$(getopt \
   -- "$@"
 )
 
-echo "opts"
-echo $opts
-
 eval set -- "$opts"
 
 # Build plugin build arguments
@@ -68,34 +65,40 @@ while [ $# -gt 0 ]
 do
   case "$1" in
     --KINESIS_PLUGIN_CLONE_URL)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_CLONE_URL=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_CLONE_URL=$2";fi
       shift 2;;
     --KINESIS_PLUGIN_TAG)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_TAG=$2"
-      KINESIS_PLUGIN_TAG="$2"
+      if [ -n "$2" ];then
+        PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_TAG=$2"
+        KINESIS_PLUGIN_TAG="$2"
+      fi
       shift 2;;
     --KINESIS_PLUGIN_BRANCH)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_BRANCH=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_BRANCH=$2";fi
       shift 2;;
     --FIREHOSE_PLUGIN_CLONE_URL)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_CLONE_URL=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_CLONE_URL=$2";fi
       shift 2;;
     --FIREHOSE_PLUGIN_TAG)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_TAG=$2"
-      FIREHOSE_PLUGIN_TAG="$2"
+      if [ -n "$2" ];then
+        PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_TAG=$2"
+        FIREHOSE_PLUGIN_TAG="$2"
+      fi
       shift 2;;
     --FIREHOSE_PLUGIN_BRANCH)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_BRANCH=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_BRANCH=$2";fi
       shift 2;;
     --CLOUDWATCH_PLUGIN_CLONE_URL)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_CLONE_URL=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_CLONE_URL=$2";fi
       shift 2;;
     --CLOUDWATCH_PLUGIN_TAG)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$2"
-      CLOUDWATCH_PLUGIN_TAG="$2"
+      if [ -n "$2" ];then
+        PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$2"
+        CLOUDWATCH_PLUGIN_TAG="$2"
+      fi
       shift 2;;
     --CLOUDWATCH_PLUGIN_BRANCH)
-      PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_BRANCH=$2"
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_BRANCH=$2";fi
       shift 2;;
     # End of arguments. End here and break.
     --) shift; break ;;
