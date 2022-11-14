@@ -339,7 +339,7 @@ Function Test-Kinesis {
     }
 
     # Run the tests which would generate test data. Once they end, perform "docker-compose down".
-    Run-Test -PluginUnderTest "kinesis stream" -DockerComposeTestFilePath $DockerComposeTestFilePath
+    Run-Test -PluginUnderTest "kinesis stream" -DockerComposeTestFilePath $DockerComposeTestFilePath -SleepTime 720
     Clean-Test -PluginUnderTest "kinesis stream" -DockerComposeFilePath $DockerComposeTestFilePath
 
     # Perform validation of the tests.
@@ -376,7 +376,7 @@ Function Test-Firehose {
     }
 
     # Run the tests which would generate test data. Once they end, perform "docker-compose down".
-    Run-Test -PluginUnderTest "firehose" -DockerComposeTestFilePath $DockerComposeTestFilePath
+    Run-Test -PluginUnderTest "firehose" -DockerComposeTestFilePath $DockerComposeTestFilePath -SleepTime 720
     Clean-Test -PluginUnderTest "firehose" -DockerComposeFilePath $DockerComposeTestFilePath
 
     # Perform validation of the tests.
