@@ -29,18 +29,25 @@ set_all_supported_versions() {
 # Sets AWS_FOR_FLUENT_BIT_STABLE_VERSION variable with the stable version.
 set_stable_version() {
   # Find the stable version.
-  AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_WINDOWS_STABLE_VERSION)
+  AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat < ../windows.versions | jq -r '.windows[] | select(.stable==true)| .version')
+  STABLE_VERSION_COUNT=$(echo "$AWS_FOR_FLUENT_BIT_STABLE_VERSION" | wc -l)
+
+  if [ "$STABLE_VERSION_COUNT" -ne 1 ]; then
+    echo "Discrepancy in stable version: ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}"
+    exit 1
+  fi
 }
 
 # Sets AWS_FOR_FLUENT_BIT_LATEST_VERSION variable with the latest version.
 set_latest_version() {
   # Find the latest version.
-  AWS_FOR_FLUENT_BIT_LATEST_VERSION=""
-  while read -r version; do
-    if [[ "$AWS_FOR_FLUENT_BIT_LATEST_VERSION" < "$version" ]]; then
-      AWS_FOR_FLUENT_BIT_LATEST_VERSION=$version
-    fi
-  done <<< "$(echo "$ALL_AWS_FOR_FLUENT_BIT_VERSIONS")"
+  AWS_FOR_FLUENT_BIT_LATEST_VERSION=$(cat < ../windows.versions | jq -r '.windows[] | select(.latest==true)| .version')
+  LATEST_VERSION_COUNT=$(echo "$AWS_FOR_FLUENT_BIT_LATEST_VERSION" | wc -l)
+
+  if [ "$LATEST_VERSION_COUNT" -ne 1 ]; then
+    echo "Discrepancy in latest version: ${AWS_FOR_FLUENT_BIT_LATEST_VERSION}"
+    exit 1
+  fi
 }
 
 # Sets AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB variable with the latest version available in dockerhub.

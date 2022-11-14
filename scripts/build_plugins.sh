@@ -25,7 +25,6 @@ ARGUMENT_LIST=(
   "CLOUDWATCH_PLUGIN_CLONE_URL"
   "CLOUDWATCH_PLUGIN_TAG"
   "CLOUDWATCH_PLUGIN_BRANCH"
-  "OS_TYPE"
 )
 
 # A variable to hold the build arguments for docker build
@@ -117,59 +116,48 @@ then
   exit 1
 fi
 
-# Sanity check that latest windows version is at top of list
+# Retrieve the latest version based on the platform.
 if [ "$OS_TYPE" == "windows" ];
 then
-  is_latest=$(cat windows.versions | jq -r '.windows[0].latest')
-  if [ "$is_latest" == "null" ];
-  then
-    echo "Latest Windows Release MUST be at the top/first element of windows.versions file"
-    exit 1
-  fi
-fi
-
-# Source go plugin versions from files if not set
-if [ "$OS_TYPE" == "windows" ];
+  latest_version=$(cat windows.versions | jq -r '.windows[] | select(.latest==true)')
+elif [ "$OS_TYPE" == "linux" ];
 then
-  if [ -z "$KINESIS_PLUGIN_TAG" ];
-  then 
-    KINESIS_PLUGIN_TAG=$(cat windows.versions | jq -r '.windows[0]."kinesis-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_TAG=$KINESIS_PLUGIN_TAG"
-  fi
-  if [ -z "$FIREHOSE_PLUGIN_TAG" ];
-  then 
-    FIREHOSE_PLUGIN_TAG=$(cat windows.versions | jq -r '.windows[0]."firehose-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_TAG=$FIREHOSE_PLUGIN_TAG"
-  fi
-  if [ -z "$CLOUDWATCH_PLUGIN_TAG" ];
-  then 
-    CLOUDWATCH_PLUGIN_TAG=$(cat windows.versions | jq -r '.windows[0]."cloudwatch-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG"
-  fi
+  latest_version=$(cat linux.version | jq -r '.linux')
 fi
 
-if [ "$OS_TYPE" == "linux" ];
+# For sanity checking, find the number of latest versions present.
+latest_counts=$(echo $latest_version | jq -r '.version' | wc -l)
+
+# If latest version is not found or if multiple entries found, then throw an error.
+if [ -z "$latest_version" ]
 then
-  if [ -z "$KINESIS_PLUGIN_TAG" ];
-  then 
-    KINESIS_PLUGIN_TAG=$(cat linux.version | jq -r '.linux."kinesis-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_TAG=$KINESIS_PLUGIN_TAG"
-  fi
-  if [ -z "$FIREHOSE_PLUGIN_TAG" ];
-  then 
-    FIREHOSE_PLUGIN_TAG=$(cat linux.version | jq -r '.linux."firehose-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_TAG=$FIREHOSE_PLUGIN_TAG"
-  fi
-  if [ -z "$CLOUDWATCH_PLUGIN_TAG" ];
-  then 
-    CLOUDWATCH_PLUGIN_TAG=$(cat linux.version | jq -r '.linux."cloudwatch-plugin"')
-    PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG"
-  fi
+  echo "latest version not found for ${OS_TYPE}"
+  exit 1
+elif [ "$latest_counts" -ne 1 ]; then
+  echo "more than 1 latest versions found for ${OS_TYPE}: ${latest_version}"
+  exit 1
 fi
 
-echo "Plugin build arguments are: $PLUGIN_BUILD_ARGS"
-echo "OS_TYPE=${OS_TYPE}"
+# Source go plugin versions from latest version, if not set.
+if [ -z "$KINESIS_PLUGIN_TAG" ];
+then
+  KINESIS_PLUGIN_TAG=$(echo "$latest_version" | jq -r '."kinesis-plugin"')
+  PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg KINESIS_PLUGIN_TAG=$KINESIS_PLUGIN_TAG"
+fi
+if [ -z "$FIREHOSE_PLUGIN_TAG" ];
+then
+  FIREHOSE_PLUGIN_TAG=$(echo "$latest_version" | jq -r '."firehose-plugin"')
+  PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg FIREHOSE_PLUGIN_TAG=$FIREHOSE_PLUGIN_TAG"
+fi
+if [ -z "$CLOUDWATCH_PLUGIN_TAG" ];
+then
+  CLOUDWATCH_PLUGIN_TAG=$(echo "$latest_version" | jq -r '."cloudwatch-plugin"')
+  PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG"
+fi
 
+echo "Plugin build arguments for ${OS_TYPE} are: $PLUGIN_BUILD_ARGS"
+
+# Run platform specific build commands
 if [ "$OS_TYPE" == "windows" ];
 then
   # Create the build output folder
