@@ -2,6 +2,14 @@
 
 ### 2.28.4
 This release includes:
+
+For Linux images:
+* Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+For Windows images:
 * Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
@@ -9,6 +17,7 @@ This release includes:
 
 Important Note:
 * Two security vulnerabilities were found in amazonlinux which we use as our base image- [ALAS-40674](https://alas.aws.amazon.com/cve/html/CVE-2022-40674.html) and [ALAS-32207](https://alas.aws.amazon.com/cve/html/CVE-2022-32207.html). This new image will be based on an updated version of amazonlinux that resolves this CVE.
+* This is the first release for aws-for-fluent-bit Windows.
 
 Compared to `2.28.3` this release adds the following feature that we are working on getting accepted upstream:
 * enhancement - Separate AWS User Agents for windows and linux [fluentbit:6325](https://github.com/fluent/fluent-bit/pull/6325)
