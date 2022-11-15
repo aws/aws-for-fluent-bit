@@ -36,6 +36,7 @@
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
+- [FAQ]
 
 
 ### Understanding Error Messages
@@ -493,3 +494,29 @@ To work around this issue, we suggest using the following option so that system 
 ```
 net.dns.mode LEGACY
 ```
+
+### FAQ
+
+#### AWS Go Plugins vs AWS Core C Plugins
+
+When AWS for Fluent Bit first launched in 2019, we debuted with a set of external output plugins written in [Golang and compiled using CGo](https://docs.fluentbit.io/manual/v/1.2/development/golang_plugins). These plugins are hosted in separate AWS owned and are still packaged with all AWS for Fluent Bit releases. There are only go plugins for Amazon Kinesis Data Firehose, Amazon Kinesis Streams, and Amazon CloudWatch Logs. They are differentiated from their C plugin counterparts by having names that are one word. This is the name that you use when you define an output configuration:
+
+```
+[OUTPUT]
+    Name cloudwatch
+```
+
+- [Name kinesis](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit)
+- [Name firehose](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit)
+- [Name cloudwatch](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit)
+
+This plugins are still used by many AWS for Fluent Bit customers. They will continue to be supported. AWS has published performance and reliability testing results for the Go plugins in this [Amazon ECS blog post](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/). Those test results remain valid/useful. 
+
+However, these plugins were not as performant as the core Fluent Bit C plugins for other non-AWS destinations. Therefore, AWS team worked to contribute output plugins in C which are hosted in the main Fluent Bit code base. These plugins have lower resource usage and can achieve higher throughput:
+- [Name kinesis_streams](https://docs.fluentbit.io/manual/pipeline/outputs/kinesis)
+- [Name kinesis_firehose](https://docs.fluentbit.io/manual/pipeline/outputs/firehose)
+- [Name cloudwatch_logs](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch)
+- [Name s3](https://docs.fluentbit.io/manual/pipeline/outputs/s3)
+- [Name opensearch](https://docs.fluentbit.io/manual/pipeline/outputs/opensearch/)
+
+AWS debuted these plugins at KubeCon North America 2020; some [discussion of the improvement in performance can be found in our session](https://youtu.be/F73MgV_c2MM). 
