@@ -26,6 +26,7 @@
 - [Log Loss](#log-loss)
 - [Scaling](#scaling)
 - [Throttling, Log Duplication & Ordering](#throttling-log-duplication--ordering)
+    - [Log Duplication Summary](#log-duplication-summary)
     - [Recommendations for throttling](#recommendations-for-throttling)
 - [Plugin Specific Issues](#plugin-specific-issues)
     - [rewrite_tag filter and cycles in the log pipeline](#rewrite_tag-filter-and-cycles-in-the-log-pipeline)
@@ -382,6 +383,11 @@ To understand how to deal with these issues, it's important to understand the Fl
 
 Because AWS APIs have a max payload size, and the size of the chunks sent to the output is not directly user configurable, this means that a single chunk may be sent in multiple API requests. If one of those requests fails, the output plugin can only tell the core pipeline to *retry the entire chunk*. This means that send failures, including throttling, can lead to duplicated data. Because when the retry happens, the output plugin has no way to track that some of the chunk was already uploaded. 
 
+The following is an example of Fluent Bit log output indicating that a retry is scheduled for a chunk:
+```
+ [ warn] [engine] failed to flush chunk '1-1647467985.551788815.flb', retry in 9 seconds: task_id=0, input=forward.1 > output=cloudwatch_logs.0 (out_id=0)
+```
+
 Additionally, while a chunk that got an FLB_RETRY will be retried with exponential backoff, the pipeline will continue to send newer chunks to the output in the meantime. This means that data ordering can not be strictly guaranteed. The exception to this is the S3 plugin with the `preserve_data_ordering` feature, which works because the S3 output maintains its own separate buffer of data in the local file system. 
 
 Finally, this behavior means that if a chunk fails because of throttling, that specific chunk will backoff, but the engine will not backoff from sending new logs to the output. Consequently, its very important to ensure that your destination can handle your log ingestion rate and that you will not be throttled.
@@ -390,7 +396,12 @@ The AWS team understands that the current behavior of the core log pipeline is n
 * [Allow output plugins to configure a max chunk size: fluent-bit#1938](https://github.com/fluent/fluent-bit/issues/1938)
 * [FLB_THROTTLE return for outputs: fluent-bit#4293](https://github.com/fluent/fluent-bit/issues/4293)
 
-NOTE: If you are using the tail input and your `Path` pattern matches rotated log files, [this misconfiguration can lead to duplicated logs](#tail-input-duplicates-logs-because-of-rotation). 
+#### Log Duplication Summary
+
+To summarize, log duplication is known to occur for the following reasons:
+1. Retries for chunks that already partially succeeded ([explained above](#throttling-log-duplication--ordering))
+    a. This type of duplication is much more likely when you use Kinesis Streams or Kinesis Firehose as a destination, as explained in the [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records) section of this guide. 
+2. If you are using the tail input and your `Path` pattern matches rotated log files, [this misconfiguration can lead to duplicated logs](#tail-input-duplicates-logs-because-of-rotation). 
 
 #### Recommendations for throttling
 
