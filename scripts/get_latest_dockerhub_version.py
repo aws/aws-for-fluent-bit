@@ -3,7 +3,8 @@ import sys
 
 numeric_tags = []
 for tag in sys.argv:
-    if tag[0].isdigit():
+    # Windows images have numeric starting but have letters separated by -.
+    if tag[0].isdigit() and tag.find("-") == -1:
         numeric_tags.append(tag)
 
 numeric_tags.sort(key=lambda s: list(map(int, s.split('.'))), reverse=True)
