@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.9
+      python: 3.7
     commands:
       - echo "Verifies the SSM parameters for Windows"
       - yum update -y && yum upgrade -y
