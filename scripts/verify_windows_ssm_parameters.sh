@@ -26,6 +26,9 @@ set -euo pipefail
 # Helper methods to verify the SSM Parameter.
 #############################################################################################################
 
+# Used to check whether this is being used in the pipeline vs sync tasks
+classic_regions_account_id="906394416424"
+
 # Verifies that the given param tag has the expected image in the given region and account.
 verify_ssm_param(){
   local ssm_parameter region version param_name
@@ -71,6 +74,14 @@ if [[ $ACTION == "verify-ssm-parameter" ]]; then
 
   # Split the comma separated list of regions into an array
   REGIONS=(`echo $REGIONS_TO_PUBLISH | sed 's/,/\n/g'`)
+
+  # AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB is only available if we auth to dockerhub and get it
+  if [[ "$ACCOUNT_ID" == "${classic_regions_account_id}" ]]; then
+    set_dockerhub_version "us-west-2"
+  else
+    set_dockerhub_version "${REGIONS[0]}"
+  fi
+
   for region in "${REGIONS[@]}"
   do
     # For a given region, iterate over all supported versions and verify the SSM parameters.

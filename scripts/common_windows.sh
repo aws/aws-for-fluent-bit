@@ -52,10 +52,16 @@ set_latest_version() {
 
 # Sets AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB variable with the latest version available in dockerhub.
 set_dockerhub_version() {
-  # Find the dockerhub version.
-  docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
+  DOCKER_HUB_SECRET="com.amazonaws.dockerhub.aws-for-fluent-bit.credentials"
+  username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region ${1} | jq -r '.SecretString | fromjson.username')"
+  password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region ${1} | jq -r '.SecretString | fromjson.password')"
+  payload="{\"username\": \"${username}\",\"password\": \"${password}\"}"
+  token=$(curl -s -X POST -H "Content-Type: application/json" -d "${payload}"  https://hub.docker.com/v2/users/login | jq -r '.token')
+  auth="Authorization: Bearer ${token}"
+  docker_hub_image_tags=$(curl -s -S -H "${auth}" 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
   tag_array=(`echo ${docker_hub_image_tags}`)
   AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
+  export AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB
 }
 
 # Returns the regional endpoint.
@@ -133,5 +139,4 @@ compare_image_manifests() {
 # Set the required variables
 set_all_supported_versions
 set_latest_version
-set_dockerhub_version
 set_stable_version
