@@ -45,6 +45,7 @@
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 - [FAQ]
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
+    - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
 
 
 ### Understanding Error Messages
@@ -649,3 +650,16 @@ Match *firelens*
 ```
 
 This may be useful if you have other streams of logs that are not stdout/stderr, for example as shown in the [ECS Log Collection Tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection).
+
+#### What to do when Fluent Bit memory usage is high
+
+If your Fluent Bit memory usage is unusually high or you have gotten an OOMKill, then try the following:
+
+1. *Understand the causes of high memory usage*. Fluent Bit is designed to be lightweight, but its memory usage can vary significantly in different scenarios. Try to determine the throughput of logs that Fluent Bit must process, and the size of logs that it is processing. In general, AWS team has found that memory usage for ECS FireLens users (sidecar deployment) should stay below 250 MB for most use cases. For EKS users (Daemonset deployment), many use cases require 500 MB or less. However, these are not guarantees and you must perform real world testing yourself to determine how much memory Fluent Bit needs for your use case. 
+2. *Increase memory limits*. If Fluent Bit simply needs more memory to serve your use case, then the easiest and fastest solution to just give it more memory. 
+3. *Modify Fluent Bit configuration to reduce memory usage*. For this, please check out our [OOMKill Prevention Guide](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention). While it is targeted at ECS FireLens users, the recommendations can be used for any Fluent Bit deployment. 
+4. *Deploy enhanced monitoring for Fluent Bit*. We have guides that cover:
+    - [Enabling debug logging](#enable-debug-logging)
+    - [Send Fluent Bit internal metrics to CloudWatch](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw)
+    - [CPU, Disk, and Memory Usage Monitoring with ADOT](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/adot-resource-monitoring)
+5. *Test for real memory leaks*. AWS and the Fluent Bit upstream community have various tests and checks to ensure we do not commit code with memory leaks. Thus, real leaks are rare. If you think you have found a real leak, please try out the [investigation steps and advice in this guide](#memory-leaks-or-high-memory-usage) and then cut us an issue. 
