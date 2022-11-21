@@ -197,7 +197,7 @@ func processConfigFile(path string) {
 
 	content := string(contentBytes)
 
-	if strings.Contains(content, "[PARSER]") {
+	if strings.Contains(content, "[PARSER]") || strings.Contains(content, "[MULTILINE_PARSER]") {
 		// this is a parser config file, change command
 		updateCommand(path)
 	} else {
