@@ -47,6 +47,7 @@
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
     - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
+    - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
 
 
 ### Understanding Error Messages
@@ -664,3 +665,18 @@ If your Fluent Bit memory usage is unusually high or you have gotten an OOMKill,
     - [Send Fluent Bit internal metrics to CloudWatch](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw)
     - [CPU, Disk, and Memory Usage Monitoring with ADOT](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/adot-resource-monitoring)
 5. *Test for real memory leaks*. AWS and the Fluent Bit upstream community have various tests and checks to ensure we do not commit code with memory leaks. Thus, real leaks are rare. If you think you have found a real leak, please try out the [investigation steps and advice in this guide](#memory-leaks-or-high-memory-usage) and then cut us an issue. 
+
+
+#### I reported an issue, how long will it take to get fixed?
+
+Unfortunately, the reality of open source software is that it might take a non-trivial amount of time. 
+
+If you provide us with an issue report, say a memory leak or a crash, then the AWS team must:
+
+1. [Up to 1+ weeks] *Determine the source of the issue in the code*. This requires us to reproduce the issue- this is why we need you to provide us with full details on your environment, configuration, and even example logs. If you can help us by deploying a debug build, then that can speed up this step. Take a look at the Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage) and the [Segfaults and crashes (SIGSEGV)](#segfaults-and-crashes-sigsegv) section of this guide. 
+2. [Up to 1+ weeks] *Implement a fix to the issue*. Sometimes this will be fast once we know the source of the bug. Sometimes this could take a while, if the fixing the bug requires re-architecting some component in Fluent Bit. *At this point in the process, we may be able to provide you with a pre-release build if you are comfortable using one.*
+3. [Up to 1+ weeks] *Get the fix accepted upstream*. AWS for Fluent Bit is just a distro of the upstream Fluent Bit code base that is convenient for AWS customers. While we may sometimes [cherry-pick fixes](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FLB_CHERRY_PICKS) onto our release, this is rare and requires careful consideration. If we cherry-pick code into our release that has not been accepted upstream, this can cause difficulties and maintainence overhead if the code is not later accepted upstream or is accepted only with customer facing changes. Thus our goal is for AWS for Fluent Bit to simply follow upstream.
+4. [Up to 2+ days] *Release the fix*. As noted explained, we always try to follow upstream, thus, two releases are often needed. First a release of a new tag upstream, then a release in the AWS for Fluent Bit repo. 
+
+
+Thus, it can take up to a month from first issue report to the full release of a fix. Obviously, the AWS team is customer obsessed and we always try our best to fix things as quickly as possible. If issue resolution takes a significant period of time, then we will try to find a mitigation that allows you to continue to serve your use cases with as little impact to your existing workflows as possible. 
