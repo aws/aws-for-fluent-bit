@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.29.0
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Compared to `2.28.4` this release adds:
+* Feature - Add `store_dir_limit_size` option [fluentbit-docs:971](https://github.com/fluent/fluent-bit-docs/pull/971)
+* Feature - New filter for AWS ECS Metadata [fluentbit:5898](https://github.com/fluent/fluent-bit/pull/5898)
+* Enhancement - Different user agent on windows vs linux [fluentbit:6325](https://github.com/fluent/fluent-bit/pull/6325)
+* Bug - Resolve Fluent Bit networking hangs affecting CloudWatch plugin by migrating to async networking + sync core scheduler [fluentbit:6339](https://github.com/fluent/fluent-bit/pull/6339)
+
 ### 2.28.4
 This release includes:
 * Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)
