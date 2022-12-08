@@ -55,7 +55,7 @@ set_dockerhub_version() {
   # Find the dockerhub version.
   docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
   tag_array=(`echo ${docker_hub_image_tags}`)
-  AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
+  AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py windows ${tag_array[@]})
 }
 
 # Returns the regional endpoint.

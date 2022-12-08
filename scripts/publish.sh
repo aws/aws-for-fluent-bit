@@ -23,7 +23,7 @@ AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
 docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
 tag_array=(`echo ${docker_hub_image_tags}`)
-AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py ${tag_array[@]})
+AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py linux ${tag_array[@]})
 
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
