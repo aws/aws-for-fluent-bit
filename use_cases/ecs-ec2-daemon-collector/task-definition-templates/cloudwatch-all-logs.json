@@ -1,0 +1,145 @@
+{
+    "family": "fluent-bit-daemon-collector-cloudwatch",
+    "networkMode": "host",
+    "taskRoleArn": "{INSERT YOUR TASK ROLE ARN}", 
+    "executionRoleArn": "{INSERT YOUR EXECUTION ROLE ARN}",
+    "volumes": [
+        {
+            "name": "app-logs",
+            "host": {
+                "sourcePath": "/var/lib/docker/containers"
+            }
+        },
+        {
+            "name": "runtime-logs",
+            "host": {
+                "sourcePath": "/var/log/journal"
+            }
+        },
+        {
+            "name": "host-and-ecs-logs",
+            "host": {
+                "sourcePath": "/var/log"
+            }
+        },
+        {
+            "name": "fluent-bit-buffer-directory",
+            "host": {
+                "sourcePath": "/var/fluent-bit"
+            }
+        }
+    ],
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:init-stable",
+            "name": "fluent-bit-daemon-collector",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/aws/ecs/{INSERT CLUSTER_NAME}/collector",
+                    "awslogs-region": "{INSERT REGION}",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "fluent-bit-stdout-stderr-"
+                }
+            },
+            "environment": [
+                {
+					"name": "CLUSTER_NAME",
+					"value": "{INSERT YOUR CLUSTER NAME HERE}"
+				},
+				{
+					"name": "aws_fluent_bit_init_file_1",
+					"value": "/ecs/daemon/inputs/task.conf"
+				},
+                {
+					"name": "MEM_BUF_LIMIT_TASK",
+					"value": "50M"
+				},
+                {
+					"name": "READ_FROM_HEAD_TASK",
+					"value": "On"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_2",
+					"value": "/ecs/daemon/outputs/cloudwatch_logs/task.conf"
+				},
+                {
+					"name": "REGION_TASK",
+					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_3",
+					"value": "/ecs/daemon/inputs/runtime.conf"
+				},
+                {
+					"name": "READ_FROM_TAIL_RUNTIME",
+					"value": "Off"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_4",
+					"value": "/ecs/daemon/outputs/cloudwatch_logs/runtime.conf"
+				},
+                {
+					"name": "REGION_RUNTIME",
+					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_5",
+					"value": "/ecs/daemon/inputs/all-ecs-dataplane.conf"
+				},
+                {
+					"name": "READ_FROM_HEAD_ECS_DATAPLANE",
+					"value": "On"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_6",
+					"value": "/ecs/daemon/outputs/cloudwatch_logs/ecs.conf"
+				},
+                {
+					"name": "REGION_ECS_DATAPLANE",
+					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_7",
+					"value": "/ecs/daemon/inputs/all-host.conf"
+				},
+                {
+					"name": "READ_FROM_HEAD_HOST",
+					"value": "On"
+				},
+                {
+					"name": "aws_fluent_bit_init_file_8",
+					"value": "/ecs/daemon/outputs/cloudwatch_logs/host.conf"
+				},
+                {
+					"name": "REGION_HOST",
+					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+			],
+            "memoryReservation": 100,
+            "mountPoints": [
+                {
+                    "sourceVolume": "app-logs",
+                    "containerPath": "/var/lib/docker/containers",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "runtime-logs",
+                    "containerPath": "/var/log/journal",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "host-and-ecs-logs",
+                    "containerPath": "/var/log",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "fluent-bit-buffer-directory",
+                    "containerPath": "/var/fluent-bit",
+                    "readOnly": true
+                }
+            ]
+        }
+    ]
+}

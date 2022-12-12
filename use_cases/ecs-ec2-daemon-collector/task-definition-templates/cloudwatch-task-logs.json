@@ -9,6 +9,12 @@
             "host": {
                 "sourcePath": "/var/lib/docker/containers"
             }
+        },
+        {
+            "name": "fluent-bit-buffer-directory",
+            "host": {
+                "sourcePath": "/var/fluent-bit"
+            }
         }
     ],
     "containerDefinitions": [
@@ -56,6 +62,11 @@
                 {
                     "sourceVolume": "applogs",
                     "containerPath": "/var/lib/docker/containers",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "fluent-bit-buffer-directory",
+                    "containerPath": "/var/fluent-bit",
                     "readOnly": true
                 }
             ]
