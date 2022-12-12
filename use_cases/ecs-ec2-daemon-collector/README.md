@@ -16,6 +16,7 @@ The tutorials and templates in this guide will show you how to deploy Fluent Bit
     * [Tutorial: Send all Container, ECS Dataplane, Container Runtime, and host logs to Amazon S3](#send-all-container-ecs-dataplane-container-runtime-and-host-logs-to-amazon-s3)
 * [Considerations and Warnings for running the Fluent Bit Daemon Collector](#considerations-and-warnings-for-running-the-fluent-bit-daemon-collector)
     * [Common Issues](#common-issues)
+    * [Monitoring the daemon collector](#monitoring-the-daemon-collector)
     * [Load Test Results](#load-test-results)
 * [DIY Guide: Use our built-in configurations to customize your log collection experience](#diy-guide-use-our-built-in-configurations-to-customize-your-log-collection-experience)
     * [Using AWS for Fluent Bit init](#using-aws-for-fluent-bit-init)
@@ -44,6 +45,10 @@ The tutorials and templates in this guide will show you how to deploy Fluent Bit
 
 ### Common Issues
 
+1. (TODO: add example error message) CloudWatch Rejects log events because they are too old. (Doc Link). If you have [READ_FROM_HEAD parameter](https://docs.fluentbit.io/manual/pipeline/inputs/tail) set to `On`, and you have older logs on disk, you may see that logs fail to upload. 
+
+### Monitoring the daemon collector
+
 ### Load Test Results
 
 ## DIY Guide: Use our built-in configurations to customize your log collection experience
@@ -58,6 +63,13 @@ This section contains a list of input files and their use case and required para
 
 ##### Container STDOUT and STDERR Logs
 * `/ecs/daemon/inputs/task.conf`
+    * **Use Case**: Collect all stdout & stderr logs from containers
+    * **Required Host Mount Volume**: `/var/lib/docker/containers`
+    * **Parameters**
+        * `READ_FROM_HEAD_TASKLOGS` - For the Fluent Bit [READ_FROM_HEAD parameter](https://docs.fluentbit.io/manual/pipeline/inputs/tail), `On` means read all logs present on disk (from the head of the file) at collector start time, `Off` means only read logs written to the file after collector start time (from the tail of the file).
+        * `MEM_BUF_LIMIT_TASK` - The Fluent Bit [MEM_BUF_LIMIT parameter](https://docs.fluentbit.io/manual/administration/buffering-and-storage) limits the amount of memory that an input can use to collect logs. The default of `50M` (50 megabytes) in our templates should be sufficient for most users. If you see [overlimit warnings](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#overlimit-warnings) then you need to increase it.
+
+
 
 ##### Container Runtime Logs
 * `/ecs/daemon/inputs/runtime.conf`
