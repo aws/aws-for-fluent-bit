@@ -55,6 +55,10 @@
                 {
 					"name": "REGION_TASK",
 					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+                {
+					"name": "FLB_AWS_USER_AGENT",
+					"value": "ecs-daemon"
 				}
 			],
             "memoryReservation": 100,

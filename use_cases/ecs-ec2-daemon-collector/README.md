@@ -32,8 +32,32 @@ The tutorials and templates in this guide will show you how to deploy Fluent Bit
 
 * An Amazon ECS Cluster with capacity provided by instances running the [Amazon ECS Optimized Amazon Linux AMI](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html) - these guides have been tested on Amazon EC2 instances. You can only run an [Amazon ECS Daemon Service](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html) with the `EC2` launch type.
 * The daemon collector can collect logs emitted by your task/application containers to stdout/stderr.
+* You must first configure your task containers to log to the json-file log driver. This can be done by adding the following for the [logConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html) of each container definition in your task definitions:
+
+```
+"logConfiguration": {
+                "logDriver": "json-file",
+                "options": {
+                    "max-file": "2",
+                    "max-size": "10m"
+                }
+            }
+```
 
 ### Tutorial: Send all Container STDOUT & STDERR to Amazon CloudWatch Logs
+
+Please read the [Prerequisites](#prerequisites) section of this guide before following this tutorial.
+
+#### Log Group and Stream Names
+
+#### Log Metadata
+
+#### Using the Task Definition Template
+
+
+Next, please read the [Considerations and Warnings for running the Fluent Bit Daemon Collector](#considerations-and-warnings-for-running-the-fluent-bit-daemon-collector) section.
+
+#### Using the CloudFormation Template
 
 ### Tutorial: Send all Container, ECS Dataplane, Container Runtime, and host logs to Amazon CloudWatch Logs
 

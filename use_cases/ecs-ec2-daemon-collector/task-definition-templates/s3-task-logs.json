@@ -63,6 +63,10 @@
                 {
 					"name": "MEM_BUF_LIMIT_REWRITE_TAG_TASK",
 					"value": "50M"
+				},
+                {
+					"name": "FLB_AWS_USER_AGENT",
+					"value": "ecs-daemon"
 				}
 			],
             "memoryReservation": 100,
