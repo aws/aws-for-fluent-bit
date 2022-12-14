@@ -421,7 +421,7 @@ CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /f
 
 ##### Option 2: Debug Build (More robust)
 
-The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the [`Dockerfile.debug`](https://github.com/aws/aws-for-fluent-bit/blob/mainline/Dockerfile.debug) in AWS for Fluent Bit. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be albe to produce useful diagnostic information about the issue. 
+The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the [`Dockerfile.debug`](https://github.com/aws/aws-for-fluent-bit/blob/mainline/Dockerfile.debug) in AWS for Fluent Bit. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be able to produce useful diagnostic information about the issue.
 
 1. Check out the git tag for the version that saw the problem
 2. Make sure the `FLB_VERSION` at the top of the `Dockerfile.debug` is set to the same version as the main Dockerfile for that tag. 
