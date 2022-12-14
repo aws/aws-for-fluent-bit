@@ -45,6 +45,7 @@
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
+    - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
 - [FAQ]
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
@@ -624,6 +625,77 @@ Save this as `tcp-logger.sh` and run `chmod +x tcp-logger.sh`. Then, create a fi
 ```
 ./tcp-logger.sh example.log 5170
 ```
+
+#### Run Fluent Bit Unit Tests in a Docker Container
+
+You can use this Dockerfile:
+
+```
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+
+RUN yum upgrade -y
+RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
+RUN yum install -y  \
+      glibc-devel \
+      libyaml-devel \
+      cmake3 \
+      gcc \
+      gcc-c++ \
+      make \
+      wget \
+      unzip \
+      tar \
+      git \
+      openssl11-devel \
+      cyrus-sasl-devel \
+      pkgconfig \
+      systemd-devel \
+      zlib-devel \
+      ca-certificates \
+      flex \
+      bison \
+    && alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
+      --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
+      --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
+      --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
+      --family cmake
+ENV HOME /home
+
+WORKDIR /tmp/fluent-bit
+RUN git clone https://github.com/{INSERT YOUR FORK HERE}/fluent-bit.git /tmp/fluent-bit
+WORKDIR /tmp/fluent-bit
+RUN git fetch && git checkout {INSERT YOUR BRANCH HERE}
+WORKDIR /tmp/fluent-bit/build
+RUN cmake -DFLB_DEV=On -DFLB_TESTS_RUNTIME=On -DFLB_TESTS_INTERNAL=On ../
+RUN make -j  $(getconf _NPROCESSORS_ONLN)
+CMD exec /bin/bash -c "trap : TERM INT; sleep infinity & wait"
+```
+
+This is useful when testing a Fluent Bit contribution you or another user has made. Replace the `INSERT .. HERE` bits with your desired git fork and branch. 
+
+Create a `Dockerfile` with the above and then build the container image:
+
+```
+docker build --no-cache -t fb-unit-tests:latest .
+```
+
+Then run it:
+
+```
+docker run -d fb-unit-tests:latest
+```
+
+Then get the container ID with `docker ps`.
+
+Then exec into it and get a bash shell with:
+
+```
+docker exec -it {Container ID} /bin/bash
+```
+
+And then you can `cd` into `/tmp/fluent-bit/build/bin`, select a unit test file, and run it.
+
+Upstream info on running integ tests can be found here: [Developer Guide: Testing](https://github.com/fluent/fluent-bit/blob/master/DEVELOPER_GUIDE.md#testing).
 
 ### FAQ
 
