@@ -156,4 +156,3 @@ CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /f
 # 
 # RUN mkdir /cores && chmod 777 /cores
 # CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
- 

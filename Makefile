@@ -55,6 +55,12 @@ debug:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
 
+.PHONY: debug-init
+debug:
+	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
+	docker build --no-cache -t amazon/aws-for-fluent-bit:debug-init -f Dockerfile.debug-init .
+
 .PHONY: cloudwatch-dev
 cloudwatch-dev:
 	docker build \
