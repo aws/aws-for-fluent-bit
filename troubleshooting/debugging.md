@@ -46,6 +46,7 @@
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
+    - [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
 - [FAQ]
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
@@ -696,6 +697,116 @@ docker exec -it {Container ID} /bin/bash
 And then you can `cd` into `/tmp/fluent-bit/build/bin`, select a unit test file, and run it.
 
 Upstream info on running integ tests can be found here: [Developer Guide: Testing](https://github.com/fluent/fluent-bit/blob/master/DEVELOPER_GUIDE.md#testing).
+
+#### Tutorial: Replicate an ECS FireLens Task Setup Locally
+
+Given an ECS task definition that uses FireLens, this tutorial will show you have to replicate what FireLens does inside of ECS locally. This can help you reproduce issues in an isolated env. What FireLens does is not magic, its a fairly simple configuration feature. 
+
+In this tutorial, we will use the [Add customer metadata to logs](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/add-keys) FireLens example as the simple setup that we want to reproduce locally. Because this example shows setting output configuration in the task definition `logConfiguration` as well as a custom config file. 
+
+Recall the key configuration in that example:
+
+1. It uses a custom config file:
+```
+"firelensConfiguration": {
+	"type": "fluentbit",
+	"options": {
+		"config-file-type": "s3",
+		"config-file-value": "arn:aws:s3:::yourbucket/yourdirectory/extra.conf"
+	}
+},
+```
+2. It uses logConfiguration to configure an output:
+```
+"logConfiguration": {
+	"logDriver":"awsfirelens",
+		"options": {
+			"Name": "kinesis_firehose",
+			"region": "us-west-2",
+			"delivery_stream": "my-stream",
+			"retry_limit": "2"
+		}
+	}
+```
+
+Perform the following steps.
+1. Create a new directory to store the configuration for this repro attempt and `cd` into it. 
+2. Create a sub-directory called `socket`. This will store the unix socket that Fluent Bit recieves container stdout/stderr logs from. 
+3. Create a sub-directory called `cores`. This will be used for core dumps if you followed the [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
+3. Copy the custom config file into your current working directory. In this case, we will call it `extra.conf`.
+4. Create a file called `fluent-bit.conf` in your current working directory.
+    1. To this file we need to add the config content that FireLens generates. Recall that this is explained in [FireLens: Under the Hood](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/). You can directly copy and paste the inputs from the [generated_by_firelens.conf](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf) example from that blog.
+    2. Next, add the filters from [generated_by_firelens.conf](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf), except for the [grep filter](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf#L16) that filters out all logs not containing "error" or "Error". That part of the FireLens generated config example is meant to demonstrate [Filtering Logs using regex](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/firelens-filtering-logs.html) feature of FireLens and Fluent Bit. That feature is not relevant here. 
+    3. Add an `@INCLUDE` statement for your custom config file in the same working directory. In this case, its `@INCLDUE extra.conf`. 
+    4. [Optional for most repros] Add the null output for TCP healthcheck logs to the `fluent-bit.conf` from [here](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf#L31). Please note that the [TCP health check is no longer recommended](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/health-check).
+    5. Create an `[OUTPUT]` configuration based on the `logConfiguration` `options` map for each container in the task definition. The `options` simply become key value pairs in the `[OUTPUT]` configuration.
+    6. Your configuration is now ready to test! If you have a more complicated custom configuration file, you may need to perform additional steps like adding parser files to your working directly, and updating the import paths for them in the Fluent Bit `[SERVICE]` section if your custom config had that. 
+5. Next you need to run Fluent Bit. You can use the following command, which assumes you have an AWS credentials file in `$HOME/.aws` which you want to use for credentials. Run this command in the same working directory that you put your config files in. You may need to customize it to run a different image, mount a directory to dump core files (see our core file tutorial) or add environment variables. 
+
+```
+docker run -it -v $(pwd):/fluent-bit/etc  \ # mount FB config dir to working dir
+     -v $(pwd)/socket:/var/run \ # mount directory for unix socket to recieve logs
+     -v $HOME:/home -e "HOME=/home" \ # mount $HOME/.aws for credentials
+     - v $(pwd)/cores:/cores \ # mount core dir for core files, if you are using debug build
+     public.ecr.aws/aws-observability/aws-for-fluent-bit:{TAG_TO_TEST}
+```
+6. Run your application container. You may or may not need to create a mock application container. If you do, a simple bash or python script container that just emits the same logs over and over again is often good enough. We have some [examples in our integ tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ/logger). The key is to run your app container with the `fluentd` log driver using the unix socket that you Fluent Bit is now listening on. 
+
+```
+docker run -d --log-driver fluentd --log-opt "fluentd-address=unix:///$(pwd)/socket/fluent.sock" {logger image}
+```
+
+You now have a local setup that perfectly mimicks FireLens!
+
+For reference, here is a tree view of the working directory for this example:
+```
+$ tree .
+.
+├── cores
+├── fluent-bit.conf
+├── extra.conf
+├── socket
+│   └── fluent.sock # this is created by Fluent Bit once you start it
+```
+
+For reference, for this example, here is what the `fluent-bit.conf` should look like:
+
+```
+[INPUT]
+    Name forward
+    unix_path /var/run/fluent.sock
+
+[INPUT]
+    Name forward
+    Listen 0.0.0.0
+    Port 24224
+
+[INPUT]
+    Name tcp
+    Tag firelens-healthcheck
+    Listen 127.0.0.1
+    Port 8877
+
+[FILTER]
+    Name record_modifier
+    Match *
+    Record ec2_instance_id i-01dce3798d7c17a58
+    Record ecs_cluster furrlens
+    Record ecs_task_arn arn:aws:ecs:ap-south-1:144718711470:task/737d73bf-8c6e-44f1-aa86-7b3ae3922011
+    Record ecs_task_definition firelens-example-twitch-session:5
+
+@INCLUDE extra.conf
+
+[OUTPUT]
+    Name null
+    Match firelens-healthcheck
+
+[OUTPUT]
+    Name kinesis_firehose
+    region us-west-2
+    delivery_stream my-stream
+    retry_limit 2
+```
 
 ### FAQ
 
