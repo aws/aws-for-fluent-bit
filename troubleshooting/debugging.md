@@ -43,6 +43,8 @@
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
+- [Testing](#testing)
+    - [Simple TCP Logger Script](#simple-tcp-logger-script)
 - [FAQ]
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
@@ -591,6 +593,36 @@ This is an issue for Windows containers running in `default` network where the f
 To work around this issue, we suggest using the following option so that system DNS resolver is used by Fluent Bit which works as expected.
 ```
 net.dns.mode LEGACY
+```
+
+### Testing
+
+#### Simple TCP Logger Script
+
+Note: In general, the AWS for Fluent Bit team recommends the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project to send test logs to Fluent Bit. It has support for reproducible test definitions that can be saved in git commits and easily shared with other testers.
+
+
+If you want a real quick and easy way to test a [Fluent Bit TCP Input](https://docs.fluentbit.io/manual/pipeline/inputs/tcp), the following script can be used:
+
+```
+send_line_by_line() {
+    while IFS= read -r line; do
+        echo "$line" | nc 127.0.0.1 $2
+        sleep 1
+    done < "$1"
+}
+
+while true
+do
+    send_line_by_line $1 $2
+    sleep 1
+done
+```
+
+Save this as `tcp-logger.sh` and run `chmod +x tcp-logger.sh`. Then, create a file with logs that you want to send to the TCP input. The script can read a file line by line and send it to some TCP port. For example, if you have a log file called `example.log` and a Fluent Bit TCP input listening on port 5170, you would run:
+
+```
+./tcp-logger.sh example.log 5170
 ```
 
 ### FAQ
