@@ -196,6 +196,8 @@ Then, you can define the volume in the task definition to be your EFS filesystem
     }],
 ```
 
+As a sanity check that you setup the EFS filesystem correctly on the Fargate task, create a file in the EFS filesystem. For example, `touch my-efs-id.txt`. Then, when you later setup your Fargate task, you can use ECS Exec to check that you can see the file in the cores directory: `ls /cores`. 
+
 #### Set initProcessEnabled and enable SYS_PTRACE capability
 
 The flag `initProcessEnabled` ensures that when Fluent Bit crashes or is killed, orphaned processes will be cleaned up gracefully. This is primarily important if you are enabling ECS Exec, as it ensures the embedded SSM Agent and shell session are cleaned up gracefully if/when you terminate Fluent Bit. 
