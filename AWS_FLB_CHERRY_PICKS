@@ -1,1 +1,2 @@
-# No added cherrypicks in this release
+# ECS filter empty tag value fix + other bug fixes
+https://github.com/PettitWesley/fluent-bit.git ecs-empty-metadata-fix-one-commit 281583b8c58215fe86db69d1dbb6958478824f37
