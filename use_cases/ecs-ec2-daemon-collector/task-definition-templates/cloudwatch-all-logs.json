@@ -145,7 +145,7 @@
                 {
                     "sourceVolume": "fluent-bit-buffer-directory",
                     "containerPath": "/var/fluent-bit",
-                    "readOnly": true
+                    "readOnly": false
                 }
             ]
         }
