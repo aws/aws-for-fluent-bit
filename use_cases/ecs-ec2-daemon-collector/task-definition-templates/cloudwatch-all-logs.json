@@ -48,8 +48,12 @@
 					"name": "CLUSTER_NAME",
 					"value": "{INSERT YOUR CLUSTER NAME HERE}"
 				},
-				{
+                {
 					"name": "aws_fluent_bit_init_file_1",
+					"value": "/ecs/daemon/service.conf"
+				},
+				{
+					"name": "aws_fluent_bit_init_file_2",
 					"value": "/ecs/daemon/inputs/task.conf"
 				},
                 {
@@ -61,7 +65,7 @@
 					"value": "On"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_2",
+					"name": "aws_fluent_bit_init_file_3",
 					"value": "/ecs/daemon/outputs/cloudwatch_logs/task.conf"
 				},
                 {
@@ -69,7 +73,7 @@
 					"value": "{INSERT REGION TO SEND LOGS TO}"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_3",
+					"name": "aws_fluent_bit_init_file_4",
 					"value": "/ecs/daemon/inputs/runtime.conf"
 				},
                 {
@@ -77,7 +81,7 @@
 					"value": "Off"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_4",
+					"name": "aws_fluent_bit_init_file_5",
 					"value": "/ecs/daemon/outputs/cloudwatch_logs/runtime.conf"
 				},
                 {
@@ -85,7 +89,7 @@
 					"value": "{INSERT REGION TO SEND LOGS TO}"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_5",
+					"name": "aws_fluent_bit_init_file_6",
 					"value": "/ecs/daemon/inputs/all-ecs-dataplane.conf"
 				},
                 {
@@ -93,7 +97,7 @@
 					"value": "On"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_6",
+					"name": "aws_fluent_bit_init_file_7",
 					"value": "/ecs/daemon/outputs/cloudwatch_logs/ecs.conf"
 				},
                 {
@@ -101,7 +105,7 @@
 					"value": "{INSERT REGION TO SEND LOGS TO}"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_7",
+					"name": "aws_fluent_bit_init_file_8",
 					"value": "/ecs/daemon/inputs/all-host.conf"
 				},
                 {
@@ -109,7 +113,7 @@
 					"value": "On"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_8",
+					"name": "aws_fluent_bit_init_file_9",
 					"value": "/ecs/daemon/outputs/cloudwatch_logs/host.conf"
 				},
                 {

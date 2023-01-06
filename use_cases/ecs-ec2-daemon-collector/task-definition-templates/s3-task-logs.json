@@ -32,8 +32,12 @@
                 }
             },
             "environment": [
-				{
+                {
 					"name": "aws_fluent_bit_init_file_1",
+					"value": "/ecs/daemon/service.conf"
+				},
+				{
+					"name": "aws_fluent_bit_init_file_2",
 					"value": "/ecs/daemon/inputs/task.conf"
 				},
                 {
@@ -45,7 +49,7 @@
 					"value": "On"
 				},
                 {
-					"name": "aws_fluent_bit_init_file_2",
+					"name": "aws_fluent_bit_init_file_3",
 					"value": "/ecs/daemon/outputs/s3/task.conf"
 				},
                 {
