@@ -66,7 +66,6 @@ debug-init: linux-plugins
 debug-init-quick:
 	docker build -t amazon/aws-for-fluent-bit:debug-init -f Dockerfile.debug-init .
 
-
 .PHONY: cloudwatch-dev
 cloudwatch-dev:
 	docker build \

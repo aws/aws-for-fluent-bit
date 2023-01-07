@@ -34,7 +34,11 @@ COPY init/fluent_bit_init_entrypoint.sh /init/fluent_bit_init_entrypoint.sh
 RUN chmod +x /init/fluent_bit_init_entrypoint.sh
 
 # Only last CMD command will be executed, automatically replaces the original entrypoint
-CMD mv /fluent-bit /cores/fluent-bit; ./init/fluent_bit_init_entrypoint.sh; mv /cores/fluent-bit /fluent-bit; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "\nwaiting 2 minutes for coredump to upload\n" sleep 120
+# CMD mv /fluent-bit /cores/fluent-bit; ./init/fluent_bit_init_entrypoint.sh; mv /cores/fluent-bit /fluent-bit; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "\nwaiting 2 minutes for coredump to upload\n" sleep 120
+CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "\nwaiting 2 minutes for coredump to upload\n"; sleep 120
+# make debug-init
+# docker run  -it --privileged --ulimit core=-1 -v ~/coredumps:/cores amazon/aws-for-fluent-bit:debug-init
+# kill -SIGSEGV 14
 
 # This works: CMD echo "please ignore the following error"; mv /fluent-bit /cores/fluent-bit; ./init/fluent_bit_init_entrypoint.sh; mv /cores/fluent-bit /fluent-bit; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; sleep 120
 # This does not work: cd /cores; /init/fluent_bit_init_entrypoint.sh; sleep 120
