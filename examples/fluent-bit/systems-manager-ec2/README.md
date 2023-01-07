@@ -2,6 +2,8 @@
 
 In this example, we will walk you through the installation of [Fluent Bit](https://fluentbit.io/documentation/0.8/installation/redhat_centos.html) on an Amazon Linux 2 EC2 instance along with the [amazon-cloudwatch-logs-for-fluent-bit](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit) and [amazon-kinesis-firehose-for-fluent-bit](https://github.com/aws/amazon-kinesis-firehose-for-fluent-bit) output plugins via an [AWS Systems Manager Document](https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html).
 
+**Note**: This tutorial was created in 2019 when AWS for Fluent Bit was first launched. It uses the AWS Go plugins which are still supported, however, newer [higher performance core Fluent Bit plugins](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins) embedded in its binary also now exist. Furthermore, Fluent Bit now has [official docs for installing on Amazon Linux](https://docs.fluentbit.io/manual/installation/linux/amazon-linux) which is another option.  
+
 #### Prerequisites
 
 To get started you will need:
