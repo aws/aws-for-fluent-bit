@@ -2,7 +2,6 @@
 
 The goal of this guide is a central location for all tutorials on solving use cases for AWS customers with Fluent Bit.
 
-## Troubleshooting errors and issues
 
 ## ECS FireLens New Features
 * [Source multiple configs from S3 or files](init-process-for-fluent-bit/README.md)
@@ -31,6 +30,10 @@ Coming Soon!
 
 ### Monitoring Fluent Bit
 * [Fluent Bit Prometheus endpoint](https://docs.fluentbit.io/manual/administration/monitoring)
+
+
+## EC2 without an orchestrator
+* [Install Fluent Bit binary and AWS plugins on Amazon Linux 2 via AWS Systems Manager](../examples/fluent-bit/systems-manager-ec2/)
 
 
 
