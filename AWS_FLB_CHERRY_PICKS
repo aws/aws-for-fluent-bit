@@ -1,1 +1,2 @@
-# No added cherrypicks in this release
+# Revert datadog fix PR to resolve segfault
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert 98313ebf206eec4a4e5375b352fc36849b762323
