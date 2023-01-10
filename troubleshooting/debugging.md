@@ -161,6 +161,8 @@ You may see that Fluent Bit exited with one of its last logs as:
 
 This means that Fluent Bit received a SIGTERM. This means that Fluent Bit was requested to stop; SIGTERM is associated with graceful shutdown. Fluent Bit will be sent a SIGTERM when your container orchestrator/runtime wants to stop its container/task/pod. 
 
+When Fluent Bit recieves a SIGTERM, it will begin a graceful shutdown and will attempt to send all currently buffered logs. Its inputs will be paused and then it will shutdown once the [configured `Grace` period has elapsed](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file). Please note that the default Grace period for Fluent Bit is only 5 seconds, whereas, in most container orchestrators the default grace period time is 30 seconds. 
+
 If you see this in your logs and you are troubleshooting a stopped task/pod, this log indicates that Fluent Bit did not cause the shutdown. If there is another container in your task/pod check if it exited unexpectedly. 
 
 If you are an Amazon ECS FireLens user and you see your task status as:
