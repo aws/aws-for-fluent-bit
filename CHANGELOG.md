@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.29.1
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Same as `2.29.0`, this release includes the following fixes for AWS customers that we are working on getting accepted upstream:
+* Bug - Resolve Datadog issue by reverting recent PR [aws-for-fluent-bit:491](https://github.com/aws/aws-for-fluent-bit/issues/491)
+
 ### 2.29.0
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
