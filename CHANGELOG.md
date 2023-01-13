@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.30.0
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Compared to `2.29.1`, this release adds the following feature that we are working on getting accepted upstream:
+* Feature - Support OpenSearch Serverless data ingestion via OpenSearch plugin [fluent-bit:6448](https://github.com/fluent/fluent-bit/pull/6448)
+
+Same as `2.29.1`, this release includes the following fix that we are working on getting accepted upstream:
+* Bug - Mitigate Datadog output plugin issue by reverting recent PR [aws-for-fluent-bit:491](https://github.com/aws/aws-for-fluent-bit/issues/491)
+
 ### 2.29.1
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
@@ -7,7 +20,7 @@ This release includes:
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
 
-Same as `2.29.0`, this release includes the following fixes for AWS customers that we are working on getting accepted upstream:
+Compared to `2.29.0`, this release includes the following fix that we are working on getting accepted upstream:
 * Bug - Mitigate Datadog output plugin issue by reverting recent PR [aws-for-fluent-bit:491](https://github.com/aws/aws-for-fluent-bit/issues/491)
 
 ### 2.29.0

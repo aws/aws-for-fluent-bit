@@ -1,2 +1,7 @@
 # Revert datadog fix PR to resolve segfault
 https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert 98313ebf206eec4a4e5375b352fc36849b762323
+
+# Support Opensearch Serverless data ingestion
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 1633c49aadad55bac483c5e55772de0e6c29704a
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 4dc5368502d22d5ed54f06e5700242a0138e3ff7
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 f7be9ba54fca28a4f4d154f8ba55e53a81f31130
