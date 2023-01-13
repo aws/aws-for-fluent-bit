@@ -51,8 +51,8 @@ linux-plugins:
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
 
 .PHONY: debug
-debug:
-	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+debug: linux-plugins
+	docker system prune -f
 	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
 
 .PHONY: cloudwatch-dev
