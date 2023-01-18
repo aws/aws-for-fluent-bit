@@ -5,3 +5,21 @@ https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert 9831
 https://github.com/matthewfala/fluent-bit.git aoss-1.9 1633c49aadad55bac483c5e55772de0e6c29704a
 https://github.com/matthewfala/fluent-bit.git aoss-1.9 4dc5368502d22d5ed54f06e5700242a0138e3ff7
 https://github.com/matthewfala/fluent-bit.git aoss-1.9 f7be9ba54fca28a4f4d154f8ba55e53a81f31130
+
+# Various Features
+# S3 filename from log timestamp
+https://github.com/Claych/fluent-bit.git clay-s3-time-stamp-1.9 cd70b5e0f0e5efb5ecdd7a22742388ad687d197c
+
+# Kinesis time format
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 dfeff9de13ba7f1bbebe08fef24ec993dee7e392
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 66e85a11590f0045294a3d1b104baf73569a1dd0
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 e225ff7374fbc5e290b0090652158e3d2db5d8a6
+
+# S3 sync iO Commit
+https://github.com/PettitWesley/fluent-bit.git s3-always-sync 232367a705c3788aecdda827cc99a69f2b7a01ef
+
+# S3 log_key warn fix
+https://github.com/PettitWesley/fluent-bit.git s3-log-key-warn-1_9 308b73558fb2d3dafb3b80feb0c68dc9b2c18186
+
+# ECS Filter
+https://github.com/PettitWesley/fluent-bit.git ecs-empty-metadata-fix-one-commit 24934c938e8f63700edf1230a09e4483ac5df6a3
