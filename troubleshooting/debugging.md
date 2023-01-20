@@ -141,6 +141,10 @@ When the storage is full the inputs will be paused and you will get warnings lik
 
 Search for "overlimit" in the Fluent Bit logs to find the paused and resume messages about storage limits. These can be found in the code in [`flb_input_chunk.c`](https://github.com/fluent/fluent-bit/blob/master/src/flb_input_chunk.c#L1267). 
 
+The `storage buf overlimit` occurs when the number of in memory ("up") chunks exceeds the `storage.max_chunks_up` and you have set `storage.type filesystem` and `storage.pause_on_chunks_overlimit On`. 
+
+The `mem buf overlimit` occurs when the input has exceeded the configured `Mem_Buf_Limit` and `storage.type memory` is configured. 
+
 #### invalid JSON message
 
 Users who followed [this tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection) or similar to send logs to the TCP input often see message like:
