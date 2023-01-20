@@ -31,6 +31,7 @@
 - [Segfaults and crashes (SIGSEGV)](#segfaults-and-crashes-sigsegv)
     - [Tutorial: Obtaining a core dump from Fluent Bit](#tutorial-obtaining-a-core-dump-from-fluent-bit)
 - [Log Loss](#log-loss)
+    - [Log Loss Summary: Common Causes](#log-loss-summary-common-causes)
 - [Scaling](#scaling)
 - [Throttling, Log Duplication & Ordering](#throttling-log-duplication--ordering)
     - [Log Duplication Summary](#log-duplication-summary)
@@ -84,6 +85,29 @@ Even if you see this message, you still have not lost logs yet. Since it will re
 ```
 
 When you see this message, you have lost logs. The other case that indicates log loss is when an input is paused, which is covered in the [overlimit error section](#overlimit-warnings).
+
+#### Tail Input Skipping File
+
+```
+[2023/01/19 04:23:24] [error] [input:tail:tail.6] file=/app/env/paymentservice/var/output/logs/system.out.log.2023-01-22-06 requires a larger buffer size, lines are too long. Skipping file.
+```
+
+Above is an example error message that can occur with the tail input. This happens due to the [code here](https://github.com/fluent/fluent-bit/blob/v2.0.0/plugins/in_tail/tail_file.c#L1312). When Fluent Bit tail skips a log file, the remaining un-read logs in the file will not be sent and will be lost. 
+
+The Fluent Bit [tail documentation](https://docs.fluentbit.io/manual/pipeline/inputs/tail) has settings that are relevant here:
+- `Buffer_Max_Size`: Defaults to `32k`. This is the max size for the in memory Fluent Bit will use to read your log file(s). Fluent Bit reads log files line by line, so this value needs to be larger than the longest log lines in your file(s). Fluent Bit will only increase the buffer as needed, therefore, it is safe and recommended to err on the side of configuring a large value for this field for safety. 
+- `Buffer_Chunk_Size`: Defaults to `32k`. This setting controls the initial size of the buffer that Fluent Bit uses to read log lines. And it also controls the increments that Fluent Bit will increase the buffer as needed. Let's understand this via an example. Consider that you have configured a `Buffer_Max_Size` of `1MB` and the default `Buffer_Chunk_Size` of `32k`. If Fluent Bit has to read a log line which is `100k` in length, the buffer will start at `32k`. Fluent Bit will read `32k` of the log line and notice that it hasn't found a newline yet. It will then increase the buffer by another `32k`, and read more of the line. That still isn't enough, so again and again the buffer will be increased by `Buffer_Chunk_Size` until its large enough to capture the entire line. So configure this setting to be a value close to the longest lines you have, this way Fluent Bit will not waste CPU cycles on many rounds of re-allocation of the buffer. 
+- `Skip_Long_Lines`: Defaults to `off`. When this setting is enabled it means "Skip long log lines instead of skipping the entire file". Fluent Bit will skip long log lines that exceed `Buffer_Max_Size` and continue reading the file at the next line. Therefore, we recommend always setting this value to `On`.
+
+To prevent the error and log loss above, we can set our tail input to have:
+
+```
+[INPUT]
+    Name tail
+    Buffer_Max_Size { A value larger than the longest line your app can produce}
+    Skip_Long_Lines On # skip unexpectedly long lines instead of skipping the whole file
+```
+
 
 #### Tail Permission Errors
 A common error message for ECS FireLens users who are reading log files is the following:
@@ -473,6 +497,13 @@ We have uploaded some tools that we have used for past log loss investigations i
 Finally, we should note that the AWS plugins go through log loss testing as part of our release pipeline, and log loss will block releases. We are working on improving our test framework; you can find it in the [integ/](integ/) directory.
 
 We also now have log loss and throughput benchmarks as part of our release notes.
+
+#### Log Loss Summary: Common Causes
+
+The following are typical causes of log loss. Each of these have clear error messages associated with them that you can find in the Fluent Bit log output.
+1. [Exhausted Retries](#how-do-i-tell-if-fluent-bit-is-losing-logs)
+2. [Input paused due to buffer overlimit](#overlimit-warnings)
+3. [Tail input skips files or lines](#tail-input-skipping-file)
 
 ### Scaling
 
