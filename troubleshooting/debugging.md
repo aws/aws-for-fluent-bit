@@ -517,8 +517,9 @@ To summarize, log duplication is known to occur for the following reasons:
 
 #### Recommendations for throttling
 
-* If you are using Kinesis Streams of Kinesis Firehose, scale your stream to handle your max required throughput
-* For CloudWatch Log Streams, there is currently a hard ingestion limit per stream. Thus, the solution is to scale out to more streams. Since the best practice is one log stream per app container, this means scaling out to more app containers so that each performs less work and thus produces fewer logs, and also so that there are more log streams.  
+* If you are using Kinesis Streams of Kinesis Firehose, scale your stream to handle your max required throughput. 
+* CloudWatch Logs [no longer has a per-log-stream ingestion limit](https://aws.amazon.com/about-aws/whats-new/2023/01/amazon-cloudwatch-logs-log-stream-transaction-quota-sequencetoken-requirement/). 
+* Read our [Checking Batch Sizes](#checking-batch-sizes) section to optimize how Fluent Bit flushes logs. This optimization can help ensure Fluent Bit does not make more requests than is necessary. However, please understand that in most cases of throttling, there is no setting change in the Fluent Bit client that can eliminate (or even reduce) throttling. Fluent Bit will and must send logs as quickly as it ingests them otherwise there will be a backlog/backpressure. 
 
 ### Plugin Specific Issues
 
