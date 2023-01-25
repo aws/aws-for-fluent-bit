@@ -1,0 +1,9 @@
+# First build image
+Docker build -t stdout-logger-{issue ID or name}:latest .
+
+# Get parent directory of repro attempt
+cd .. && pwd
+
+# Run container with path to fluent.sock
+docker run -d --log-driver fluentd --log-opt "fluentd-address=unix://{path to repro attempt parent dir}/socket/fluent.sock" --log-opt "tag={container 
+name}-firelens-{fake task ID}" stdout-logger-{issue ID or name}:latest

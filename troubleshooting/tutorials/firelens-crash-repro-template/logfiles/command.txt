@@ -1,0 +1,4 @@
+# You should probably run this command in a screen or tmux session so that this keeps running even if your SSH session dies
+# Add customer log content to logs.log
+# The script will cat it to app.log every second
+

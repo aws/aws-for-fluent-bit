@@ -1,0 +1,6 @@
+docker run -d --network host  --privileged --ulimit core=-1  -v $(pwd):/fluent-bit/etc -v $(pwd)/cores:/cores -v $(pwd)/storage:/storage -v $(pwd)/socket:/var/run \
+     -v $(pwd)/logfiles:/logfiles {debug build of Fluent Bit version used}
+
+# Notes
+# You may need to set env vars with -e
+# Common env vars include: LOG_REGION, HOSTNAME
