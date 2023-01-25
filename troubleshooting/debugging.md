@@ -50,6 +50,7 @@
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
     - [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
+        - [FireLens Customer Case Local Repro Template]()
 - [FAQ]
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
@@ -883,6 +884,19 @@ For reference, for this example, here is what the `fluent-bit.conf` should look 
     delivery_stream my-stream
     retry_limit 2
 ```
+
+##### FireLens Customer Case Local Repro Template
+
+In [troubleshooting/tutorials/firelens-crash-repro-template](troubleshooting/tutorials/firelens-crash-repro-template) there are a set of files that you can use to quickly create the setup above. The template includes setup for outputting corefiles to a directory and optionally sending logs from stdout, file, and TCP loggers. Using the loggers is optional and we recommended considering [aws/firelens-datajet](https://github.com/aws/firelens-datajet) as another option to send log files. 
+
+To use the template:
+1. Build a core file debug build of the Fluent Bit version in the customer case.
+2. Clone/copy the [troubleshooting/tutorials/firelens-crash-repro-template](troubleshooting/tutorials/firelens-crash-repro-template) into a new project directory. 
+3. Customize the `fluent-bit.conf` and the `extra.conf` with customer config file content. You may need to edit it to be convenient for your repro attempt. If there is a `storage.path`, set it to `/storage` which will be the storage sub-directory of your repro attempt. If there are log files read, customize the path to `/logfiles/app.log`, which will be the `logfiles` sub-directory containing the logging script. 
+4. The provided `run-fluent-bit.txt` contains a starting point for constructing a docker run command for the repro.
+5. The `logfiles` directory contains a script for appending to a log file every second from an example log file called `example.log`. Add customer custom log content that caused the issue to that file. Then use the instructions in `command.txt` to run the logger script. 
+6. The `stdout-logger` sub-directory includes setup for a simple docker container that writes the `example.log` file to stdout every second. Fill `example.log` with customer log content. Then use the instructions in `command.txt` to run the logger container. 
+7. The `tcp-logger` sub-directory includes setup for a simple script that writes the `example.log` file to a TCP port every second. Fill `example.log` with customer log content. Then use the instructions in `command.txt` to run the logger script. 
 
 ### FAQ
 
