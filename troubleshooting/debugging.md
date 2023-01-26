@@ -43,6 +43,7 @@
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
+    - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
@@ -607,6 +608,25 @@ Path                /logs/request.log
 In other cases, the original config would be correct. For example, assume your app produces first a log file `request.log` and then next creates and writes new logs to a new file named `request.log1` and then next `request.log2`. And then when the max number of files are reached, the original `request.log` is deleted and then a new `request.log` is written. If that is the scenario, then the original Path pattern with a wildcard at the end is correct since it is necessary to match all log files where new logs are written. This method of log rotation is the behavior of the [log4j DirectWriteRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DirectWriteRolloverStrategy) where there is no file renaming. 
 
 ### Fluent Bit Windows containers
+
+#### Enabling debug mode for Fluent Bit Windows images
+Debug mode can be enabled for Fluent Bit Windows images so that when Fluent Bit crashes, we are able to generate crash dumps which would help in debugging the issue. This can be accomplished by overriding the entrypoint command to include the `-EnableCoreDump` flag. For example-
+```
+# If you are using the config file located at C:\fluent-bit\etc\fluent-bit.conf 
+Powershell -Command C:\\entrypoint.ps1 -EnableCoreDump
+
+# If you are using a custom config file located at other location say C:\fluent-bit-config\fluent-bit.conf. 
+Powershell -Command C:\\entrypoint.ps1 -EnableCoreDump -ConfigFile C:\\fluent-bit-config\\fluent-bit.conf
+```
+
+The crash dumps would be generated at location `C:\fluent-bit\CrashDumps` inside the container. Since the container would exit when the fluent-bit crashes, we need to bind mount this folder on the host so that the crash dumps are available even after the container exits.
+
+**Note:** This functionality is available in all `aws-for-fluent-bit` Windows images with version `2.31.0` and above. 
+
+###### Caveat with debug mode 
+Please note that when you are running the Windows images in debug mode, then Golang plugins would not be supported. This means that `cloudwatch`, `kinesis`, and `firehose` plugins cannot be used at all in debug mode.
+
+This also means that you can generate crash dumps only for core plugins when using Windows images. Therefore, we recommend that you use corresponding core plugins `cloudwatch_logs`, `kinesis_streams`, and `firehose_kinesis` instead which are available in both normal and debug mode.
 
 #### Networking issue with Windows containers when using `async` DNS resolution by plugins
 There are Fluent Bit core plugins which are using the default [async mode for performance improvement](https://github.com/fluent/fluent-bit/blob/master/DEVELOPER_GUIDE.md#concurrency). Ideally when there are multiple nameservers present in a network namespace, the DNS resolver should retry with other nameservers if it receives failure response from the first one. However, Fluent Bit version 1.9 had a bug wherein the DNS resolution failed after first failure. The Fluent Bit Github issue link is [here](https://github.com/fluent/fluent-bit/issues/5862).
