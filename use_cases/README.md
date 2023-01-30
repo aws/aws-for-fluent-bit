@@ -14,7 +14,7 @@ We have guides on everything from JSON parsing to sending Fluent Bit's internal 
 
 ## ECS Daemon Service Examples
 
-Coming Soon!
+TODO
 
 ## EKS/Kubernetes Examples
 

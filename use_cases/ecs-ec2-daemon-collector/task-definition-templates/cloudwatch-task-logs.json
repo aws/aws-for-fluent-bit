@@ -1,0 +1,84 @@
+{
+    "family": "fluent-bit-daemon-collector-cloudwatch",
+    "networkMode": "host",
+    "taskRoleArn": "{INSERT YOUR TASK ROLE ARN}", 
+    "executionRoleArn": "{INSERT YOUR EXECUTION ROLE ARN}",
+    "volumes": [
+        {
+            "name": "applogs",
+            "host": {
+                "sourcePath": "/var/lib/docker/containers"
+            }
+        },
+        {
+            "name": "fluent-bit-buffer-directory",
+            "host": {
+                "sourcePath": "/var/fluent-bit"
+            }
+        }
+    ],
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "public.ecr.aws/aws-observability/aws-for-fluent-bit:stable",
+            "name": "fluent-bit-daemon-collector",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/aws/ecs/{INSERT CLUSTER_NAME}/collector",
+                    "awslogs-region": "{INSERT REGION}",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "fluent-bit-stdout-stderr-"
+                }
+            },
+            "entryPoint": [
+                "/fluent-bit/bin/fluent-bit",
+                "-c",
+                "/ecs/daemon/cloudwatch_logs_task.conf"
+            ],
+            "environment": [
+                {
+					"name": "MEM_BUF_LIMIT_TASK",
+					"value": "50M"
+				},
+                {
+					"name": "MEM_BUF_LIMIT_REWRITE_TAG_TASK",
+					"value": "50M"
+				},
+                {
+					"name": "READ_FROM_HEAD_TASK",
+					"value": "On"
+				},
+                {
+					"name": "CLUSTER_NAME",
+					"value": "{INSERT YOUR CLUSTER NAME HERE}"
+				},
+                {
+					"name": "REGION_TASK",
+					"value": "{INSERT REGION TO SEND LOGS TO}"
+				},
+                {
+					"name": "FLB_AWS_USER_AGENT",
+					"value": "ecs-daemon"
+				},
+                {
+					"name": "FLB_LOG_LEVEL",
+					"value": "info"
+				}
+			],
+            "memoryReservation": 100,
+            "mountPoints": [
+                {
+                    "sourceVolume": "applogs",
+                    "containerPath": "/var/lib/docker/containers",
+                    "readOnly": true
+                },
+                {
+                    "sourceVolume": "fluent-bit-buffer-directory",
+                    "containerPath": "/var/fluent-bit",
+                    "readOnly": false
+                }
+            ]
+        }
+    ]
+}

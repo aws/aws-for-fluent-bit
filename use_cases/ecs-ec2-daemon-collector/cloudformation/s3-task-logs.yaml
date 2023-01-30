@@ -1,0 +1,134 @@
+Description: >
+    This template deploys a Fluent Bit Daemon Collector to an ECS EC2 Cluster to collect task logs
+Parameters:
+    DockerImage:
+        Description: The Fluent Bit Docker image.
+        Type: String
+        Default: public.ecr.aws/aws-observability/aws-for-fluent-bit:stable
+
+    ClusterName:
+        Description: Please provide the ECS Cluster name that this service should run on
+        Type: String
+
+    BucketName:
+        Description: Please provide the S3 Bucket Name to which Fluent Bit should send task logs.
+        Type: String
+
+    BucketRegion:
+        Description: Please provide region of the S3 bucket above. Note- Fluent Bit stdout/stderr output will go the region the stack is deployed in
+        Type: String
+
+Resources:
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            Cluster: !Ref Cluster
+            LaunchType: EC2
+            TaskDefinition: !Ref TaskDefinition
+            SchedulingStrategy: DAEMON
+
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: fluent-bit-daemon-collector-s3
+            TaskRoleArn: !Ref TaskRole
+            ExecutionRoleArn: !Ref ExecutionRole
+            NetworkMode: host
+            Volumes:
+                - Name: applogs
+                  Host:
+                    SourcePath: /var/lib/docker/containers
+                - Name: fluent-bit-buffer-directory
+                  Host:
+                    SourcePath: /var/fluent-bit
+            ContainerDefinitions:
+                - Name: fluent-bit-daemon-collector
+                  Essential: true
+                  EntryPoint: 
+                      - "/fluent-bit/bin/fluent-bit"
+                      - "-c"
+                      - "/ecs/daemon/s3_task.conf"
+                  Environment:
+                      - Name: FLB_LOG_LEVEL
+                        Value: info
+                      - Name: MEM_BUF_LIMIT_TASK
+                        Value: 50M
+                      - Name: MEM_BUF_LIMIT_REWRITE_TAG_TASK
+                        Value: 50M
+                      - Name: READ_FROM_HEAD_TASK
+                        Value: On
+                      - Name: CLUSTER_NAME
+                        Value: !Ref ClusterName
+                      - Name: BUCKET_REGION_TASK
+                        Value: !Ref BucketRegion
+                      - Name: BUCKET_NAME_TASK
+                        Value: !Ref BucketName
+                      - Name: FLB_AWS_USER_AGENT
+                        Value: ecs-daemon
+                  Image: !Ref DockerImage
+                  MountPoints:
+                      - ContainerPath: /var/lib/docker/containers
+                        SourceVolume: applogs
+                        ReadOnly: true
+                      - ContainerPath: /var/fluent-bit
+                        SourceVolume: fluent-bit-buffer-directory
+                        ReadOnly: false
+                  MemoryReservation: 100
+                  LogConfiguration:
+                    LogDriver: awslogs
+                    Options:
+                        awslogs-group: !Join [ "/", [ "/aws/ecs", !Ref ClusterName, "collector" ] ]
+                        awslogs-region: !Ref AWS::Region
+                        awslogs-stream-prefix: fluent-bit-stdout-stderr-
+
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Join [ "/", [ "/aws/ecs", !Ref ClusterName, "collector" ] ]
+
+    # This IAM Role grants the task access S3 for Fluent Bit
+    TaskRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ecs-task-daemon-collector-${AWS::StackName}
+            Path: /
+            AssumeRolePolicyDocument: |
+                {
+                    "Statement": [{
+                        "Sid": "",
+                        "Effect": "Allow",
+                        "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                        "Action": "sts:AssumeRole"
+                    }]
+                }
+            Policies:
+                - PolicyName: !Sub ecs-fluent-bit-daemon-${AWS::StackName}
+                  PolicyDocument:
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:PutObject"
+                                ],
+                                "Resource": "*"
+                            }
+                        ]
+                    }
+    ExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub ecs-execution-daemon-collector-${AWS::StackName}
+            Path: /
+            AssumeRolePolicyDocument: |
+                {
+                    "Statement": [{
+                        "Sid": "",
+                        "Effect": "Allow",
+                        "Principal": { "Service": [ "ecs-tasks.amazonaws.com" ]},
+                        "Action": "sts:AssumeRole"
+                    }]
+                }
+            ManagedPolicyArns: 
+                - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
