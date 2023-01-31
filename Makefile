@@ -55,6 +55,11 @@ debug:
 	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
 
+.PHONY: validate-version-file-format
+validate-version-file-format:
+	jq -e . windows.versions && true || false
+	jq -e . linux.version && true || false
+
 .PHONY: cloudwatch-dev
 cloudwatch-dev:
 	docker build \
