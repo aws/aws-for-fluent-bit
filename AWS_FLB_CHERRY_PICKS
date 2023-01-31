@@ -38,3 +38,10 @@ https://github.com/PettitWesley/fluent-bit.git sync-io-keepalive-fix 7b4550486b7
 https://github.com/PettitWesley/fluent-bit.git mk_event_inject_conn_fix 0f5efc921950feeee99d9251cb330b27d3639863
 
 https://github.com/PettitWesley/fluent-bit.git mk_event_add_corruption-one-commit 33651cca41e9f84ce8930a9bca9d3d7319e50fbd
+
+# Useful debug messages for input events
+# input chunk append message with input name context and number of records
+https://github.com/PettitWesley/fluent-bit.git chunk-append-context 8fc357c6f245a16c4a1e3355a8ccfc2571b876ea
+# in_tail file name context for inotify events
+https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutable-cherry-pick ab11d1d7438f5254d04eba8dfc2f10b78cc2244d
+
