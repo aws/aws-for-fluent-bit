@@ -35,8 +35,6 @@ Param(
 $version = Get-Content -Path "C:\AWS_FOR_FLUENT_BIT_VERSION"
 Write-Host "AWS for Fluent Bit Container Image Version ${version}"
 
-$PluginsToBindParams = "-e C:\fluent-bit\kinesis.dll -e C:\fluent-bit\firehose.dll -e C:\fluent-bit\cloudwatch.dll"
-
 if ($EnableCoreDump) {
     Write-Host "Setting the registry keys to collect dumps"
 
@@ -51,7 +49,9 @@ if ($EnableCoreDump) {
     # Github issue: https://github.com/golang/go/issues/20498
     # Therefore, we will not bind the Golang plugins when in debug mode.
     # We recommend that the corresponding core plugins are used instead of the Golang plugins.
-    $PluginsToBindParams = ""
+    Write-Host "Running in debug mode"
+    C:\fluent-bit\bin\fluent-bit.exe -c "${ConfigFile}"
+} else
+{
+    C:\fluent-bit\bin\fluent-bit.exe -e C:\fluent-bit\kinesis.dll -e C:\fluent-bit\firehose.dll -e C:\fluent-bit\cloudwatch.dll -c "${ConfigFile}"
 }
-
-C:\fluent-bit\bin\fluent-bit.exe "${PluginsToBindParams}" -c "${ConfigFile}"
