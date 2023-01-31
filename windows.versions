@@ -34,7 +34,7 @@
       "openssl": "3.0.7",
       "flexBison": "2.5.22",
       "latest": false,
-      "stable": true,
+      "stable": true
     },
     {
       "version": "2.29.0",
