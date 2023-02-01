@@ -4,6 +4,7 @@
 
 - [Understanding Error Messages](#understanding-error-messages)
     - [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs)
+    - [Tail Input Skipping File](#tail-input-skipping-file)
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
     - [invalid JSON message, skipping](#invalid-json-message)
@@ -37,12 +38,16 @@
     - [Log Duplication Summary](#log-duplication-summary)
     - [Recommendations for throttling](#recommendations-for-throttling)
 - [Plugin Specific Issues](#plugin-specific-issues)
+    - [Tail Ignore_Older](#tail-input-ignore_older)
     - [rewrite_tag filter and cycles in the log pipeline](#rewrite_tag-filter-and-cycles-in-the-log-pipeline)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
     - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
     - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
+- [Best Practices]
+    - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
+    - [Tail Config with Best Practices](#tail-config-with-best-practices)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
@@ -559,6 +564,13 @@ To summarize, log duplication is known to occur for the following reasons:
 
 ### Plugin Specific Issues
 
+#### Tail input Ignore_Older
+
+The [tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) has a setting called `Ignore_Older`:
+> Ignores files which modification date is older than this time in seconds. Supports m,h,d (minutes, hours, days) syntax.
+
+We have seen that if there are a large number of files on disk matched by the Fluent Bit tail `Path`, then Fluent Bit may become slow and may even lose logs. This happens because it must processes watch events for each file. Consider setting up log file deletion and set `Ignore_Older` so that Fluent Bit can stop watching older files.
+
 #### rewrite_tag filter and cycles in the log pipeline
 
 The [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is a very powerful part of the log pipeline. It allows you to define a filter that is actually an input that will re-emit log records with a new tag. 
@@ -641,6 +653,56 @@ Path                /logs/request.log
 ```
 
 In other cases, the original config would be correct. For example, assume your app produces first a log file `request.log` and then next creates and writes new logs to a new file named `request.log1` and then next `request.log2`. And then when the max number of files are reached, the original `request.log` is deleted and then a new `request.log` is written. If that is the scenario, then the original Path pattern with a wildcard at the end is correct since it is necessary to match all log files where new logs are written. This method of log rotation is the behavior of the [log4j DirectWriteRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DirectWriteRolloverStrategy) where there is no file renaming. 
+
+### Best Practices
+
+*Configuration changes which either help mitigate/prevent common issues, or help in debugging issues.*
+
+#### Set Aliases on all Inputs and Outputs
+
+Fluent Bit supports [configuring an alias name](https://docs.fluentbit.io/manual/administration/monitoring#configuring-aliases) for each input and output. 
+
+The Fluent Bit internal metrics and most error/warn/info/debug log messages use either the alias or the Fluent Bit defined input name for context. The Fluent Bit input name is the plugin name plus an ID number; for example if you have 4 tail inputs you would have `tail.1`, `tail.2`, `tail.3`, `tail.4`. The numbers are assigned based on the order in your configuration file. However, numbers are not easy to understand and follow, if you configure a human meaningful Alias, then the log messages and metrics will be easy to follow.
+
+Example input definition with Alias:
+
+```
+[INPUT]
+    Name  tail
+    Alias ServiceMetricsLog
+    ...
+```
+
+Example output definition with Alias:
+
+```
+[OUTPUT]
+    Name cloudwatch_logs
+    Alias SendServiceMetricsLog
+```
+
+#### Tail Config with Best Practices
+
+First take a look at the sections of this guide specific to tail input:
+* [Tail Input Skipping File](#tail-input-skipping-file)
+* [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
+* [Tail input duplicates logs because of rotation](#tail-input-duplicates-logs-because-of-rotation)
+* [Tail Ignore_Older](#tail-input-ignore_older)
+* [Tail Permission Errors](#tail-permission-errors)
+
+
+A Tail configuration following the above best practices might look like:
+
+```
+[INPUT]
+    Name tail
+    Path { your path } # Make sure path does NOT match log files after they are renamed
+    Alias VMLogs # A useful name for this input, used in log messages and metrics
+    Buffer_Max_Size { A value larger than the longest line your app can produce}
+    Skip_Long_Lines On # skip unexpectedly long lines instead of skipping the whole file
+    multiline.parser # add if you have any multiline records to parse. Use this key in tail instead of the separate multiline filter for performance. 
+    Ignore_Older 1h # ignore files not modified for 1 hour (->pick your own time)
+```
 
 ### Fluent Bit Windows containers
 
