@@ -46,6 +46,10 @@
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
+- [Runbooks](#runbooks)
+    - [Log Loss Investigation Runbook](#log-loss-investigation-runbook)
+        - [CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending](#cloudwatch-log-insights-queries-to-check-if-fluent-bit-ingesting-data-and-sending)
+        - [CloudWatch Log Insights Queries to check Tail Input](#cloudwatch-log-insights-queries-to-check-tail-input)
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
@@ -673,6 +677,91 @@ To work around this issue, we suggest using the following option so that system 
 ```
 net.dns.mode LEGACY
 ```
+
+### Runbooks
+
+#### Log Loss Investigation Runbook
+
+*Each investigation is unique and requires judgement and expertise. This runbook contains a set of tools and techniques that we have used in past investigations*.
+
+When you receive a report that a customer has losts logs, consider the following:
+
+1. Check the [Log Loss Summary](#log-loss-summary-common-causes) in this guide. Could any of those root causes apply?
+2. Generally double check the customer configuration for best practices and common issues. While they might not cause the log loss, getting everything in a good state can help.
+3. Query for all instances of `err` or `warn` in the Fluent Bit log output. Does it indicate any potential problems?
+4. Consider enabling [monitoring](https://docs.fluentbit.io/manual/administration/monitoring) for Fluent Bit. We have a [tutorial for ECS FireLens](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw), which can be re-worked for other platforms. 
+5. [Enable debug logging](#enable-debug-logging). And then after the log loss occurs again, use the CloudWatch Log Insights Queries (or equivalents for other systems) to check what is happening inside of Fluent Bit. 
+    1. [CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending](#cloudwatch-log-insights-queries-to-check-if-fluent-bit-ingesting-data-and-sending)
+    2. [CloudWatch Log Insights Queries to check Tail Input](#cloudwatch-log-insights-queries-to-check-tail-input)
+6. Consider deploying the [S3 File Uploader](#s3-file-uploader) which uses `aws s3 sync` to sync a directories contents to an S3 bucket. This can be used to determine which logs were actually lost. If the customer is using the tail input, it can sync the log files (you may need/want to remove log rotation if possible since the script will sync a directory). If the customer is not using a tail input, you could configure a Fluent Bit [file output](https://docs.fluentbit.io/manual/pipeline/outputs/file) to make Fluent Bit output all logs it captured to a directory and sync those. This can help determine if the problem is on the ingestion side or the sending side.
+7. Consider adding new debug logs and instrumentation to check what is happening inside of Fluent Bit. We have some past examples here for checking the state of the event loop:
+    - [Print number of events in event loop](https://github.com/matthewfala/fluent-bit/commit/01f96376fb48da90ab0af8be4c89c6dfb2142453)
+    - TODO: Matt can add links to his previous work on GitHub.
+
+
+##### CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending
+
+*This requires that the customer enabled debug logging*.
+
+One past cause of log loss was the [CloudWatch C Plugin Hang Issue](https://github.com/aws/aws-for-fluent-bit/issues/525) which caused Fluent Bit to freeze/hang and stop sending logs. 
+
+If you can verify that Fluent Bit is still actively ingesting and sending data, that is one data point against it being a freeze/hang/deadlock issue. 
+
+Recall the [Checking Batch sizes](#checking-batch-sizes) section of this guide; you can check these messages to see if the outputs are active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'payload='
+```
+
+When an input appends data to a chunk, there is a [common message](https://github.com/fluent/fluent-bit/pull/6761) that is logged. This checks that the inputs are still active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'update output instances with new chunk size'
+```
+
+Most chunk related messages have `chunk` in them, that string can be used in queries. 
+
+For both of these, checking the frequency of debug messages may be more interesting than the events themselves. 
+
+##### CloudWatch Log Insights Queries to check Tail Input
+
+*This requires that the customer enabled debug logging*.
+
+If the log loss report specifically involves the tail input, there are many useful debug messages it outputs. 
+
+You can check for events for a specific file path/prefix:
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like '{log path/prefix}'
+```
+
+Check the output- does it make sense? One past issue we encountered was that Fluent Bit was stuck processing lots of events for old files, the solution for which was to configure `Ignore_Older`. See the section of this guide on that common issue. 
+
+This query checks for all instances where FLB picked up a new file:
+
+```
+fields @timestamp, @message, @logStream, @log
+| sort @timestamp desc
+| filter @message like 'inotify_fs_add'
+```
+
+Which can verify that new files are being picked up. This next query checks for all `IN_MODIFY` events, which happen when a log file is appended to.
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'IN_MODIFY'
+```
+
+Depending on the results of the above queries, you may want to search for all messages for a specific inode ID or file name. 
+
+##### S3 File Uploader
 
 ### Testing
 
