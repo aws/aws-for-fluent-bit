@@ -117,8 +117,7 @@ RUN yum upgrade -y \
           zlib-devel \
           valgrind \
           libyaml \
-          gdb \
-          nc && rm -fr /var/cache/yum
+          nc
 
 COPY --from=builder /fluent-bit /fluent-bit
 COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so
@@ -145,15 +144,10 @@ ADD ecs /ecs/
 EXPOSE 2020
 
 # Default: Run under valgrind
-# alternatively, you can change this to run FB directly and try
-# to get a core file instead
+# This is the base debug Dockerfile which builds Fluent Bit with debug symbols
+# Dockerfile.core takes it and customizes for core dump
+# Dockerfile.valgrind takes it and just runs valgrind
+# This base debug image does not remove yum, so its heavier 
 CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
 
-# Alternate: Run directly and get core file
-# make sure you run with `docker run --ulimit core=-1`
-# and mount the /cores folder onto the host
-# Un-Comment the lines below:
-# 
-# RUN mkdir /cores && chmod 777 /cores
-# CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
  

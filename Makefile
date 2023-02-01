@@ -50,10 +50,15 @@ linux-plugins:
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
 
-.PHONY: debug
-debug:
-	docker build --no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
-	docker build --no-cache -t amazon/aws-for-fluent-bit:debug -f Dockerfile.debug .
+.PHONY: debug-base
+debug-base: linux-plugins
+	docker system prune -f
+	docker build --no-cache -t amazon/aws-for-fluent-bit:debug-base -f Dockerfile.debug-base .
+
+.PHONY: core
+core: debug-base
+	docker system prune -f
+	docker build -t amazon/aws-for-fluent-bit:core -f Dockerfile.core .
 
 .PHONY: validate-version-file-format
 validate-version-file-format:
