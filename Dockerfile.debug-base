@@ -145,8 +145,7 @@ EXPOSE 2020
 
 # Default: Run under valgrind
 # This is the base debug Dockerfile which builds Fluent Bit with debug symbols
-# Dockerfile.core takes it and customizes for core dump
-# Dockerfile.valgrind takes it and just runs valgrind
+# Dockerfile.core takes it and customizes for core dump and now can upload cores to S3.
 # This base debug image does not remove yum, so its heavier 
 CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
 

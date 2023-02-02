@@ -60,6 +60,11 @@ core: debug-base
 	docker system prune -f
 	docker build -t amazon/aws-for-fluent-bit:core -f Dockerfile.core .
 
+.PHONY: valgrind
+valgrind: debug-base
+	docker system prune -f
+	docker build -t amazon/aws-for-fluent-bit:valgrind -f Dockerfile.core .
+
 .PHONY: validate-version-file-format
 validate-version-file-format:
 	jq -e . windows.versions && true || false
