@@ -1,7 +1,7 @@
 FROM amazon/aws-for-fluent-bit:debug-base
 
-ENV BUCKET customer-must-set-bucket-env-var-to-upload-core-dump
-ENV BUCKET_PREFIX set-this-to-a-useful-name-for-the-issue
+ENV S3_BUCKET customer-must-set-bucket-env-var-to-upload-core-dump
+ENV S3_KEY_PREFIX set-this-to-a-useful-name-for-the-issue
 
 RUN yum install -y unzip zip curl gdb
 
@@ -27,4 +27,4 @@ WORKDIR /cores
 
 # Upload coredumps to s3 on shutdown
 # customer must set BUCKET env var
-CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${BUCKET}/${BUCKET_PREFIX}/${HOSTNAME}-${RANDOM}/
+CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM}/
