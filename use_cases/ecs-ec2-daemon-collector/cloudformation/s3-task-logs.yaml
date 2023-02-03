@@ -22,7 +22,7 @@ Resources:
     Service:
         Type: AWS::ECS::Service
         Properties:
-            Cluster: !Ref Cluster
+            Cluster: !Ref ClusterName
             LaunchType: EC2
             TaskDefinition: !Ref TaskDefinition
             SchedulingStrategy: DAEMON
