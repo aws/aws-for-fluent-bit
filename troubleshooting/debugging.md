@@ -23,7 +23,6 @@
     - [Searching old issues](#searching-old-issues)
     - [Downgrading or upgrading your version](#downgrading-or-upgrading-your-version)
     - [Network Connection Issues](#network-connection-issues)
-    - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
 - [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
     - [High Memory usage does not always mean there is a leak/bug](#high-memory-usage-does-not-always-mean-there-is-a-leakbug)
     - [FireLens OOMKill Prevention Guide](#firelens-oomkill-prevention-guide)
@@ -56,6 +55,7 @@
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
     - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
+    - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
 
 
 ### Understanding Error Messages
@@ -398,37 +398,6 @@ Remember that we also have older Golang output plugins for AWS (no longer recomm
 - `kinesis`
 
 Consequently, the AWS team contributed an `auto_retry_requests` config option for each of the core AWS outputs. This will issue an immediate retry for any connection issues. 
-
-#### What will the logs collected by Fluent Bit look like?
-
-This depends on what input the logs were collected with. However, in general, the raw log line for a container is encapsulated in a `log` key and a JSON is created like:
-
-```
-{
-    "log": "actual line from container here",
-}
-```
-
-Fluent Bit internally stores JSON encoded as msgpack. Fluent Bit can only process/ingest logs as JSON/msgpack. With FireLens, your stdout & stderr logs would look like this with if you have not disabled `enable-ecs-log-metadata`:
-
-```
-{
-    "source": "stdout",
-    "log": "116.82.105.169 - Homenick7462 197 [2018-11-27T21:53:38Z] \"HEAD /enable/relationships/cross-platform/partnerships\" 501 13886",
-    "container_id": "e54cccfac2b87417f71877907f67879068420042828067ae0867e60a63529d35",
-    "container_name": "/ecs-demo-6-container2-a4eafbb3d4c7f1e16e00"
-    "ecs_cluster": "mycluster",
-    "ecs_task_arn": "arn:aws:ecs:us-east-2:01234567891011:task/mycluster/3de392df-6bfa-470b-97ed-aa6f482cd7a6",
-    "ecs_task_definition": "demo:7"
-    "ec2_instance_id": "i-06bc83dbc2ac2fdf8"
-}
-```
-
-The first 4 fields are added by the [Fluentd Docker Log Driver](https://docs.docker.com/config/containers/logging/fluentd/). The 4 ECS metadata fields are added by FireLens and are explained here:
-* [FireLens example generated config](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf)
-* [FireLens Under the Hood](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/)
-
-If you are using CloudWatch as your destination, there are additional considerations if you use the `log_key` option to just send the raw log line: [What if I just want the raw log line to appear in CW?](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs#what-if-i-just-want-the-raw-log-line-from-the-container-to-appear-in-cloudwatch).
 
 ### Memory Leaks or high memory usage
 
@@ -985,3 +954,36 @@ If you provide us with an issue report, say a memory leak or a crash, then the A
 
 
 Thus, it can take up to a month from first issue report to the full release of a fix. Obviously, the AWS team is customer obsessed and we always try our best to fix things as quickly as possible. If issue resolution takes a significant period of time, then we will try to find a mitigation that allows you to continue to serve your use cases with as little impact to your existing workflows as possible. 
+
+#### What will the logs collected by Fluent Bit look like?
+
+This depends on what input the logs were collected with. However, in general, the raw log line for a container is encapsulated in a `log` key and a JSON is created like:
+
+```
+{
+    "log": "actual line from container here",
+}
+```
+
+Fluent Bit internally stores JSON encoded as msgpack. Fluent Bit can only process/ingest logs as JSON/msgpack. 
+
+With ECS FireLens, your stdout & stderr logs would look like this with if you have not disabled `enable-ecs-log-metadata`:
+
+```
+{
+    "source": "stdout",
+    "log": "116.82.105.169 - Homenick7462 197 [2018-11-27T21:53:38Z] \"HEAD /enable/relationships/cross-platform/partnerships\" 501 13886",
+    "container_id": "e54cccfac2b87417f71877907f67879068420042828067ae0867e60a63529d35",
+    "container_name": "/ecs-demo-6-container2-a4eafbb3d4c7f1e16e00"
+    "ecs_cluster": "mycluster",
+    "ecs_task_arn": "arn:aws:ecs:us-east-2:01234567891011:task/mycluster/3de392df-6bfa-470b-97ed-aa6f482cd7a6",
+    "ecs_task_definition": "demo:7"
+    "ec2_instance_id": "i-06bc83dbc2ac2fdf8"
+}
+```
+
+The first 4 fields are added by the [Fluentd Docker Log Driver](https://docs.docker.com/config/containers/logging/fluentd/). The 4 ECS metadata fields are added by FireLens and are explained here:
+* [FireLens example generated config](https://github.com/aws-samples/amazon-ecs-firelens-under-the-hood/blob/mainline/generated-configs/fluent-bit/generated_by_firelens.conf)
+* [FireLens Under the Hood](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/)
+
+If you are using CloudWatch as your destination, there are additional considerations if you use the `log_key` option to just send the raw log line: [What if I just want the raw log line to appear in CW?](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs#what-if-i-just-want-the-raw-log-line-from-the-container-to-appear-in-cloudwatch).
