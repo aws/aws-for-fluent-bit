@@ -23,3 +23,13 @@ https://github.com/PettitWesley/fluent-bit.git s3-log-key-warn-1_9 308b73558fb2d
 
 # ECS Filter
 https://github.com/PettitWesley/fluent-bit.git ecs-empty-metadata-fix-one-commit 24934c938e8f63700edf1230a09e4483ac5df6a3
+
+# Add back Datadog fixes that do not trigger segfault
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert acc01a4bf4ce656023d82943bec2683b5b7755e5
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert ac30b7c876a95d44c33a406b2b58ce08b978587e
+
+# Datadog Partial Fix Patch
+https://github.com/matthewfala/fluent-bit.git datadog-ecs-patch 3c1ad69ada5bb6f2e448c6f39a1a0ea6a6f4ff17
+
+# S3 retry limit configuration option
+https://github.com/Claych/fluent-bit.git clay-retry-limit-1.9 76ae393e565ccf37c131afc58902c9fc3d15de12

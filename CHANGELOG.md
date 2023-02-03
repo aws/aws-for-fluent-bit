@@ -1,5 +1,26 @@
 # Changelog
 
+### 2.31.1
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Compared to `2.31.0`, this release adds the following feature that we are working on getting accepted upstream:
+* Feature - Add a configuration option for S3 retry attempts [fluent-bit:6475](https://github.com/fluent/fluent-bit/pull/6475)
+* Bug - Resolve a rare Datadog segfault that occurs when remapping tags [aws-for-fluent-bit:491](https://github.com/aws/aws-for-fluent-bit/issues/491)
+
+Same as `2.31.0`, this release includes the following fixes and features that we are working on getting accepted upstream:
+* Feature - Add `kinesis_firehose` and `kinesis_streams` support for `time_key_format` milliseconds with `%3N` option, and nanoseconds `9N` and `%L` options [fluent-bit:2831](https://github.com/fluent/fluent-bit/issues/2831)
+* Feature - Support OpenSearch Serverless data ingestion via OpenSearch plugin [fluent-bit:6448](https://github.com/fluent/fluent-bit/pull/6448)
+* Enhancement - Transition S3 to fully synchronous file uploads to improve plugin stability [fluent-bit:6573](https://github.com/fluent/fluent-bit/pull/6573)
+* Bug - Mitigate Datadog output plugin issue by reverting recent PR [aws-for-fluent-bit:491](https://github.com/aws/aws-for-fluent-bit/issues/491)
+* Bug - Format S3 filename with timestamp from the first log in uploaded file, rather than the time the first log was buffered by the s3 output [aws-for-fluent-bit:459](https://github.com/aws/aws-for-fluent-bit/issues/459)
+* Bug - Resolve S3 logic to display `log_key` missing warning message if the configured `log_key` field is missing from log payload [fluent-bit:6557](https://github.com/fluent/fluent-bit/pull/6557)
+* Bug - ECS Metadata filter gracefuly handle task metadata query errors and cache metadata processing state to improve performance [aws-for-fluent-bit:505](https://github.com/aws/aws-for-fluent-bit/issues/505)
+
+
 ### 2.31.0
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
