@@ -1,0 +1,7 @@
+# custom logger that outputs events to stdout 
+# uses openssl to generate random data, so each log emitted
+# is unique
+#
+# Env Vars:
+# LOGGER_RATE => number of logs to emit per second
+# LOG_SIZE => size in bytes of openssl to generate for each log
