@@ -46,6 +46,11 @@
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
+- [Runbooks](#runbooks)
+    - [FireLens Crash Report Runbook](#firelens-crash-report-runbook)
+        - [1. Build and distribute a core dump S3 uploader image](#1-build-and-distribute-a-core-dump-s3-uploader-image)
+        - [2. Setup your own repro attempt](#2-setup-your-own-repro-attempt)
+        - [Template: Replicate FireLens case in Fargate](#template-replicate-firelens-case-in-fargate)
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
@@ -674,6 +679,96 @@ To work around this issue, we suggest using the following option so that system 
 net.dns.mode LEGACY
 ```
 
+### Runbooks
+
+
+#### FireLens Crash Report Runbook
+
+When you recieve a SIGSEGV/crash report from a FireLens customer, perform the following steps. 
+
+##### 1. Build and distribute a core dump S3 uploader image
+
+You need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.debug-base` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing. 
+
+Then simply run:
+```
+make core
+```
+
+Push this image to AWS (ideally public ECR) so that you and the customer can download it. 
+
+Send the customer a comment like the following:
+
+If you can deploy this image, in an env which easily reproduces the issue, we can obtain a "core dump" when Fluent Bit crashes. This image will run normally until Fluent Bit crashes, then it will run an AWS CLI command to upload a compressed "core dump" to an S3 bucket. You can then send that zip file to us, and we can use it to figure out what's going wrong. 
+
+If you choose to deploy this, for the S3 upload on shutdown to work, you must:
+
+1. Set the following env vars:
+    a. `S3_BUCKET` => an S3 bucket that your task can upload too. 
+    b. `S3_KEY_PREFIX` => this is the key prefix in S3 for the core dump, set it to something useful like the ticket ID or a human readable string. It must be valid for an S3 key.
+2. You then must add the following S3 permissions to your task role so that the AWS CLI can upload to S3.
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Resource": [
+                "arn:aws:s3:::YOUR_BUCKET_NAME",
+                "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+            ],
+            "Effect": "Allow",
+            "Action": [
+                "s3:DeleteObject",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutObject"
+            ]
+        }
+    ]
+}
+```
+
+Make sure to edit the `Resource` section with your bucket name. 
+
+
+##### 2. Setup your own repro attempt 
+
+There are two options for reproducing a crash:
+1. [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
+2. [Template: Replicate FireLens case in Fargate](#template-replicate-firelens-case-in-fargate)
+
+Replicating the case in Fargate is recommended, since you can easily scale up the repro to N instances. This makes it much more likely that you can actually reproduce the issue. 
+
+
+##### Template: Replicate FireLens case in Fargate
+
+In [troubleshooting/tutorials/cloud-firelens-crash-repro-template](tutorials/cloud-firelens-crash-repro-template/), you will find a template for setting up a customer repro in Fargate. 
+
+This can help you quickly setup a repro. The template and this guide require thought and consideration to create an ideal replication of the customer's setup.
+
+Perform the following steps:
+1. Copy the template to a new working directory.
+2. Setup the custom logger. Note: this step is optional, and other tools like [firelens-datajet](https://github.com/aws/firelens-datajet) may be used instead. You need some simulated log producer. There is also a logger in [troubleshooting/tools/big-rand-logger](tools/big-rand-logger/) which uses openssl to emit random data to stdout with a configurable size and rate. 
+    1. If the customer tails a file, add issue log content or simulated log content to the `file1.log`. If they tail more than 1 file, then add a `file2.log` and add an entry in the `logger.sh` for it. If they do not tail a file, remove the file entry in `logger.sh`.
+    2. If the customer has a TCP input, place issue log content or simulated log content in `tcp.log`. If there are multiple TCP inputs or no TCP inputs, customize `logger.sh` accordingly.
+    3. If the customer sends logs to stdout, then add issue log content or simulated log content to `stdout.log`. Customize the `logger.sh` if needed.
+    4. Build the logger image with `docker build -t {useful case name}-logger .` and then push it to ECR for use in your task definition. 
+3. Build a custom Fluent Bit image
+    1. Place customer config content in the `extra.conf` if they have custom Fluent Bit configuration. If they have a custom parser file set it in `parser.conf`. If there is a `storage.path` set, make sure the path is not on a read-only volume/filesystem. If the `storage.path` can not be created Fluent Bit will fail to start.
+    2. You probably need to customize many things in the customer's custom config, `extra.conf`. Read through the config and ensure it could be used in your test account. Note any required env vars. 
+    3. Make sure all `auto_create_group` is set to `true` or `On` for CloudWatch outputs. Customers often create groups in CFN, but for a repro, you need Fluent Bit to create them.
+    4. The logger script and example task definition assume that any log files are outputted to the `/tail` directory. Customize tail paths to `/tail/file1*`, `/tail/file2*`, etc. If you do not do this, you must customize the logger and task definition to use a different path for log files. 
+    5. In the `Dockerfile` make the base image your core dump image build from the first step in this Runbook. 
+4. Customize the `task-def-template.json`. 
+    1. Add your content for each of the `INSERT` statements. 
+    2. Set any necessary env vars, and customize the logger env vars. `TCP_LOGGER_PORT` must be set to the port from the customer config.
+    3. You need to follow the same steps you gave the customer to run the S3 core uploader. Set `S3_BUCKET` and `S3_KEY_PREFIX`. Make sure your task role has all required permissions both for Fluent Bit to send logs and for the S3 core uploader to work. 
+5. Run the task on Fargate. 
+    1. Make sure your networking setup is correct so that the task can access the internet/AWS APIs. There are different ways of doing this. We recommend using the CFN in [aws-samples/ecs-refarch-cloudformation](https://github.com/aws-samples/ecs-refarch-cloudformation/blob/master/infrastructure/vpc.yaml) to create a VPC with private subnsets that can access the internet over a NAT gateway. This way, your Fargate tasks do not need be assigned a public IP.
+6. Make sure your repro actually works. Verify that the task actually successfully ran and that Fluent Bit is functioning normally and sending logs. Check that the task proceeds to running in ECS and then check the Fluent Bit log output in CloudWatch.  
+
 ### Testing
 
 #### Simple TCP Logger Script
@@ -887,16 +982,16 @@ For reference, for this example, here is what the `fluent-bit.conf` should look 
 
 ##### FireLens Customer Case Local Repro Template
 
-In [troubleshooting/tutorials/firelens-crash-repro-template](troubleshooting/tutorials/firelens-crash-repro-template) there are a set of files that you can use to quickly create the setup above. The template includes setup for outputting corefiles to a directory and optionally sending logs from stdout, file, and TCP loggers. Using the loggers is optional and we recommended considering [aws/firelens-datajet](https://github.com/aws/firelens-datajet) as another option to send log files. 
+In [troubleshooting/tutorials/local-firelens-crash-repro-template](tutorials/local-firelens-crash-repro-template) there are a set of files that you can use to quickly create the setup above. The template includes setup for outputting corefiles to a directory and optionally sending logs from stdout, file, and TCP loggers. Using the loggers is optional and we recommended considering [aws/firelens-datajet](https://github.com/aws/firelens-datajet) as another option to send log files. 
 
 To use the template:
 1. Build a core file debug build of the Fluent Bit version in the customer case.
 2. Clone/copy the [troubleshooting/tutorials/firelens-crash-repro-template](troubleshooting/tutorials/firelens-crash-repro-template) into a new project directory. 
 3. Customize the `fluent-bit.conf` and the `extra.conf` with customer config file content. You may need to edit it to be convenient for your repro attempt. If there is a `storage.path`, set it to `/storage` which will be the storage sub-directory of your repro attempt. If there are log files read, customize the path to `/logfiles/app.log`, which will be the `logfiles` sub-directory containing the logging script. 
 4. The provided `run-fluent-bit.txt` contains a starting point for constructing a docker run command for the repro.
-5. The `logfiles` directory contains a script for appending to a log file every second from an example log file called `example.log`. Add customer custom log content that caused the issue to that file. Then use the instructions in `command.txt` to run the logger script. 
-6. The `stdout-logger` sub-directory includes setup for a simple docker container that writes the `example.log` file to stdout every second. Fill `example.log` with customer log content. Then use the instructions in `command.txt` to run the logger container. 
-7. The `tcp-logger` sub-directory includes setup for a simple script that writes the `example.log` file to a TCP port every second. Fill `example.log` with customer log content. Then use the instructions in `command.txt` to run the logger script. 
+5. The `logfiles` directory contains a script for appending to a log file every second from an example log file called `example.log`. Add case custom log content that caused the issue to that file. Then use the instructions in `command.txt` to run the logger script. 
+6. The `stdout-logger` sub-directory includes setup for a simple docker container that writes the `example.log` file to stdout every second. Fill `example.log` with case log content. Then use the instructions in `command.txt` to run the logger container. 
+7. The `tcp-logger` sub-directory includes setup for a simple script that writes the `example.log` file to a TCP port every second. Fill `example.log` with case log content. Then use the instructions in `command.txt` to run the logger script. 
 
 ### FAQ
 
