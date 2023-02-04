@@ -1,0 +1,100 @@
+{
+    "family": "firelens-repro-{INSERT ticket/issue ID}",
+    "taskRoleArn": "{INSERT your task role}", 
+    "executionRoleArn": "{INSERT your execution role}",
+    "networkMode": "awsvpc",
+    "cpu": "2048",
+    "memory": "4096",
+    "volumes": [
+        {
+            "name": "tail-logs"
+        }
+    ],
+    "containerDefinitions": [
+        {
+            "essential": true,
+            "image": "{INSERT core dump build image}",
+            "name": "log_router",
+            "firelensConfiguration": {
+                "type": "fluentbit",
+                "options": {
+					"config-file-type": "file",
+					"config-file-value": "/extra.conf"
+				}
+            },
+            "mountPoints": [
+                {
+                    "sourceVolume": "tail-logs",
+                    "containerPath": "/tail",
+                    "readOnly": false
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "firelens-repro-{INSERT ticket/issue ID}",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "firelens"
+                }
+            },
+            "environment": [
+				{
+					"name": "LOG_REGION",
+					"value": "us-west-2"
+				},
+                {
+					"name": "FLB_LOG_LEVEL",
+					"value": "debug"
+				},
+                {
+					"name": "S3_BUCKET",
+					"value": "INSERT YOUR BUCKET NAME"
+				},
+                {
+					"name": "S3_KEY_PREFIX",
+					"value": "INSERT case name or issue ID"
+				}
+			],
+            "memoryReservation": 50
+        },
+        {
+            "essential": true,
+            "image": "{INSERT simulated app image}",
+            "name": "app",
+            "logConfiguration": {
+                "logDriver":"awsfirelens"
+            },
+            "mountPoints": [
+                {
+                    "sourceVolume": "tail-logs",
+                    "containerPath": "/tail",
+                    "readOnly": false
+                }
+            ],
+            "environment": [
+				{
+					"name": "STDOUT_LOGGER_RATE",
+					"value": "10"
+				},
+                {
+					"name": "FILE1_LOGGER_RATE",
+					"value": "10"
+				},
+                {
+					"name": "FILE2_LOGGER_RATE",
+					"value": "10"
+				},
+                {
+					"name": "TCP_LOGGER_RATE",
+					"value": "10"
+				},
+                {
+					"name": "TCP_LOGGER_PORT",
+					"value": "5170"
+				}
+			],
+            "memoryReservation": 100
+        }
+    ]
+}

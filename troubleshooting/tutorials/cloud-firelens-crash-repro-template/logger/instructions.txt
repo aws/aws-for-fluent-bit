@@ -1,0 +1,15 @@
+# Usage: Set the following env vars:
+#
+# STDOUT_LOGGER_RATE => logs per second to send to stdout
+# FILE1_LOGGER_RATE => logs per second to send to /tail/file1.log$(date "+%Y-%m-%d-%H")
+# TCP_LOGGER_RATE => logs per second to send to TCP_LOGGER_PORT
+# TCP_LOGGER_PORT => TCP port of TCP input in Fluent Bit, if used
+#
+# If you do not need one of these loggers, simply remove its entry from the loop
+# in the logger.sh
+#
+# you can easily configure additional loggers as needed
+# just add another entry in the while loop
+# and import the new file in the Dockerfile
+#
+# Build this container with `docker build`, push to ECR, and use in task def for logger
