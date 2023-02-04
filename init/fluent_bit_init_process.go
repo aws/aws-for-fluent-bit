@@ -51,14 +51,15 @@ type S3Downloader interface {
 
 // all values in the structure are empty strings by default
 type ECSTaskMetadata struct {
-	AWS_REGION          string `json:"AWSRegion"`
-	ECS_CLUSTER         string `json:"Cluster"` // Cluster name
-	ECS_TASK_ARN        string `json:"TaskARN"`
-	ECS_TASK_ID         string `json:"TaskID"`
-	ECS_FAMILY          string `json:"Family"`
-	ECS_LAUNCH_TYPE     string `json:"LaunchType"`     // Task launch type will be an empty string if container agent is under version 1.45.0
-	ECS_REVISION        string `json:"Revision"`       // Revision number
-	ECS_TASK_DEFINITION string `json:"TaskDefinition"` // TaskDefinition = "family:revision"
+	AWS_REGION            string `json:"AWSRegion"`
+	AWS_AVAILABILITY_ZONE string `json:"AvailabilityZone"`
+	ECS_CLUSTER           string `json:"Cluster"` // Cluster name
+	ECS_TASK_ARN          string `json:"TaskARN"`
+	ECS_TASK_ID           string `json:"TaskID"`
+	ECS_FAMILY            string `json:"Family"`
+	ECS_LAUNCH_TYPE       string `json:"LaunchType"`     // Task launch type will be an empty string if container agent is under version 1.45.0
+	ECS_REVISION          string `json:"Revision"`       // Revision number
+	ECS_TASK_DEFINITION   string `json:"TaskDefinition"` // TaskDefinition = "family:revision"
 }
 
 // get ECS Task Metadata via endpoint V4
