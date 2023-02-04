@@ -108,7 +108,7 @@ func TestSetECSTaskMetadata(t *testing.T) {
 		ECS_TASK_DEFINITION:   "esc-task-definition:1",
 	}
 
-	expectedContent1 := "export FLB_AWS_USER_AGENT=init\n" +
+	expectedContent1 := "export FLB_AWS_USER_AGENT=ecs-init\n" +
 		"export AWS_REGION=us-west-2\n" +
 		"export AWS_AVAILABILITY_ZONE=us-west-2a\n" +
 		"export ECS_CLUSTER=ecs-Test\n" +
@@ -135,7 +135,7 @@ func TestSetECSTaskMetadata(t *testing.T) {
 		ECS_TASK_DEFINITION:   "",
 	}
 
-	expectedContent2 := "export FLB_AWS_USER_AGENT=init\n" +
+	expectedContent2 := "export FLB_AWS_USER_AGENT=ecs-init\n" +
 		"export AWS_REGION=us-west-1\n" +
 		"export ECS_CLUSTER=ecs-Test\n"
 
