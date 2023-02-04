@@ -695,8 +695,38 @@ When you receive a report that a customer has losts logs, consider the following
     2. [CloudWatch Log Insights Queries to check Tail Input](#cloudwatch-log-insights-queries-to-check-tail-input)
 6. Consider deploying the [S3 File Uploader](#s3-file-uploader) which uses `aws s3 sync` to sync a directories contents to an S3 bucket. This can be used to determine which logs were actually lost. If the customer is using the tail input, it can sync the log files (you may need/want to remove log rotation if possible since the script will sync a directory). If the customer is not using a tail input, you could configure a Fluent Bit [file output](https://docs.fluentbit.io/manual/pipeline/outputs/file) to make Fluent Bit output all logs it captured to a directory and sync those. This can help determine if the problem is on the ingestion side or the sending side.
 7. Consider adding new debug logs and instrumentation to check what is happening inside of Fluent Bit. We have some past examples here for checking the state of the event loop:
-    - [Print number of events in event loop](https://github.com/matthewfala/fluent-bit/commit/01f96376fb48da90ab0af8be4c89c6dfb2142453)
-    - TODO: Matt can add links to his previous work on GitHub.
+    - [Print number of events in event loop](https://github.com/matthewfala/fluent-bit/commit/01f96376fb48da90ab0af8be4c89c6dfb2142453).
+    - [Instrumentation core](https://github.com/matthewfala/fluent-bit/commit/f8b91790c666df8077f01da9c32f3d98be936083). This core instrumentation library provides a common tag based api to output each thread's metrics to a different file. Counter, events, and delta time, can be collected. Will output results to FLB_INSTRUMENTATION_OUT_PATH folder. Used as a base for other instrumentation.
+    - [Event loop instrumentation to track coroutine count, event loop wait time, and network error count](https://github.com/matthewfala/fluent-bit/commits/1.8.12-instrumentation-evl-reorder-event-loop-r2). Use on top of instrumentation core.
+    - [Track Fluent Bit task count](https://github.com/matthewfala/fluent-bit/commit/95b733cf96de846132958e7857a191eeb9709e56). Use on top of instrumentation core.
+    - [Instrument sync dns getaddrinfo calls count over time](https://github.com/matthewfala/fluent-bit/commit/796a4ae043a63ae8bcefbf624f1825b0564cdac5).
+    - [Instrument Open SSL to track tls shutdowns, destroy_shutdowns, reads, writes, handshakes as well as stop and start event for the above](https://github.com/matthewfala/fluent-bit/commit/57645336f3fddcbd69633bc8dc1f517f7fdff153). Use on top of instrumentation core.
+    - [Instrument http client. Print out response data](https://github.com/matthewfala/fluent-bit/commit/fbe49292583e6453039b1355f468e03022adfa03). Use on top of instrumentation core.
+    - Various slowdowns by adding a delay to malloc. Helps at times repro concurrency dependant issues faster. [2ms](https://github.com/matthewfala/fluent-bit/commit/a9ce9f80544c0c97560f8c3a5c0833df6c55acaa), [7ms](https://github.com/matthewfala/fluent-bit/commit/335bd8e8981c566fa013fbf3146c05f40ef4c79f), [20ms](https://github.com/matthewfala/fluent-bit/commit/c89518e1f1f38ac316791a28c8d60c036b111d3b)
+    - [Trigger segfault artificially after 5 seconds](https://github.com/matthewfala/fluent-bit/commits/segfault)
+    - [AWS Client Request Logger](https://github.com/matthewfala/fluent-bit/commit/085aa7799768a1f2c58253b181e3d01bf3ddb452). Prints logs to a file in the following filename:   `AWS_Requests_Log_File_<today's date>.txt` and format:
+        ```
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                AWS Client Requests Logger 🪵             
+                Tue Nov  2 01:54:58 2021
+                
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AWS Client Request
+        Time: Tue Nov  2 01:58:22 2021
+        Host: logs.us-west-2.amazonaws.com
+        URI: /
+        Method: POST
+        Headers
+        | [X-Amz-Target]: Logs_20140328.CreateLogGroup
+        Body:
+
+        {"logGroupName":"my body"}
+
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        (...)
+        ```
 
 
 ##### CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending
