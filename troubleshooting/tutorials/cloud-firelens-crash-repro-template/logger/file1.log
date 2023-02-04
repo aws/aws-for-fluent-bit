@@ -1,0 +1,2 @@
+# add customer or simulated log content log content here
+# script writes this to '/tail/file1.log$(date "+%Y-%m-%d-%H")'

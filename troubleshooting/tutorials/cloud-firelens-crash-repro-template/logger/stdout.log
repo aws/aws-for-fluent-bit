@@ -1,0 +1,2 @@
+# add customer or simulated log content here that will be sent to stdout
+# it will be cat'd to stdout STDOUT_LOGGER_RATE times per second
