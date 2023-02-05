@@ -1,7 +1,7 @@
 FROM amazon/aws-for-fluent-bit:debug-base
 
-ENV S3_BUCKET customer-must-set-bucket-env-var-to-upload-core-dump
-ENV S3_KEY_PREFIX set-this-to-a-useful-name-for-the-issue
+ENV S3_BUCKET 
+ENV S3_KEY_PREFIX 
 
 RUN yum install -y unzip zip curl gdb
 
