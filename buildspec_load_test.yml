@@ -3,7 +3,7 @@ env:
   shell: bash
   variables: 
     THROUGHPUT_LIST: '["20m", "25m", "30m"]'
-    CW_THROUGHPUT_LIST: '["1m", "2m", "3m"]'
+    CW_THROUGHPUT_LIST: '["2m", "4m", "6m"]'
     TESTING_RESOURCES_STACK_NAME: 'load-test-fluent-bit-testing-resources'
     LOG_STORAGE_STACK_NAME: 'load-test-fluent-bit-log-storage'
     EKS_CLUSTER_NAME: 'load-test-fluent-bit-eks-cluster'
