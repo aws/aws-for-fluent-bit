@@ -31,5 +31,5 @@ https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert ac30
 # Datadog Partial Fix Patch
 https://github.com/matthewfala/fluent-bit.git datadog-ecs-patch 3c1ad69ada5bb6f2e448c6f39a1a0ea6a6f4ff17
 
-# S3 retry limit configuration option
-https://github.com/Claych/fluent-bit.git clay-retry-limit-1.9 76ae393e565ccf37c131afc58902c9fc3d15de12
+# S3 retry limit configuration option -- Cherrypick from combined branch that resolves s3 merge conflict
+https://github.com/matthewfala/fluent-bit.git 2.31.1-all-cherrypicks 26c0b0c779b1747a1c751c05d96a597e443bf29a
