@@ -57,6 +57,10 @@ Resources:
                         Value: !Ref LogRegion
                       - Name: FLB_AWS_USER_AGENT
                         Value: ecs-daemon
+                      - Name: S3_BUCKET
+                        Value: firenosed-dolphin-bucket
+                      - Name: S3_KEY_PREFIX
+                        Value: daemon-stability-test
                   Image: !Ref DockerImage
                   MountPoints:
                       - ContainerPath: /var/lib/docker/containers
