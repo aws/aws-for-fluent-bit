@@ -50,8 +50,9 @@
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
     - [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
         - [FireLens Customer Case Local Repro Template]()
-- [FAQ]
+- [FAQ](#faq)
     - [AWS Go Plugins vs AWS Core C Plugins](#aws-go-plugins-vs-aws-core-c-plugins)
+    - [Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin)
     - [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config)
     - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
@@ -892,6 +893,74 @@ However, these plugins were not as performant as the core Fluent Bit C plugins f
 - [Name opensearch](https://docs.fluentbit.io/manual/pipeline/outputs/opensearch/)
 
 AWS debuted these plugins at KubeCon North America 2020; some [discussion of the improvement in performance can be found in our session](https://youtu.be/F73MgV_c2MM). 
+
+#### Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin
+
+The following options are only supported with `Name`  `cloudwatch_logs` and must be *removed* if you switch to `Name`  `cloudwatch`. 
+
+* `metric_namespace`
+* `metric_dimensions`
+* `auto_retry_requests`
+* `workers` 
+* The networking settings noted here: https://docs.fluentbit.io/manual/administration/networking
+    * `net.connect_timeout`
+    * `net.connect_timeout_log_error`
+    * `net.dns.mode`
+    * `net.dns.prefer_ipv4`
+    * `net.dns.resolver`
+    * `net.keepalive`
+    * `net.keepalive_idle_timeout`
+    * `net.keepalive_max_recycle`
+    * `net.source_address`
+* If you use log group or stream name templating, each plugin has some support for this but the features and config option names are entirely different.
+    * https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit#templating-log-group-and-stream-names
+    * https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch#log-stream-and-group-name-templating-using-record_accessor-syntax
+    * With `cloudwatch` you can put `$()` template variables in the `log_group_name` and `log_stream_name` options. You can then use `default_log_group_name` and `default_log_stream_name` as fallback names if templating fails.
+        * Only `cloudwatch` supports direct templating of ECS metadata when you run in ECS: `$(ecs_task_id)`, `$(ecs_cluster)`or `$(ecs_task_arn)`. With `cloudwatch_logs` you can only inject values from the log JSONs. If you want to use ECS Metadata in your config with `cloudwatch_logs` please see: https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/init-metadata
+    * With `cloudwatch_logs` templates go in the `log_group_template` or `log_stream_template` and use a `$var` syntax (see [documentation](https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch#log-stream-and-group-name-templating-using-record_accessor-syntax)). Fallback names if templating fails go in the `log_group_name`, `log_stream_name`, or` log_stream_prefix` options. 
+
+
+Example migration from `cloudwatch_logs` to `cloudwatch`:
+
+
+```
+[OUTPUT]
+    Name                cloudwatch_logs
+    Match               MyTag
+    log_stream_prefix   my-prefix
+    log_group_name      my-group
+    auto_create_group   true
+    auto_retry_requests true
+    net.keepalive       Off
+    workers             1
+```
+
+After migration: 
+
+```
+[OUTPUT]
+    Name                cloudwatch
+    Match               MyTag
+    log_stream_prefix   my-prefix
+    log_group_name      my-group
+    auto_create_group   true
+```
+
+
+The following options are only supported with `Name`  `cloudwatch` and must be *removed* if you switch to `Name`  `cloudwatch_logs`. 
+
+* `default_log_group_name`
+* `default_log_stream_name`
+* `new_log_group_tags`
+* `credentials_endpoint`
+* If you use log group or stream name templating, each plugin has some support for this but the features and config option names are entirely different.
+    * https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit#templating-log-group-and-stream-names
+    * https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch#log-stream-and-group-name-templating-using-record_accessor-syntax
+    * With `cloudwatch` you can put `$()` template variables in the `log_group_name` and `log_stream_name` options. You can then use `default_log_group_name` and `default_log_stream_name` as fallback names if templating fails.
+        * Only `cloudwatch` supports direct templating of ECS metadata when you run in ECS: `$(ecs_task_id)`, `$(ecs_cluster `or `$(ecs_task_arn)`. With `cloudwatch_logs` you can only inject values from the log JSONs. If you want to use ECS Metadata in your config with `cloudwatch_logs` please see: https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/init-metadata
+    * With `cloudwatch_logs` templates go in the `log_group_template` or `log_stream_template` and use a `$var` syntax (see doc). Fallback names if templating fails go in the `log_group_name`, `log_stream_name`, or` log_stream_prefix` options. 
+
+
 
 #### FireLens Tag and Match Pattern and generated config
 
