@@ -1144,3 +1144,21 @@ The first 4 fields are added by the [Fluentd Docker Log Driver](https://docs.doc
 * [FireLens Under the Hood](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/)
 
 If you are using CloudWatch as your destination, there are additional considerations if you use the `log_key` option to just send the raw log line: [What if I just want the raw log line to appear in CW?](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs#what-if-i-just-want-the-raw-log-line-from-the-container-to-appear-in-cloudwatch).
+
+#### What version did I deploy?
+
+Check the log output from Fluent Bit. The first log statement printed by AWS for Fluent Bit is always the version used:
+
+For example:
+```
+AWS for Fluent Bit Container Image Version 2.28.4
+Fluent Bit v1.9.9
+* Copyright (C) 2015-2022 The Fluent Bit Authors
+* Fluent Bit is a CNCF sub-project under the umbrella of Fluentd
+* https://fluentbit.io
+```
+
+In general, we recommend locking your deployments to a specific version tag. Rather than our `latest` or `stable` tags which are dynamic and change over time. This ensures that your deployments are always predictable and all tasks/pods/nodes in the deployment use the same version. Check our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) and [latest stable version] and make a decision taking into consideration your use cases. 
+* Our latest [stable version is noted in this file](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION). 
+* Our [latest stable criteria is outlined in the repo README](https://github.com/aws/aws-for-fluent-bit#using-the-stable-tag).
+
