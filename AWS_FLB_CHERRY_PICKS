@@ -33,3 +33,6 @@ https://github.com/matthewfala/fluent-bit.git datadog-ecs-patch 3c1ad69ada5bb6f2
 
 # S3 retry limit configuration option -- Cherrypick from combined branch that resolves s3 merge conflict
 https://github.com/matthewfala/fluent-bit.git 2.31.1-all-cherrypicks 26c0b0c779b1747a1c751c05d96a597e443bf29a
+
+# Resolve cloudwatch_logs duplicate tag match SIGSEGV issue
+https://github.com/matthewfala/fluent-bit.git sync-scheduler-fix-1.9 2614c46af3a051b2758bef57f01f6b10a8e73b62
