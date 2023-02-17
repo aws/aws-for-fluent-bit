@@ -1,0 +1,30 @@
+FROM amazon/aws-for-fluent-bit:init-debug-base
+COPY Dockerfile.init-debug-base /Dockerfile.2.init-debug-base
+
+ENV S3_BUCKET customer-must-set-bucket-env-var-to-upload-core-dump
+ENV S3_KEY_PREFIX set-this-to-a-useful-name-for-the-issue
+
+RUN yum install -y unzip zip curl gdb
+
+WORKDIR /var/tmp
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+RUN rm awscliv2.zip
+
+RUN yum remove unzip -y \
+    && yum clean all \
+    && rm -rf /var/cache/yum
+
+WORKDIR /cores
+
+# Upload coredumps to s3 on shutdown
+# customer must set BUCKET env var
+
+# Only last CMD command will be executed, automatically replaces the original entrypoint
+# CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; env RANDOM_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)) /init/invoke_fluent_bit.sh; echo $RANDOM_ID; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM_ID}/; /bin/bash
+# CMD trap "ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM_ID}/" SIGSEGV ; /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; RANDOM_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); source /init/invoke_fluent_bit.sh
+# CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; RANDOM_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); /init/invoke_fluent_bit.sh; echo "process exit with status: $?"; echo $RANDOM_ID; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM_ID}/; /bin/bash
+# CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; RANDOM_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); /init/invoke_fluent_bit.sh; echo "process exit with status: $?"; echo $RANDOM_ID; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM_ID}/; /bin/bash
+
+CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; export RANDOM_ID_VALUE=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); echo "RANDOM_ID is set to $RANDOM_ID_VALUE"; env RANDOM_ID=$RANDOM_ID_VALUE /init/invoke_fluent_bit.sh; echo $RANDOM_ID; ls /cores; zip /cores/core.zip *; aws s3 cp /cores/core.zip s3://${S3_BUCKET}/${S3_KEY_PREFIX}/${HOSTNAME}-${RANDOM_ID_VALUE}/; /bin/bash

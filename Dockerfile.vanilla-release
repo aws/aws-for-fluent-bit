@@ -1,0 +1,58 @@
+FROM amazon/aws-for-fluent-bit:build as builder
+COPY Dockerfile.build /Dockerfile.1.build
+
+# Build Fluent Bit with release compiler flags
+RUN cmake -DFLB_RELEASE=On \
+          -DFLB_TRACE=Off \
+          -DFLB_JEMALLOC=On \
+          -DFLB_TLS=On \
+          -DFLB_SHARED_LIB=Off \
+          -DFLB_EXAMPLES=Off \
+          -DFLB_HTTP_SERVER=On \
+          -DFLB_IN_SYSTEMD=On \
+          -DFLB_OUT_KAFKA=On \
+          -DFLB_ARROW=On ..
+
+RUN make -j $(getconf _NPROCESSORS_ONLN)
+RUN install bin/fluent-bit /fluent-bit/bin/
+
+# Build lightweight release image
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+RUN yum upgrade -y \
+    && yum install -y openssl11-devel \
+          cyrus-sasl-devel \
+          pkgconfig \
+          systemd-devel \
+          zlib-devel \
+          libyaml \
+          nc && rm -fr /var/cache/yum
+
+COPY --from=builder /fluent-bit /fluent-bit
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/bin/firehose.so /fluent-bit/firehose.so
+COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/bin/cloudwatch.so /fluent-bit/cloudwatch.so
+RUN mkdir -p /fluent-bit/licenses/fluent-bit
+RUN mkdir -p /fluent-bit/licenses/firehose
+RUN mkdir -p /fluent-bit/licenses/cloudwatch
+RUN mkdir -p /fluent-bit/licenses/kinesis
+COPY THIRD-PARTY /fluent-bit/licenses/fluent-bit/
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-firehose/THIRD-PARTY \
+    /kinesis-firehose/LICENSE \
+    /fluent-bit/licenses/firehose/
+COPY --from=aws-fluent-bit-plugins:latest /cloudwatch/THIRD-PARTY \
+    /cloudwatch/LICENSE \
+    /fluent-bit/licenses/cloudwatch/
+COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
+    /kinesis-streams/LICENSE \
+    /fluent-bit/licenses/kinesis/
+COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
+ADD ecs /ecs/
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Optional Metrics endpoint
+EXPOSE 2020
+
+# Entry point
+CMD /entrypoint.sh

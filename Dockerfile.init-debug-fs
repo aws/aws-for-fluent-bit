@@ -1,0 +1,5 @@
+FROM amazon/aws-for-fluent-bit:init-debug-base
+COPY Dockerfile.init-debug-base /Dockerfile.2.init-debug-base
+
+# Only last CMD command will be executed, automatically replaces the original entrypoint
+CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "\nwaiting 2 minutes for core file to be processed\n"; sleep 120

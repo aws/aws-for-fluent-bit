@@ -13,12 +13,23 @@
 
 all: release
 
+# Improve buildspeeds during development by removing the --no-cache flag
+DOCKER_BUILD_FLAGS=--no-cache
+
 .PHONY: release
-release: linux-plugins
+release: build
 	docker system prune -f
-	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:latest -f Dockerfile.vanilla-release .
 	docker system prune -f
-	docker build -t amazon/aws-for-fluent-bit:init-latest -f Dockerfile.init .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-latest -f Dockerfile.init-release .
+
+.PHONY: debug
+debug: vanilla-debug init-debug
+
+.PHONY: build
+build: linux-plugins
+	docker system prune -f
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build -f Dockerfile.build .
 
 #TODO: the bash script opts does not work on developer Macs
 windows-plugins: export OS_TYPE = windows
@@ -35,7 +46,8 @@ windows-plugins:
     	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
     	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
-    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
+    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
+		--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 
 .PHONY: linux-plugins
 linux-plugins:
@@ -48,17 +60,27 @@ linux-plugins:
     	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
     	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
-    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH}
+    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
+		--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 
-.PHONY: debug-base
-debug-base: linux-plugins
-	docker system prune -f
-	docker build --no-cache -t amazon/aws-for-fluent-bit:debug-base -f Dockerfile.debug-base .
+.PHONY: vanilla-debug
+vanilla-debug: vanilla-debug-base
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-fs       -f Dockerfile.vanilla-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-s3       -f Dockerfile.vanilla-debug-s3 .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-valgrind -f Dockerfile.vanilla-debug-valgrind .
+	docker tag amazon/aws-for-fluent-bit:debug-valgrind amazon/aws-for-fluent-bit:debug
 
-.PHONY: core
-core: debug-base
-	docker system prune -f
-	docker build -t amazon/aws-for-fluent-bit:core -f Dockerfile.core .
+.PHONY: init-debug
+init-debug: vanilla-debug-base
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-init      -f Dockerfile.build-init .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-base -f Dockerfile.init-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-fs   -f Dockerfile.init-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-s3   -f Dockerfile.init-debug-s3 .
+	docker tag amazon/aws-for-fluent-bit:init-debug-s3 amazon/aws-for-fluent-bit:init-debug
+
+.PHONY: vanilla-debug-base
+vanilla-debug-base: build
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:vanilla-debug-base  -f Dockerfile.vanilla-debug-base .
 
 .PHONY: valgrind
 valgrind: debug-base
@@ -75,7 +97,7 @@ cloudwatch-dev:
 	docker build \
 	--build-arg CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
 	--build-arg CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
 .PHONY: firehose-dev
@@ -83,7 +105,7 @@ firehose-dev:
 	docker build \
 	--build-arg FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
 	--build-arg FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
-	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
 .PHONY: kinesis-dev
@@ -91,7 +113,7 @@ kinesis-dev:
 	docker build \
 	--build-arg KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
 	--build-arg KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
-	--no-cache -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
 
 .PHONY: integ-cloudwatch

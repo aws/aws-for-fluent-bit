@@ -1,0 +1,7 @@
+FROM amazon/aws-for-fluent-bit:vanilla-debug-base
+COPY Dockerfile.vanilla-debug-base /Dockerfile.2.vanilla-debug-base
+
+# Default: Run under valgrind
+# alternatively, you can change this to run FB directly and try
+# to get a core file instead
+CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
