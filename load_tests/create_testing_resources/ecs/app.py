@@ -25,6 +25,7 @@ class TestingResources(core.Stack):
 
         asg = autoscaling.AutoScalingGroup(
             self, "fleet",
+            require_imdsv2=True,  # Disable IMDSv1
             instance_type=ec2.InstanceType("c5.24xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(),
             associate_public_ip_address=True,
