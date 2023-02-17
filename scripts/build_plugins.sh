@@ -25,6 +25,7 @@ ARGUMENT_LIST=(
   "CLOUDWATCH_PLUGIN_CLONE_URL"
   "CLOUDWATCH_PLUGIN_TAG"
   "CLOUDWATCH_PLUGIN_BRANCH"
+  "DOCKER_BUILD_FLAGS"
 )
 
 # A variable to hold the build arguments for docker build
@@ -44,7 +45,8 @@ CLOUDWATCH_PLUGIN_TAG=""
 usage() {
   echo "Usage: $0 [--KINESIS_PLUGIN_CLONE_URL <string>] [--KINESIS_PLUGIN_TAG <string>] [--KINESIS_PLUGIN_BRANCH <string>]\
   [--FIREHOSE_PLUGIN_CLONE_URL <string>] [--FIREHOSE_PLUGIN_TAG <string>] [--FIREHOSE_PLUGIN_BRANCH <string>]\
-  [--CLOUDWATCH_PLUGIN_CLONE_URL <string>] [--CLOUDWATCH_PLUGIN_TAG <string>] [--CLOUDWATCH_PLUGIN_BRANCH <string>]" 1>&2;
+  [--CLOUDWATCH_PLUGIN_CLONE_URL <string>] [--CLOUDWATCH_PLUGIN_TAG <string>] [--CLOUDWATCH_PLUGIN_BRANCH <string>] \
+  [--DOCKER_BUILD_FLAGS <string>]" 1>&2;
   exit 1;
 }
 
@@ -98,6 +100,9 @@ do
       shift 2;;
     --CLOUDWATCH_PLUGIN_BRANCH)
       if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_BRANCH=$2";fi
+      shift 2;;
+    --DOCKER_BUILD_FLAGS)
+      if [ -n "$2" ];then DOCKER_BUILD_FLAGS="$2";fi
       shift 2;;
     # End of arguments. End here and break.
     --) shift; break ;;
@@ -165,7 +170,7 @@ then
   echo "Created build output folder"
 
   # Build plugin image and then copy the windows plugins
-  docker build $PLUGIN_BUILD_ARGS --no-cache -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins-windows .
+  docker build $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins-windows .
   docker create -ti --name plugin-build-container aws-fluent-bit-plugins:latest bash
   docker cp plugin-build-container:/plugins_windows.tar ./build/windows/plugins_windows.tar
   docker rm -f plugin-build-container
@@ -174,6 +179,6 @@ fi
 
 if [ "$OS_TYPE" == "linux" ];
 then
-  docker build $PLUGIN_BUILD_ARGS --no-cache -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins .
+  docker build $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./Dockerfile.plugins .
 fi
 

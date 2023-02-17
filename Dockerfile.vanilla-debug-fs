@@ -1,0 +1,4 @@
+FROM amazon/aws-for-fluent-bit:vanilla-debug-base
+COPY Dockerfile.vanilla-debug-base /Dockerfile.2.vanilla-debug-base
+
+CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf

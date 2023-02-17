@@ -1,4 +1,5 @@
-FROM amazon/aws-for-fluent-bit:debug-base
+FROM amazon/aws-for-fluent-bit:vanilla-debug-base
+COPY Dockerfile.vanilla-debug-base /Dockerfile.2.vanilla-debug-base
 
 ENV S3_BUCKET 
 ENV S3_KEY_PREFIX 
@@ -15,14 +16,6 @@ RUN yum remove unzip -y \
     && yum clean all \
     && rm -rf /var/cache/yum
 
-RUN mkdir /cores && chmod 777 /cores
-
-# Setting core pattern in /proc/sys/kernel/core_pattern requires privileged mode
-# And can only be done at container runtime
-# Default kernel core pattern for amazonlinux should be: '/cores/core_%e.%p'
-# However, we have seen that sometimes for unknown reasons cores are just dumped
-# to the current working directory. 
-# S0 change working directory to the cores folder to run fluent bit from there.
 WORKDIR /cores
 
 # Upload coredumps to s3 on shutdown
