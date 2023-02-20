@@ -3,8 +3,8 @@ https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert 9831
 
 # Support Opensearch Serverless data ingestion
 https://github.com/matthewfala/fluent-bit.git aoss-1.9 1633c49aadad55bac483c5e55772de0e6c29704a
-https://github.com/matthewfala/fluent-bit.git aoss-1.9 4dc5368502d22d5ed54f06e5700242a0138e3ff7
-https://github.com/matthewfala/fluent-bit.git aoss-1.9 f7be9ba54fca28a4f4d154f8ba55e53a81f31130
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 e1301bc52e209b6c6de8602bff12e0a98aefa0c0
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 1917a7760d1bd400ac987620661b48e1bbc001ae
 
 # Various Features
 # S3 filename from log timestamp
