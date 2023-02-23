@@ -36,3 +36,8 @@ https://github.com/matthewfala/fluent-bit.git 2.31.1-all-cherrypicks 26c0b0c779b
 
 # Resolve cloudwatch_logs duplicate tag match SIGSEGV issue
 https://github.com/matthewfala/fluent-bit.git sync-scheduler-fix-1.9 2614c46af3a051b2758bef57f01f6b10a8e73b62
+
+# resolve user agent wrong type
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 0642f42e8097c159d7364f1ff97c0196484815ce
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix ed21492a94e8ca156897afc32c73bcdc37bc6b0f
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 7c16af941bed91da9558e4e6b8cea98d3ef1fa0d
