@@ -80,6 +80,10 @@ milan_region="eu-south-1"
 
 milan_account_id="960320637246"
 
+jakarta_region="ap-southeast-3"
+
+jakarta_account_id="921575906885"
+
 gamma_region="us-west-2"
 
 gamma_account_id="626332813196"
@@ -620,6 +624,10 @@ if [ "${1}" = "publish" ]; then
 		publish_ecr ${milan_region} ${milan_account_id}
 	fi
 
+	if [ "${2}" = "${jakarta_region}" ]; then
+		publish_ecr ${jakarta_region} ${jakarta_account_id}
+	fi
+
 	if [ "${2}" = "gamma" ]; then
 		publish_ecr ${gamma_region} ${gamma_account_id}
 	fi
@@ -664,6 +672,10 @@ if [ "${1}" = "verify" ]; then
 		verify_ecr ${milan_region} ${milan_account_id}
 	fi
 
+	if [ "${2}" = "${jakarta_region}" ]; then
+		verify_ecr ${jakarta_region} ${jakarta_account_id}
+	fi
+
 	if [ "${2}" = "gamma" ]; then
 		verify_ecr ${gamma_region} ${gamma_account_id}
 	fi
@@ -703,6 +715,10 @@ if [ "${1}" = "publish-ssm" ]; then
 	if [ "${2}" = "${milan_region}" ]; then
 		publish_ssm ${milan_region} ${milan_account_id}.dkr.ecr.${milan_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
+
+	if [ "${2}" = "${jakarta_region}" ]; then
+		publish_ssm ${jakarta_region} ${jakarta_account_id}.dkr.ecr.${jakarta_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	fi
 fi
 
 if [ "${1}" = "verify-ssm" ]; then
@@ -738,6 +754,10 @@ if [ "${1}" = "verify-ssm" ]; then
 
 	if [ "${2}" = "${milan_region}" ]; then
 		verify_ssm ${milan_region} false ${milan_account_id}
+	fi
+
+	if [ "${2}" = "${jakarta_region}" ]; then
+		verify_ssm ${jakarta_region} false ${jakarta_account_id}
 	fi
 fi
 
@@ -775,6 +795,10 @@ if [ "${1}" = "rollback-ssm" ]; then
 	if [ "${2}" = "${milan_region}" ]; then
 		rollback_ssm ${milan_region}
 	fi
+
+	if [ "${2}" = "${jakarta_region}" ]; then
+		rollback_ssm ${jakarta_region}
+	fi
 fi
 
 # Publish using CI/CD pipeline
@@ -800,6 +824,8 @@ if [ "${1}" = "cicd-publish" ]; then
 		sync_latest_image ${cape_town_region} ${cape_town_account_id}
 	elif [ "${2}" = "${milan_region}" ]; then
 		sync_latest_image ${milan_region} ${milan_account_id}
+	elif [ "${2}" = "${jakarta_region}" ]; then
+		sync_latest_image ${jakarta_region} ${jakarta_account_id}
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			sync_latest_image ${region} ${classic_regions_account_id}
@@ -839,6 +865,8 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_ecr ${cape_town_region} ${cape_town_account_id} true
 	elif [ "${2}" = "${milan_region}" ]; then
 		verify_ecr ${milan_region} ${milan_account_id} true
+	elif [ "${2}" = "${jakarta_region}" ]; then
+		verify_ecr ${jakarta_region} ${jakarta_account_id} true
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			verify_ecr ${region} ${classic_regions_account_id} true
@@ -871,6 +899,8 @@ if [ "${1}" = "cicd-publish-ssm" ]; then
 		publish_ssm ${cape_town_region} ${cape_town_account_id}.dkr.ecr.${cape_town_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	elif [ "${2}" = "${milan_region}" ]; then
 		publish_ssm ${milan_region} ${milan_account_id}.dkr.ecr.${milan_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		elif [ "${2}" = "${jakarta_region}" ]; then
+		publish_ssm ${jakarta_region} ${jakarta_account_id}.dkr.ecr.${jakarta_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	else
 		for region in ${classic_regions}; do
 			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
@@ -896,6 +926,8 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 		verify_ssm ${cape_town_region} true ${cape_town_account_id}
 	elif [ "${2}" = "${milan_region}" ]; then
 		verify_ssm ${milan_region} true ${milan_account_id}
+	elif [ "${2}" = "${jakarta_region}" ]; then
+		verify_ssm ${jakarta_region} true ${jakarta_account_id}
 	elif [ $# -eq 3 ]; then
 		for region in ${classic_regions}; do
 			verify_ssm ${region} true ${classic_regions_account_id}
