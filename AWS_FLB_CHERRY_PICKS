@@ -41,3 +41,10 @@ https://github.com/matthewfala/fluent-bit.git sync-scheduler-fix-1.9 2614c46af3a
 https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 0642f42e8097c159d7364f1ff97c0196484815ce
 https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix ed21492a94e8ca156897afc32c73bcdc37bc6b0f
 https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 7c16af941bed91da9558e4e6b8cea98d3ef1fa0d
+
+# Resolve keepalive and priority scheduler issue
+https://github.com/PettitWesley/fluent-bit.git sync-io-keepalive-fix 7b4550486b7e8e02b773894d31a08b0cb18154e3
+
+https://github.com/PettitWesley/fluent-bit.git mk_event_inject_conn_fix 0f5efc921950feeee99d9251cb330b27d3639863
+
+https://github.com/PettitWesley/fluent-bit.git mk_event_add_corruption-one-commit 33651cca41e9f84ce8930a9bca9d3d7319e50fbd
