@@ -21,12 +21,35 @@ IMAGE_SHA_MATCHED="FALSE"
 AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
 AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
+PUBLISH_LATEST=$(cat ../linux.version | jq -r '.linux.latest')
+echo "Publish Latest? ${PUBLISH_LATEST}"
+
+# Problem: when we push a new version bump the version number in AWS_FOR_FLUENT_BIT_VERSION file changes
+# but that version is not published immediately. Thus, sync tasks normally
+# sync latest version found in DockerHub. But what if we want to release a non-latest version?
+# then sync tasks need to know this. So we use the script to check for an already published version
+# that's not latest
+
+# this code currenly works because DockerHub returns the only last 100 tags and as of March 2023 we only have 64
+# and it should keep working because dockerhub returns the latest tags first
 docker_hub_image_tags=$(curl -s -S 'https://registry.hub.docker.com/v2/repositories/amazon/aws-for-fluent-bit/tags/?page=1&page_size=250' | jq -r '.results[].name')
 tag_array=(`echo ${docker_hub_image_tags}`)
-AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py linux ${tag_array[@]})
+AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=$(./get_latest_dockerhub_version.py linux latest ${tag_array[@]})
+
+# If the AWS_FOR_FLUENT_BIT_VERSION is an older version which is already published to dockerhub
+# and latest is set to false in linux.version, then we sync an older non-latest version.
+# otherwise, normal behavior, sync latest version found in dockerhub
+if [ "${PUBLISH_LATEST}" = "false" ]; then
+	PUBLISH_NON_LATEST=$(./get_latest_dockerhub_version.py linux ${AWS_FOR_FLUENT_BIT_VERSION} ${tag_array[@]})
+	if [ "${PUBLISH_NON_LATEST}" = "true" ]; then
+		AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB=${AWS_FOR_FLUENT_BIT_VERSION}
+	fi
+fi
+
 
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
+
 
 classic_regions="
 us-east-1
@@ -153,11 +176,14 @@ publish_to_docker_hub() {
 
 		done
 
-		create_manifest_list ${1} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 
-		create_manifest_list_init ${1} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${1} "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			create_manifest_list ${1} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${1} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+		fi
 	fi
 }
 
@@ -189,11 +215,17 @@ publish_to_public_ecr() {
 
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-
+		
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+
+			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+		fi
 	fi
 }
 
@@ -207,16 +239,22 @@ publish_ssm() {
 		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:${3}
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
-			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
-			--type String --region ${1} --value ${2}:latest
+
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
+				--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
+				--type String --region ${1} --value ${2}:latest
+		fi
 		
 		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:"$init"-${3}
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
-			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
-			--type String --region ${1} --value ${2}:"$init"-latest
+
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
+				--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
+				--type String --region ${1} --value ${2}:"$init"-latest
+		fi
 	fi
 }
 
@@ -310,7 +348,7 @@ sync_ssm() {
 	fi
 }
 
-sync_latest_image() {
+sync_image_version() {
 	region=${1}
 	account_id=${2}
 
@@ -330,10 +368,13 @@ sync_latest_image() {
 	done
 
 	if [ "${account_id}" != "${classic_regions_account_id}" ]; then
-		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+			create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		fi
+
 		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 
-		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 
@@ -360,12 +401,15 @@ verify_ssm() {
 	is_sync_task=${2:-false}
 
 	endpoint='amazonaws.com'
+	
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
 	aws ecr get-login-password --region ${1} | docker login --username AWS --password-stdin ${3}.dkr.ecr.${1}.${endpoint}
 
-	check_parameter ${1} latest
+	if [ "${PUBLISH_LATEST}" = "true" ]; then
+		check_parameter ${1} latest
+	fi
 
 	if [ "${is_sync_task}" = "true" ]; then
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
@@ -439,10 +483,12 @@ publish_ecr() {
 	done
 
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-
 	create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-	create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+
+	if [ "${PUBLISH_LATEST}" = "true" ]; then
+		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+	fi 
 
 	make_repo_public ${region}
 }
@@ -471,22 +517,48 @@ verify_ecr() {
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
+
+		# verify version number tag against public ECR
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
+
+		verify_sha $sha1 $sha2
+
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB})
+
+		verify_sha $sha1_init $sha2_init
 	else
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
+
+		# verify version number tag against public ECR
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+
+		verify_sha $sha1 $sha2
+
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION})
+
+		verify_sha $sha1_init $sha2_init
 	fi
-	docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
-	sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
-	verify_sha $sha1 $sha2
+	if [ "${PUBLISH_LATEST}" = "true" ]; then
+	    # Also validate version number tag against latest tag
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
-	docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest
-	sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest)
-	
-	verify_sha $sha1_init $sha2_init
+		verify_sha $sha1 $sha2
+
+		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest)
+		
+		verify_sha $sha1_init $sha2_init
+	fi 
 }
 
 check_image_version() {
@@ -527,7 +599,7 @@ verify_dockerhub() {
 	docker_hub_login
 	
 	# Verify the image with stable tag
-	if [ $# -eq 1 ]; then
+	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
 		docker pull amazon/aws-for-fluent-bit:stable
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:stable)
@@ -556,7 +628,7 @@ verify_public_ecr() {
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 
 	# Verify the image with stable tag
-	if [ $# -eq 1 ]; then
+	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:stable
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:stable)
@@ -918,33 +990,33 @@ if [ "${1}" = "cicd-publish" ]; then
 		publish_to_public_ecr amazon/aws-for-fluent-bit
 	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
-			sync_latest_image ${region} ${gov_regions_account_id}
+			sync_image_version ${region} ${gov_regions_account_id}
 		done
 	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
 		for region in ${cn_regions}; do
-			sync_latest_image ${region} ${cn_regions_account_id}
+			sync_image_version ${region} ${cn_regions_account_id}
 		done
 	elif [ "${2}" = "${bahrain_region}" ]; then
-		sync_latest_image ${bahrain_region} ${bahrain_account_id}
+		sync_image_version ${bahrain_region} ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
-		sync_latest_image ${hongkong_region} ${hongkong_account_id}
+		sync_image_version ${hongkong_region} ${hongkong_account_id}
 	elif [ "${2}" = "${cape_town_region}" ]; then
-		sync_latest_image ${cape_town_region} ${cape_town_account_id}
+		sync_image_version ${cape_town_region} ${cape_town_account_id}
 	elif [ "${2}" = "${milan_region}" ]; then
-		sync_latest_image ${milan_region} ${milan_account_id}
+		sync_image_version ${milan_region} ${milan_account_id}
 	elif [ "${2}" = "${jakarta_region}" ]; then
-		sync_latest_image ${jakarta_region} ${jakarta_account_id}
+		sync_image_version ${jakarta_region} ${jakarta_account_id}
 	elif [ "${2}" = "${uae_region}" ]; then
-		sync_latest_image ${uae_region} ${uae_account_id}
+		sync_image_version ${uae_region} ${uae_account_id}
 	elif [ "${2}" = "${spain_region}" ]; then
-		sync_latest_image ${spain_region} ${spain_account_id}
+		sync_image_version ${spain_region} ${spain_account_id}
 	elif [ "${2}" = "${zurich_region}" ]; then
-		sync_latest_image ${zurich_region} ${zurich_account_id}
+		sync_image_version ${zurich_region} ${zurich_account_id}
 	elif [ "${2}" = "${hyderabad_region}" ]; then
-		sync_latest_image ${hyderabad_region} ${hyderabad_account_id}
+		sync_image_version ${hyderabad_region} ${hyderabad_account_id}
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
-			sync_latest_image ${region} ${classic_regions_account_id}
+			sync_image_version ${region} ${classic_regions_account_id}
 		done
 	elif [ $# -eq 3 ] && [ "${2}" = "public-dockerhub-stable" ]; then
 		if [ "${3}" = "us-west-2" ]; then
