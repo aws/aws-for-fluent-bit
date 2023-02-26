@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import sys
 
-# First argument would be the platform.
+# first argument is the platform
 platform = sys.argv[1]
 
+# second argument is the version to check. "latest" => prints latest version. "version" => prints is_not_latest && is_published
+check_version = sys.argv[2]
+
+
 numeric_tags = []
-for tag in sys.argv[2:]:
+for tag in sys.argv[3:]: # third argument starts the taglist
     if tag[0].isdigit():
         tag_to_store = tag
         if platform == 'linux':
@@ -22,4 +26,12 @@ for tag in sys.argv[2:]:
         numeric_tags.append(tag_to_store)
 
 numeric_tags.sort(key=lambda s: list(map(int, s.split('.'))), reverse=True)
-print(numeric_tags[0])
+
+if check_version == "latest":
+    print(numeric_tags[0]) # print latest version
+else:
+    # prints true if the version is in the list but not latest
+    # printing true means publish.sh sync a non-latest version
+    is_latest = (numeric_tags[0] == check_version)
+    is_published = check_version in numeric_tags
+    print(str(not is_latest and is_published).lower()) # print if version is latest
