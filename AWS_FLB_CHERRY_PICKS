@@ -11,9 +11,6 @@ https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 dfeff9d
 https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 66e85a11590f0045294a3d1b104baf73569a1dd0
 https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 e225ff7374fbc5e290b0090652158e3d2db5d8a6
 
-# S3 sync iO Commit
-https://github.com/PettitWesley/fluent-bit.git s3-always-sync 232367a705c3788aecdda827cc99a69f2b7a01ef
-
 # S3 log_key warn fix
 https://github.com/PettitWesley/fluent-bit.git s3-log-key-warn-1_9 308b73558fb2d3dafb3b80feb0c68dc9b2c18186
 
