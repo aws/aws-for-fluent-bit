@@ -51,6 +51,11 @@ class IntegTestStack(Stack):
             },
         )
 
+        task_definition.execution_role.add_managed_policy(
+            iam.ManagedPolicy.from_managed_policy_arn(self, 'ecsExecutionRole',
+                                                      managed_policy_arn='arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy')
+        )
+
         task_definition.task_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess")
         )
