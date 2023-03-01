@@ -7,6 +7,9 @@ This release includes:
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
 
+Compared to `2.23.4` this release adds:
+* Feature - In the init image, extract Availability Zone from ECS Task Metadata and inject into Fluent Bit container as `AWS_AVAILABILITY_ZONE` environment variable [aws-for-fluent-bit:539](https://github.com/aws/aws-for-fluent-bit/pull/539)
+
 Compared to `2.31.4`, this release removes the following fixes that may introduce instabilities to the S3 plugin:
 * Enhancement - Transition S3 to fully synchronous file uploads to improve plugin stability [fluent-bit:6573](https://github.com/fluent/fluent-bit/pull/6573)
 
