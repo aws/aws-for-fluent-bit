@@ -31,14 +31,15 @@ func TestGetECSTaskMetadata(t *testing.T) {
 	actualOutput1 := getECSTaskMetadata(&client1)
 
 	expectedOutput1 := ECSTaskMetadata{
-		AWS_REGION:          "us-west-2",
-		ECS_CLUSTER:         "ecs-cluster",
-		ECS_TASK_ARN:        "arn:aws:ecs:us-west-2:123456789123:task/ecs-cluster/4ca5a280e68947cd84a8357f0d008fb5",
-		ECS_TASK_ID:         "4ca5a280e68947cd84a8357f0d008fb5",
-		ECS_FAMILY:          "code_test_A",
-		ECS_LAUNCH_TYPE:     "EC2",
-		ECS_REVISION:        "35",
-		ECS_TASK_DEFINITION: "code_test_A:35",
+		AWS_REGION:            "us-west-2",
+		AWS_AVAILABILITY_ZONE: "us-west-2a",
+		ECS_CLUSTER:           "ecs-cluster",
+		ECS_TASK_ARN:          "arn:aws:ecs:us-west-2:123456789123:task/ecs-cluster/4ca5a280e68947cd84a8357f0d008fb5",
+		ECS_TASK_ID:           "4ca5a280e68947cd84a8357f0d008fb5",
+		ECS_FAMILY:            "code_test_A",
+		ECS_LAUNCH_TYPE:       "EC2",
+		ECS_REVISION:          "35",
+		ECS_TASK_DEFINITION:   "code_test_A:35",
 	}
 
 	assert.Equal(t, actualOutput1, expectedOutput1)
@@ -52,14 +53,15 @@ func TestGetECSTaskMetadata(t *testing.T) {
 	actualOutput2 := getECSTaskMetadata(&client2)
 
 	expectedOutput2 := ECSTaskMetadata{
-		AWS_REGION:          "us-west-2",
-		ECS_CLUSTER:         "ecs-cluster",
-		ECS_TASK_ARN:        "arn:aws:ecs:us-west-2:123456789123:task/ecs-cluster/4ca5a280e68947cd84a8357f0d008fb5",
-		ECS_TASK_ID:         "4ca5a280e68947cd84a8357f0d008fb5",
-		ECS_FAMILY:          "code_test_A",
-		ECS_LAUNCH_TYPE:     "", // empty lunch type
-		ECS_REVISION:        "35",
-		ECS_TASK_DEFINITION: "code_test_A:35",
+		AWS_REGION:            "us-west-2",
+		AWS_AVAILABILITY_ZONE: "us-west-2a",
+		ECS_CLUSTER:           "ecs-cluster",
+		ECS_TASK_ARN:          "arn:aws:ecs:us-west-2:123456789123:task/ecs-cluster/4ca5a280e68947cd84a8357f0d008fb5",
+		ECS_TASK_ID:           "4ca5a280e68947cd84a8357f0d008fb5",
+		ECS_FAMILY:            "code_test_A",
+		ECS_LAUNCH_TYPE:       "", // empty lunch type
+		ECS_REVISION:          "35",
+		ECS_TASK_DEFINITION:   "code_test_A:35",
 	}
 
 	assert.Equal(t, actualOutput2, expectedOutput2)
@@ -74,14 +76,15 @@ func TestGetECSTaskMetadata(t *testing.T) {
 	actualOutput3 := getECSTaskMetadata(&client3)
 
 	expectedOutput3 := ECSTaskMetadata{
-		AWS_REGION:          "",
-		ECS_CLUSTER:         "",
-		ECS_TASK_ARN:        "",
-		ECS_TASK_ID:         "",
-		ECS_FAMILY:          "",
-		ECS_LAUNCH_TYPE:     "",
-		ECS_REVISION:        "",
-		ECS_TASK_DEFINITION: "",
+		AWS_REGION:            "",
+		AWS_AVAILABILITY_ZONE: "",
+		ECS_CLUSTER:           "",
+		ECS_TASK_ARN:          "",
+		ECS_TASK_ID:           "",
+		ECS_FAMILY:            "",
+		ECS_LAUNCH_TYPE:       "",
+		ECS_REVISION:          "",
+		ECS_TASK_DEFINITION:   "",
 	}
 
 	assert.Equal(t, actualOutput3, expectedOutput3)
@@ -94,18 +97,20 @@ func TestSetECSTaskMetadata(t *testing.T) {
 
 	// Test case 1: full metadata
 	metadataTest1 := ECSTaskMetadata{
-		AWS_REGION:          "us-west-2",
-		ECS_CLUSTER:         "ecs-Test",
-		ECS_TASK_ARN:        "arn:aws:ecs:us-west-2:111:task/ecs-local-cluster/37e8",
-		ECS_TASK_ID:         "56461",
-		ECS_FAMILY:          "esc-task-definition",
-		ECS_LAUNCH_TYPE:     "EC2",
-		ECS_REVISION:        "1",
-		ECS_TASK_DEFINITION: "esc-task-definition:1",
+		AWS_REGION:            "us-west-2",
+		AWS_AVAILABILITY_ZONE: "us-west-2a",
+		ECS_CLUSTER:           "ecs-Test",
+		ECS_TASK_ARN:          "arn:aws:ecs:us-west-2:111:task/ecs-local-cluster/37e8",
+		ECS_TASK_ID:           "56461",
+		ECS_FAMILY:            "esc-task-definition",
+		ECS_LAUNCH_TYPE:       "EC2",
+		ECS_REVISION:          "1",
+		ECS_TASK_DEFINITION:   "esc-task-definition:1",
 	}
 
-	expectedContent1 := "export FLB_AWS_USER_AGENT=init\n" +
+	expectedContent1 := "export FLB_AWS_USER_AGENT=ecs-init\n" +
 		"export AWS_REGION=us-west-2\n" +
+		"export AWS_AVAILABILITY_ZONE=us-west-2a\n" +
 		"export ECS_CLUSTER=ecs-Test\n" +
 		"export ECS_TASK_ARN=arn:aws:ecs:us-west-2:111:task/ecs-local-cluster/37e8\n" +
 		"export ECS_TASK_ID=56461\n" +
@@ -119,17 +124,18 @@ func TestSetECSTaskMetadata(t *testing.T) {
 
 	// Test case 2: some environment variables is empty
 	metadataTest2 := ECSTaskMetadata{
-		AWS_REGION:          "us-west-1",
-		ECS_CLUSTER:         "ecs-Test",
-		ECS_TASK_ARN:        "",
-		ECS_TASK_ID:         "",
-		ECS_FAMILY:          "",
-		ECS_LAUNCH_TYPE:     "",
-		ECS_REVISION:        "",
-		ECS_TASK_DEFINITION: "",
+		AWS_REGION:            "us-west-1",
+		AWS_AVAILABILITY_ZONE: "",
+		ECS_CLUSTER:           "ecs-Test",
+		ECS_TASK_ARN:          "",
+		ECS_TASK_ID:           "",
+		ECS_FAMILY:            "",
+		ECS_LAUNCH_TYPE:       "",
+		ECS_REVISION:          "",
+		ECS_TASK_DEFINITION:   "",
 	}
 
-	expectedContent2 := "export FLB_AWS_USER_AGENT=init\n" +
+	expectedContent2 := "export FLB_AWS_USER_AGENT=ecs-init\n" +
 		"export AWS_REGION=us-west-1\n" +
 		"export ECS_CLUSTER=ecs-Test\n"
 

@@ -123,8 +123,8 @@ The init process also injects ECS Task Metadata into the Fluent Bit container as
 The init process injects ECS Task Metadata into the Fluent Bit container as environment variables:
 
 ```
-AWS_REGION / ECS_LAUNCH_TYPE / ECS_CLUSTER / ECS_FAMILY
-ECS_TASK_ARN / ECS_TASK_ID / ECS_REVISION / ECS_TASK_DEFINITION
+AWS_REGION / AWS_AVAILABILITY_ZONE / ECS_LAUNCH_TYPE / ECS_CLUSTER
+ECS_FAMILY / ECS_TASK_ARN / ECS_TASK_ID / ECS_REVISION / ECS_TASK_DEFINITION
 ```
 
 You can use them as env vars directly in the Fluent Bit config.
