@@ -318,13 +318,13 @@ sync_latest_image() {
 
 	make_repo_public ${region}
 
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region})
+	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region} || true)
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	fi
 
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/stable" --region ${region})
+	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/stable" --region ${region} || true)
 	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
 	if [ "$invalid_parameter" != 'null' ]; then
 		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
@@ -492,8 +492,8 @@ verify_ecr_image_scan() {
 	repo_uri=${2}
 	tag=${3}
 
-	imageTag=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
-	if [ "$imageTag" = '1' ]; then
+	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+	if [ "$tagCount" = '1' ]; then
 		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
 		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
