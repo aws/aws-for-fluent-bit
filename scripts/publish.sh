@@ -243,8 +243,8 @@ sync_public_and_repo() {
 	repoList=$(aws ecr describe-repositories --region ${region})
 	repoName=$(echo $repoList | jq .repositories[0].repositoryName)
 	if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
-		imageTag=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
-		if [ "$imageTag" = '1' ]; then
+		tagCount=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+		if [ "$tagCount" = '1' ]; then
 			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag}
 			sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag})
 		else
