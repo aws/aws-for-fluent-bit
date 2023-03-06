@@ -102,6 +102,7 @@ RUN cp conf/parsers*.conf /fluent-bit/etc
 RUN cp conf/parsers*.conf /fluent-bit/parsers/
 
 ADD configs/parse-json.conf /fluent-bit/configs/
+ADD configs/multiline-parse-json.conf /fluent-bit/configs/
 ADD configs/minimize-log-loss.conf /fluent-bit/configs/
 ADD configs/output-metrics-healthcheck.conf /fluent-bit/configs/
 ADD configs/plugin-metrics-to-cloudwatch.conf /fluent-bit/configs/

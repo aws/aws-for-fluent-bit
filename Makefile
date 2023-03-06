@@ -15,10 +15,7 @@ all: release
 
 .PHONY: release
 release: linux-plugins
-	docker system prune -f
-	docker build -t amazon/aws-for-fluent-bit:latest -f Dockerfile .
-	docker system prune -f
-	docker build -t amazon/aws-for-fluent-bit:init-latest -f Dockerfile.init .
+	docker build -t superbxp/aws-for-fluent-bit:latest -f Dockerfile .
 
 #TODO: the bash script opts does not work on developer Macs
 windows-plugins: export OS_TYPE = windows
