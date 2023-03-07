@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.31.6
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Compared to `2.23.5` this release adds:
+* Bug - Fixed Log Loss can occur when log group creation or retention policy API calls fail [cloudwatch:314](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/issues/314)
+
+This release includes the same fixes and features that we are working on getting accepted upstream as [AWS for Fluent Bit 2.31.5](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.5).
+
+
 ### 2.31.5
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
