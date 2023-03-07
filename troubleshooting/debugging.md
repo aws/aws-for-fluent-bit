@@ -45,6 +45,7 @@
     - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
+    - [Both CloudWatch Plugins: Create failures consume retries](#both-cloudwatch-plugins-create-failures-consume-retries)
 - [Best Practices]
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
@@ -670,6 +671,20 @@ Path                /logs/request.log
 ```
 
 In other cases, the original config would be correct. For example, assume your app produces first a log file `request.log` and then next creates and writes new logs to a new file named `request.log1` and then next `request.log2`. And then when the max number of files are reached, the original `request.log` is deleted and then a new `request.log` is written. If that is the scenario, then the original Path pattern with a wildcard at the end is correct since it is necessary to match all log files where new logs are written. This method of log rotation is the behavior of the [log4j DirectWriteRolloverStrategy](https://logging.apache.org/log4j/2.x/manual/appenders.html#DirectWriteRolloverStrategy) where there is no file renaming. 
+
+#### Both CloudWatch Plugins: Create failures consume retries
+
+In Fluent Bit, [retries are handled by the core engine](https://docs.fluentbit.io/manual/administration/scheduling-and-retries). Whenever the plugin encounters any error, it returns a retry to the engine which schedules a retry. This means that log group creation, log stream creation or log retention policy calls can consume a retry if they fail.
+
+*This applies to both the [CloudWatch Go Plugin and the CloudWatch C Plugin](#aws-go-plugins-vs-aws-core-c-plugins).*
+
+This means that before the plugin even tries to send a chunk of log records, it may consume a retry on a random temporary networking error trying to call CreateLogStream.
+
+In general, this should not cause problems, because log stream and group creation is rare and unlikely to fail.
+
+If you are concerned about this, the solution is to set a higher value for `Retry_Limit`. 
+
+If you use the `log_group_name` or `log_stream_name` options, creation only happens on startup. If you use the `log_stream_prefix` option, creation happens the first time logs are sent with a new tag. Thus, in most cases resource creation is rare/only on startup. If you use the log group and stream templating options (these are different for each CloudWatch plugin, see [Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin)), then log groups and log streams are created on demand based on your templates.
 
 ### Best Practices
 
