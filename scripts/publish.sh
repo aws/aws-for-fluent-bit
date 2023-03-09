@@ -283,6 +283,26 @@ sync_public_and_repo() {
 	fi
 }
 
+sync_ssm() {
+	namespace_path=${1}
+	region=${2}
+	repo=${3}
+	tag=${4}
+
+	invalid_parameter=
+	should_prepare=false
+	# Check to see if namespace is prepared, once a parameter is put into namespace requests should not fail
+	if ! ssm_parameters=$(aws ssm get-parameters --names ${namespace_path} --region ${region}); then
+		should_prepare=true
+	else
+		invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
+	fi
+
+	if [ $should_prepare = true ] || [ "$invalid_parameter" != 'null' ]; then
+		publish_stable_ssm ${region} ${repo} ${tag}
+	fi
+}
+
 sync_latest_image() {
 	region=${1}
 	account_id=${2}
@@ -318,17 +338,8 @@ sync_latest_image() {
 
 	make_repo_public ${region}
 
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region} || true)
-	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
-	if [ "$invalid_parameter" != 'null' ]; then
-		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-	fi
-
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/stable" --region ${region} || true)
-	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
-	if [ "$invalid_parameter" != 'null' ]; then
-		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-	fi
+	sync_ssm "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	sync_ssm "/aws/service/aws-for-fluent-bit/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 
 	stable_uri=$(aws ssm get-parameters --names /aws/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameters[0].Value')
 	stable_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$stable_uri")
