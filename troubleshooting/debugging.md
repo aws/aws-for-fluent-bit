@@ -4,6 +4,7 @@
 
 - [Understanding Error Messages](#understanding-error-messages)
     - [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs)
+    - [Common Network Errors](#common-network-errors)
     - [Tail Input Skipping File](#tail-input-skipping-file)
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
@@ -98,6 +99,43 @@ Even if you see this message, you still have not lost logs yet. Since it will re
 ```
 
 When you see this message, you have lost logs. The other case that indicates log loss is when an input is paused, which is covered in the [overlimit error section](#overlimit-warnings).
+
+#### Common Network Errors
+
+First, please read the section [Network Connection Issues](#network-connection-issues), which explains that Fluent Bit's http client is low level and logs errors that other clients may simply silently retry. That section also explains the `auto_retry_requests` option which defaults to true. 
+
+Your Fluent Bit deployment will occasionally log network connection errors. These are normal and should not cause concern unless they cause log loss. See [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs) to learn how to check for log loss from network issues. If you see network errors happen very frequently or they cause your retries to expire, then please cut us an issue.
+
+The following are common network connection errors that we have seen frequently:
+
+```
+[error] [tls] error: error:00000005:lib(0):func(0):DH lib
+```
+
+```
+[error] [src/flb_http_client.c:1199 errno=25] Inappropriate ioctl for device
+```
+
+```
+[error] [tls] error: unexpected EOF
+```
+
+```
+[error] [http_client] broken connection to firehose.eu-west-1.amazonaws.com:443
+```
+
+```
+[error] [aws_client] connection initialization error
+```
+
+```
+[error] [src/flb_http_client.c:1172 errno=32] Broken pipe
+```
+
+```
+[error] [tls] SSL error: NET - Connection was reset by peer
+```
+
 
 #### Tail Input Skipping File
 
@@ -395,6 +433,8 @@ In the AWS for Fluent Bit repo, we always attempt to tag bug reports with which 
 #### Network Connection Issues
 
 One of the simplest causes of network connection issues is throttling, some AWS APIs will block new connections from the same IP for throttling (rather than wasting effort returning a throttling error in the response). We have seen this with the CloudWatch Logs API. So, the first thing to check when you experience network connection issues is your log ingestion/throughput rate and the limits for your destination. 
+
+Please see [Common Network Errors](#common-network-errors) for a list of common network errors outputted by Fluent Bit.
 
 In addition, Fluent Bit's networking library and http client is very low level and simple. It can be normal for there to be occasional dropped connections or client issues. Other clients may silently auto-retry these transient issues; Fluent Bit by default will always log an error and issue a full retry with backoff for any networking error. 
 
