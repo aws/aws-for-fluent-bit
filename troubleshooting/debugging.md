@@ -67,6 +67,7 @@
     - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
     - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
+    - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
 
 
 ### Understanding Error Messages
@@ -1231,3 +1232,70 @@ In general, we recommend locking your deployments to a specific version tag. Rat
 * Our latest [stable version is noted in this file](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION). 
 * Our [latest stable criteria is outlined in the repo README](https://github.com/aws/aws-for-fluent-bit#using-the-stable-tag).
 
+
+#### How is the timestamp set for my logs?
+
+This depends on a number of aspects in your configuration. You must consider:
+1. How is the timestamp set when my logs are ingested?
+2. How is the timestamp set when my logs are sent?
+
+Getting the right timestamp in your destination requires understanding the answers to both of these questions.
+
+##### Background
+
+To prevent confusion, understand the following:
+* **Timestamp in the log message string**: This is the timestamp in the log message itself. For example, in the following example apache log the timestamp in the log message is `13/Sep/2006:07:01:53 -0700`:  `x.x.x.90 - - [13/Sep/2006:07:01:53 -0700] "PROPFIND /svn/[xxxx]/Extranet/branches/SOW-101 HTTP/1.1" 401 587`.
+* **Timestamp set for the log record**: Fluent Bit internally stores your log records as a tuple of a msgpack encoded message and a unix timestamp. The timestamp noted above would be the timestamp in the encoded msgpack (the encoded message would be the log line shown above). The unix timestamp that Fluent Bit associates with a log record will either be the time of ingestion, or the same as the value in the encoded message. *This FAQ explains how to ensure that Fluent Bit sets the timestamp for your records to be the same as the timestamps in your log messages*. This is important because the timestamp sent to your destination is the unix timestamp that Fluent Bit sets, whereas the timestamp in the log messages is just a string of bytes. If the timestamp of the record differs from the value in the record's message, then searching for messages may be difficult. 
+
+##### 1. How is the timestamp set when my logs are ingested?
+
+Every log ingested into Fluent Bit must have a timestamp. Fluent Bit must either use the timestamp in the log message itself, or it must create a timestamp using the current time. *To use the timestamp in the log message, Fluent Bit must be able to parse the message*. 
+
+The following are common cases for ingesting logs with timestamps:
+* **Forward Input**: [The Fluent forward protocol input](https://docs.fluentbit.io/manual/pipeline/inputs/forward) always ingests logs with the timestamps set for each message because the Fluent forward protocol includes timestamps. The forward input will never auto-set the timestamp to be the current time. *Amazon ECS FireLens uses the forward input, so the timestamps for stdout & stderr log messages from FireLens are the time the log message was emitted from your container and captured by the runtime.*
+* **Tail Input**: When you read a log file with [tail](https://docs.fluentbit.io/manual/pipeline/inputs/tail), the timestamp in the log lines can be parsed and ingested if you specify a `Parser`. Your [parser](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser) must set a `Time_Format` and `Time_Key` as explained below. It should be noted that if you use the [container/kubernetes built-in multiline parsers](https://docs.fluentbit.io/manual/pipeline/inputs/tail#multiline-and-containers-v1.8), then the timestamp from your container log lines will be parsed. However, user defined multiline parsers can not set the timestamp.
+* **Other Inputs**: Some other inputs, such as [systemd](https://docs.fluentbit.io/manual/pipeline/inputs/systemd) can function like the `forward` input explained above, and automatically ingest the timestamp from the log. Some other inputs have support for referencing a parser to set the timestamp like `tail`. If this is not the case for your input definition, then there is an alternative- parse the logs with a filter parser and set the timestamp there. *Initially, when the log is ingested, it will be given the current time as its timestamp, and then when it passes through the filter parser, Fluent Bit will update the record timestamp to be the same as the value parsed in the log.*
+
+##### Setting timestamps with a filter and parser
+
+The following example demonstrates a configuration that will parse the timestamp in the message and set it as the timestamp of the log record in Fluent Bit.
+
+First configure a [parser definition](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser) that has `Time_Key` and `Time_Format` in your `parsers.conf`:
+
+```
+[PARSER]
+    Name        syslog-rfc5424
+    Format      regex
+    Regex       ^\<(?<pri>[0-9]{1,5})\>1 (?<time>[^ ]+) (?<host>[^ ]+) (?<ident>[^ ]+) (?<pid>[-0-9]+) (?<msgid>[^ ]+) (?<extradata>(\[(.*)\]|-)) (?<message>.+)$
+    Time_Key    time
+    Time_Format %Y-%m-%dT%H:%M:%S.%L
+    Time_Keep   On
+    Types pid:integer
+```
+
+The `Regex` here will parse the message and turn each named capture group into a field in the log record JSON. Thus, a key called `time` will be created. The `Time_Key time` notes this key. And the `Time_Format` tells Fluent Bit how ti process the `Time_Key`. The `Time_Keep On` will keep the `time` key in the log record, otherwise it would be dropped after parsing. 
+
+Finally, our main `fluent-bit.conf` will reference the parser with a [filter](https://docs.fluentbit.io/manual/pipeline/filters/parser):
+
+```
+[FILTER]
+    Name parser
+    Match app*
+    Key_Name log
+    Parser syslog-rfc5424
+```
+
+Consider the following log line which can be parsed by this parser:
+
+```
+<165>1 2007-01-20T11:02:09Z mymachine.example.com evntslog - ID47 [exampleSDID@32473 iut="3" eventSource="Application" eventID="1011"] APP application event log entry
+```
+
+The parser will first parse out the `time` field `2007-01-20T11:02:09Z`. It will then match this against the time format `%Y-%m-%dT%H:%M:%S.%L`. Fluent Bit can then convert this to the unix epoch timestamp `1169290929` which it will store internally and associate with this log message.
+
+##### How is the timestamp set when my logs are sent?
+
+This depends on the output that you use. For the AWS Outputs:
+* `cloudwatch` and `cloudwatch_logs` will send the timestamp that Fluent Bit associates with the log record to CloudWatch as the message timestamp. *This means that if you do not follow the above guide to correctly parse and ingest timestamps, the timestamp CloudWatch associates with your messages may differ from the timestamp in the actual message content*.
+* `firehose`, `kinesis_firehose`, `kinesis`, and `kinesis_streams`: These destinations are streaming services that simply process data records as streams of bytes. By default, the log message is all that is sent. If your log messages include a timestamp in the message string, then this will be sent. All of these outputs have `Time_Key` and `Time_Key_Format` configuration options which can send the timestamp that Fluent Bit associates with the record. This is the timestamp that the above guide explains how to set/parse. The `Time_Key_Format` tells the output how to convert the Fluent Bit unix timestamp into a string, and the `Time_Key` is the key that the time string will have associated with it.
+* `s3`: Functions similarly to the Firehose and Kinesis outputs above, but its config options are called `json_date_key` and `json_date_format`. For the `json_date_format`, there is a [predefined list of supported values](https://docs.fluentbit.io/manual/pipeline/outputs/s3/).
