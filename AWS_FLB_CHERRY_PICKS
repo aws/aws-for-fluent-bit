@@ -45,3 +45,6 @@ https://github.com/PettitWesley/fluent-bit.git chunk-append-context 8fc357c6f245
 # in_tail file name context for inotify events
 https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutable-cherry-pick ab11d1d7438f5254d04eba8dfc2f10b78cc2244d
 
+# S3 tag corruption fix
+https://github.com/PettitWesley/fluent-bit.git s3-str-fixes 38303131e049265277881c0d79935ad31fdd3e13
+

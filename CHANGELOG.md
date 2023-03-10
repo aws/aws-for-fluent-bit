@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.31.7
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon Kinesis Streams for Fluent Bit 1.10.1
+* Amazon Kinesis Firehose for Fluent Bit 1.7.1
+
+Compared to `2.23.6` this release adds:
+* Bug - Fixed S3 Key Tag Corruption with `preserve_data_ordering` option [aws-for-fluent-bit:541](https://github.com/aws/aws-for-fluent-bit/issues/541) [fluent-bit:6933](https://github.com/fluent/fluent-bit/issues/6933)
+
+This release includes the same fixes and features that we are working on getting accepted upstream as [AWS for Fluent Bit 2.31.6](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.6).
+
+
 ### 2.31.6
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
