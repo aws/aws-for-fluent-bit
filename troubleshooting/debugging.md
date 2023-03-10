@@ -39,6 +39,7 @@
     - [Recommendations for throttling](#recommendations-for-throttling)
 - [Plugin Specific Issues](#plugin-specific-issues)
     - [Tail Ignore_Older](#tail-input-ignore_older)
+    - [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
     - [rewrite_tag filter and cycles in the log pipeline](#rewrite_tag-filter-and-cycles-in-the-log-pipeline)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
     - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
@@ -532,6 +533,9 @@ The following are typical causes of log loss. Each of these have clear error mes
 2. [Input paused due to buffer overlimit](#overlimit-warnings)
 3. [Tail input skips files or lines](#tail-input-skipping-file)
 
+In rare cases, we have also seen that lack of log deletion and tail settings can cause slowdown in Fluent Bit and loss of logs:
+* [Tail input Ignore_Older](#tail-input-ignore_older) and [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
+
 ### Scaling
 
 While the Fluent Bit maintainers are constantly working to improve its max performance, there are limitations. Carefully architecting your Fluent Bit deployment can ensure it can scale to meet your required throughput. 
@@ -588,6 +592,15 @@ The [tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) has a se
 > Ignores files which modification date is older than this time in seconds. Supports m,h,d (minutes, hours, days) syntax.
 
 We have seen that if there are a large number of files on disk matched by the Fluent Bit tail `Path`, then Fluent Bit may become slow and may even lose logs. This happens because it must processes watch events for each file. Consider setting up log file deletion and set `Ignore_Older` so that Fluent Bit can stop watching older files.
+
+We have a [Log File Deletion example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-deletion). Setting up log file deletion is required to ensure Fluent Bit tail input can achieve ideal performance. While `Ignore_Older` will ensure that it does not process events for older files, the input will still continuously scan your configured `Path` for all log files that it matches. If you have lots of old files that match your `Path`, this will slow it down. See the log file deletion link below. 
+
+#### Tail input performance issues and log file deletion
+
+As noted above, setting up log file deletion is required to ensure Fluent Bit tail input can achieve ideal performance. If you have lots of old files that match your `Path`, this will slow it down.
+
+We have a [Log File Deletion example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-deletion).
+
 
 #### rewrite_tag filter and cycles in the log pipeline
 
