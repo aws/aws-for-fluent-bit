@@ -35,8 +35,6 @@ phases:
       # install aws
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       - unzip awscliv2.zip
-      - which aws
-      - ls -l /usr/local/bin/aws
       - ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/bin --update
       # install aws-iam-authenticator
       - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
