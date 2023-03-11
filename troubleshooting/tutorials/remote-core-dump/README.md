@@ -315,3 +315,21 @@ Once inside of gdb, the following commands will be useful:
 These are the commands that our team typically uses to pull information out of a core file. Once you know the state of the stack in each thread, you can cross reference this with the code and generally determine what caused the crash.
 
 For a full reference for GDB, see its [man page](https://linux.die.net/man/1/gdb).
+
+You may get a note from GDB on startup that it is missing debuginfo:
+
+```
+Missing separate debuginfos, use: debuginfo-install bzip2-libs-1.0.6-13.amzn2.0.3.x86_64 cyrus-sasl-lib-2.1.26-24.amzn2.x86_64 elfutils-libelf-0.176-2.amzn2.x86_64 elfutils-libs-0.176-2.amzn2.x86_64
+```
+
+You can install these with [`debuginfo-install`](https://man7.org/linux/man-pages/man1/debuginfo-install.1.html) which can be obtained with [`yum-utils`](https://man7.org/linux/man-pages/man1/yum-utils.1.html).
+
+1. Get `debuginfo-install`
+```
+sudo yum update && sudo yum install yum-utils
+```
+
+2. Then run the command provided by GDB to install debug info:
+```
+sudo debuginfo-install bzip2-libs-1.0.6-13.amzn2.0.3.x86_64 cyrus-sasl-lib-2.1.26-24.amzn2.x86_64 elfutils-libelf-0.176-2.amzn2.x86_64 elfutils-libs-0.176-2.amzn2.x86_64
+```
