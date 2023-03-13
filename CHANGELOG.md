@@ -3,7 +3,7 @@
 ### 2.31.7
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
-* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon CloudWatch Logs for Fluent Bit 1.9.2
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
 
@@ -16,7 +16,7 @@ This release includes the same fixes and features that we are working on getting
 ### 2.31.6
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
-* Amazon CloudWatch Logs for Fluent Bit 1.9.1
+* Amazon CloudWatch Logs for Fluent Bit 1.9.2
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
 
