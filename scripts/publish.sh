@@ -478,7 +478,7 @@ check_image_version() {
 	docker_hub_login
 	
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
-	docker manifest inspect amazon/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
+	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
 	if [ "${EXIT_CODE}" = "0" ]; then
 		echo "Accidental release: current image version from github source file match a previous version from dockerhub."
 		exit 1
