@@ -7,11 +7,10 @@ phases:
   pre_build:
     commands:
       - echo Publish the image to Public ECR
+      - pip3 uninstall awscli -y
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
       - unzip awscliv2.zip
-      - which aws
-      - ls -l /root/.pyenv/shims/aws
-      - ./aws/install --bin-dir /root/.pyenv/shims --install-dir /root/.pyenv/shims --update
+      - ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/bin --update
       - which aws
       - aws --version
   build:
