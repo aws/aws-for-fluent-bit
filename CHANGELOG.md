@@ -1,5 +1,9 @@
 # Changelog
 
+
+* Enhancement - Add clear info message when chunks are removed because `storage.total_limit_size` is reached [fluent-bit:6719](https://github.com/fluent/fluent-bit/pull/6719)
+
+
 ### 2.31.7
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
