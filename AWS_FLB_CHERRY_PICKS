@@ -48,3 +48,7 @@ https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutab
 # S3 tag corruption fix
 https://github.com/PettitWesley/fluent-bit.git s3-str-fixes 38303131e049265277881c0d79935ad31fdd3e13
 
+# User friend message when storage.total_limit_size causes fs chunk deletion, before there was no indication
+https://github.com/fluent/fluent-bit.git master b725d6b8b289fccde4e9b31d3f3ac61f13711ef9
+# use total_chunks_up in max_chunks_up memory overlimit warn message
+https://github.com/fluent/fluent-bit.git master 9c72f3ac6510b701277936897cd9701ffce3646e
