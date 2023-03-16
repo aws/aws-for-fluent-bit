@@ -63,7 +63,7 @@ Fluent Bit can be used in a HIPAA compliant matter to send logs to AWS, even if 
 
 AWS for Fluent Bit uses ECR image scanning in its release pipeline and any scan that finds high or critical vulnerabilities will block a release: [scripts/publish.sh](https://github.com/aws/aws-for-fluent-bit/blob/mainline/scripts/publish.sh#L487)
 
-If you find an issue from a scan on our latest images please follow the reporting guidelines below and we will work quickly to introduce a new release. To be clear, we do not patch existing images, we just will release a new image without the issue. The team uses ECR image scan as the main source of truth for whether or not the image contains a vulnerability in a dependency. 
+If you find an issue from a scan on our latest images please follow the reporting guidelines below and we will work quickly to introduce a new release. To be clear, we do not patch existing images, we just will release a new image without the issue. The team uses [Amazon ECR Basic image scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html) and [Amazon ECR Enhanced scanning powered by AWS Inspector](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html) as the primary source of truth for whether or not the image contains a vulnerability in a dependency. 
 
 If your concern is about a vulnerability in the Fluent Bit upstream ([github.com/fluent/fluent-bit](https://github.com/fluent/fluent-bit/) open source code), please let us know as well. However, fixing upstream issues requires additional work and time because we must work closely with upstream maintainers to commit a fix and cut an upstream release, and then we can cut an AWS for Fluent Bit release. 
 
