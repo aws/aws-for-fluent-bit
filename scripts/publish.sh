@@ -198,25 +198,26 @@ publish_to_public_ecr() {
 }
 
 publish_ssm() {
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
-		--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:${3}
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
-		--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:latest
-	
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
-		--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:"$init"-${3}
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
-		--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:"$init"-latest
-}
-
-publish_stable_ssm() {
-	aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
-		--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
-		--type String --region ${1} --value ${2}:${3}
+	# This optional parameter indicates if we should publish stable (defaults to false)
+	if [ ${4:-false} = true ]; then
+		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
+			--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
+			--type String --region ${1} --value ${2}:${3}
+	else
+		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
+			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
+			--type String --region ${1} --value ${2}:${3}
+		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
+			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
+			--type String --region ${1} --value ${2}:latest
+		
+		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
+			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
+			--type String --region ${1} --value ${2}:"$init"-${3}
+		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
+			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
+			--type String --region ${1} --value ${2}:"$init"-latest
+	fi
 }
 
 rollback_ssm() {
@@ -283,6 +284,32 @@ sync_public_and_repo() {
 	fi
 }
 
+sync_ssm() {
+	namespace_path=${1}
+	region=${2}
+	repo=${3}
+	tag=${4}
+
+	# Check the namespace_path looking for stable at the end, if the string were too short it would return an empty string
+	is_stable=false
+	if [ "${namespace_path:(-6)}" = "stable" ]; then
+		is_stable=true
+	fi
+
+	invalid_parameter=
+	should_prepare=false
+	# Check to see if namespace is prepared, once a parameter is put into namespace requests should not fail
+	if ! ssm_parameters=$(aws ssm get-parameters --names ${namespace_path} --region ${region}); then
+		should_prepare=true
+	else
+		invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
+	fi
+
+	if [ $should_prepare = true ] || [ "$invalid_parameter" != 'null' ]; then
+		publish_ssm ${region} ${repo} ${tag} ${is_stable}
+	fi
+}
+
 sync_latest_image() {
 	region=${1}
 	account_id=${2}
@@ -318,23 +345,14 @@ sync_latest_image() {
 
 	make_repo_public ${region}
 
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" --region ${region})
-	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
-	if [ "$invalid_parameter" != 'null' ]; then
-		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-	fi
-
-	ssm_parameters=$(aws ssm get-parameters --names "/aws/service/aws-for-fluent-bit/stable" --region ${region})
-	invalid_parameter=$(echo $ssm_parameters | jq .InvalidParameters[0])
-	if [ "$invalid_parameter" != 'null' ]; then
-		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-	fi
+	sync_ssm "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	sync_ssm "/aws/service/aws-for-fluent-bit/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 
 	stable_uri=$(aws ssm get-parameters --names /aws/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameters[0].Value')
 	stable_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$stable_uri")
 
 	if [ "$stable_uri" != "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" ]; then
-		publish_stable_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		publish_ssm ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION} true
 	fi
 }
 
@@ -492,8 +510,8 @@ verify_ecr_image_scan() {
 	repo_uri=${2}
 	tag=${3}
 
-	imageTag=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
-	if [ "$imageTag" = '1' ]; then
+	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+	if [ "$tagCount" = '1' ]; then
 		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
 		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
