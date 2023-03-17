@@ -481,7 +481,7 @@ Use the Dockerfile below to create a new container image that will invoke your F
 ```
 FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:latest as builder
 
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
     && yum install -y openssl11-devel \
           cyrus-sasl-devel \
@@ -905,7 +905,7 @@ Save this as `tcp-logger.sh` and run `chmod +x tcp-logger.sh`. Then, create a fi
 You can use this Dockerfile:
 
 ```
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
 RUN yum upgrade -y
 RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
