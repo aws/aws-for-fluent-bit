@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 client = boto3.client('logs', region_name=os.environ.get('AWS_REGION'))
 metrics_client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
 start_time = datetime.utcnow() - timedelta(seconds=1200)
-end_time = datetime.utcnow()
+end_time = datetime.utcnow() + timedelta(seconds=10)
 
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
 
@@ -34,8 +34,18 @@ def execute_with_retry(max_retry_attempts, retriable_function, *argv):
 
 
 def validate_test_case(test_name, log_group, log_stream, validator_func):
+    ret = False
     print('RUNNING: ' + test_name)
-    response = client.get_log_events(logGroupName=log_group, logStreamName=log_stream)
+    for _ in range(RETRIES):
+        try: 
+            response = client.get_log_events(logGroupName=log_group, logStreamName=log_stream)
+        except Exception as e:
+            print(e)
+            continue
+        if response is not None:
+            break
+        time.sleep(RETRY_SLEEP)
+        
     # test length
     if len(response['events']) != 1000:
         print(str(len(response['events'])) + ' events found in CloudWatch')
@@ -82,16 +92,23 @@ def validate_metric(test_name, metric_namespace, dim_key, dim_value, expected_sa
 
 def metric_exists(metric_namespace, dim_key, dim_value, expected_samples):
     metric_name = get_expected_metric_name()
-    response = metrics_client.get_metric_statistics(
-        Namespace=metric_namespace,
-        MetricName=metric_name,
-        Dimensions=[{"Name": dim_key, "Value": dim_value}],
-        StartTime=start_time,
-        EndTime=end_time,
-        Period=60,
-        Statistics=["SampleCount", "Average"],
-        Unit="None",
-    )
+    try:
+        response = metrics_client.get_metric_statistics(
+            Namespace=metric_namespace,
+            MetricName=metric_name,
+            Dimensions=[{"Name": dim_key, "Value": dim_value}],
+            StartTime=start_time,
+            EndTime=end_time,
+            Period=60,
+            Statistics=["SampleCount", "Average"],
+            Unit="None",
+        )
+    except Exception as e:
+        print(e)
+        return False
+
+    if response is None:
+        return False
 
     total_samples = 0
     for datapoint in response["Datapoints"]:

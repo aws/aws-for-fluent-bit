@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -23,6 +24,8 @@ const (
 	envS3Prefix        = "S3_PREFIX"
 	envTestFile        = "TEST_FILE"
 	envExpectedLogsLen = "EXPECTED_EVENTS_LEN"
+	retries            = 2
+	retrySleep         = 5
 )
 
 type Message struct {
@@ -67,11 +70,26 @@ func main() {
 	s3Action := os.Getenv(envS3Action)
 	if s3Action == "validate" {
 		// Validate the data on the s3 bucket
-		getS3ObjectsResponse := getS3Objects(s3Client, bucket, prefix)
-		validate(s3Client, getS3ObjectsResponse, bucket, testFile, numEvents)
+		for i := 0; i < retries; i++ {
+			success, canRetry := validate(s3Client, prefix, bucket, testFile, numEvents)
+			if success {
+				fmt.Println("[VALIDATION SUCCESSFULL]")
+				break
+			} else if !canRetry {
+				break
+			}
+			time.Sleep(retrySleep * time.Second)
+		}
 	} else {
 		// Clean the s3 bucket-- delete all objects
-		deleteS3Objects(s3Client, bucket, prefix)
+		for i := 0; i < retries; i++ {
+			success := deleteS3Objects(s3Client, bucket, prefix)
+			if success {
+				break
+			}
+			time.Sleep(retrySleep * time.Second)
+		}
+		
 	}
 }
 
@@ -99,7 +117,8 @@ func getS3Objects(s3Client *s3.S3, bucket string, prefix string) *s3.ListObjects
 	response, err := s3Client.ListObjectsV2(input)
 
 	if err != nil {
-		exitErrorf("[TEST FAILURE] Error occured to get the objects from bucket: %q., %v", bucket, err)
+		fmt.Fprintf(os.Stderr,"[TEST FAILURE] Error occured to get the objects from bucket: %q., %v", bucket, err)
+		return nil
 	}
 
 	return response
@@ -108,7 +127,15 @@ func getS3Objects(s3Client *s3.S3, bucket string, prefix string) *s3.ListObjects
 // Validates the log messages. Our log producer is designed to send 1000 integers [0 - 999].
 // Both of the Kinesis Streams and Kinesis Firehose try to send each log maintaining the "at least once" policy.
 // To validate, we need to make sure all the valid numbers [0 - 999] are stored at least once.
-func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, testFile string, numEvents int) {
+// returns success, can retry
+// if the failure was on a network call, then we can retry
+func validate(s3Client *s3.S3, prefix string, bucket string, testFile string, numEvents int) (bool, bool) {
+	response := getS3Objects(s3Client, bucket, prefix)
+	if response == nil {
+		return false, true
+	}
+
+	
 	logCounter := make([]int, numEvents)
 	for index := range logCounter {
 		logCounter[index] = 1
@@ -120,10 +147,14 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 			Key:    response.Contents[i].Key,
 		}
 		obj := getS3Object(s3Client, input)
+		if obj == nil {
+			return false, true
+		}
 
 		dataByte, err := ioutil.ReadAll(obj.Body)
 		if err != nil {
-			exitErrorf("[TEST FAILURE] Error to parse GetObject response. %v", err)
+			fmt.Fprintf(os.Stderr,"[TEST FAILURE] Error to parse GetObject response. %v", err)
+			return false, true
 		}
 
 		data := strings.Split(string(dataByte), "\n")
@@ -140,7 +171,8 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 
 			decodeError := json.Unmarshal([]byte(d), &message)
 			if decodeError != nil {
-				exitErrorf("[TEST FAILURE] Json Unmarshal Error:", decodeError)
+				fmt.Fprintf(os.Stderr,"[TEST FAILURE] Json Unmarshal Error:", decodeError)
+				return false, false
 			}
 
 			if runtime.GOOS == "windows" {
@@ -150,11 +182,13 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 
 			number, convertionError := strconv.Atoi(message.Log)
 			if convertionError != nil {
-				exitErrorf("[TEST FAILURE] String to Int convertion Error:", convertionError)
+				fmt.Fprintf(os.Stderr,"[TEST FAILURE] String to Int convertion Error:", convertionError)
+				return false, false
 			}
 
 			if number < 0 || number >= numEvents {
-				exitErrorf("[TEST FAILURE] Invalid number: %d found. Expected value in range (0 - %d)", number, numEvents)
+				fmt.Fprintf(os.Stderr,"[TEST FAILURE] Invalid number: %d found. Expected value in range (0 - %d)", number, numEvents)
+				return false, false
 			}
 
 			logCounter[number] = 0
@@ -167,11 +201,13 @@ func validate(s3Client *s3.S3, response *s3.ListObjectsV2Output, bucket string, 
 	}
 
 	if sum > 0 {
-		exitErrorf("[TEST FAILURE] Validation Failed. Number of missing log records: %d", sum)
+		fmt.Fprintf(os.Stderr,"[TEST FAILURE] Validation Failed. Number of missing log records: %d", sum)
+		return false, false
 	} else {
 		fmt.Println("[TEST SUCCESSFULL] Found all the log records.")
 		// The file was created when the integ test started. Removing this file as a flag of test success.
 		os.Remove(filepath.Join("/out", testFile))
+		return true, false
 	}
 }
 
@@ -180,14 +216,15 @@ func getS3Object(s3Client *s3.S3, input *s3.GetObjectInput) *s3.GetObjectOutput 
 	obj, err := s3Client.GetObject(input)
 
 	if err != nil {
-		exitErrorf("[TEST FAILURE] Error occured to get s3 object: %v", err)
+		fmt.Fprintf(os.Stderr,"[TEST FAILURE] Error occured to get s3 object: %v", err)
+		return nil
 	}
 
 	return obj
 }
 
 // Delete all the objects with the given prefix from the specified S3 bucket
-func deleteS3Objects(s3Client *s3.S3, bucket string, prefix string) {
+func deleteS3Objects(s3Client *s3.S3, bucket string, prefix string) bool {
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 		Bucket: aws.String(bucket),
@@ -196,10 +233,12 @@ func deleteS3Objects(s3Client *s3.S3, bucket string, prefix string) {
 
 	// Traverse the iterator deleting each object
 	if err := s3manager.NewBatchDeleteWithClient(s3Client).Delete(aws.BackgroundContext(), iter); err != nil {
-		exitErrorf("[CLEAN FAILURE] Unable to delete the objects from the bucket %q., %v", bucket, err)
+		fmt.Fprintf(os.Stderr,"[CLEAN FAILURE] Unable to delete the objects from the bucket %q., %v", bucket, err)
+		return false
 	}
 
 	fmt.Println("[CLEAN SUCCESSFUL] All the objects are deleted from the bucket:", bucket)
+	return true
 }
 
 func exitErrorf(msg string, args ...interface{}) {
