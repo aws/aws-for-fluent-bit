@@ -71,6 +71,7 @@
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
     - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
+    - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
 
 
 ### Understanding Error Messages
@@ -1367,3 +1368,57 @@ This depends on the output that you use. For the AWS Outputs:
 * `cloudwatch` and `cloudwatch_logs` will send the timestamp that Fluent Bit associates with the log record to CloudWatch as the message timestamp. *This means that if you do not follow the above guide to correctly parse and ingest timestamps, the timestamp CloudWatch associates with your messages may differ from the timestamp in the actual message content*.
 * `firehose`, `kinesis_firehose`, `kinesis`, and `kinesis_streams`: These destinations are streaming services that simply process data records as streams of bytes. By default, the log message is all that is sent. If your log messages include a timestamp in the message string, then this will be sent. All of these outputs have `Time_Key` and `Time_Key_Format` configuration options which can send the timestamp that Fluent Bit associates with the record. This is the timestamp that the above guide explains how to set/parse. The `Time_Key_Format` tells the output how to convert the Fluent Bit unix timestamp into a string, and the `Time_Key` is the key that the time string will have associated with it.
 * `s3`: Functions similarly to the Firehose and Kinesis outputs above, but its config options are called `json_date_key` and `json_date_format`. For the `json_date_format`, there is a [predefined list of supported values](https://docs.fluentbit.io/manual/pipeline/outputs/s3/).
+
+
+#### What are STDOUT and STDERR?
+
+Standard output (`stdout`) and standard error (`stderr`) are standard file handles attached to your application. Your application emits log messages to these pipes. Typically standard out is used for informational log output, and standard error is used for log output that indicates an error state. 
+
+Most standard logging libraries will by default send "info" and "debug" level log statements to STDOUT, whereas "warn" or "error" or "fatal" level log statements will be sent to STDERR. 
+
+For example, the python `print` function writes to STDOUT by default:
+
+```
+print("info: some information") # writes to stdout
+```
+
+But can also print to stderr:
+```
+print("ERROR: something went wrong", file=sys.stderr) # writes to stderr
+```
+
+Generally, logging systems group stdout and stderr logs together. For example, CRI/containerd kubernetes logs files look like the following with stdout and stderr messages in the same file, ordered by the time the container outputted them:
+
+```
+2020-02-02T03:45:58.799991063+00:00 stdout F getting gid for app.sock
+2020-02-02T03:45:58.892908216+00:00 stdout F adding agent user to local app group
+2020-02-02T03:45:59.096509878+00:00 stderr F curl: (7) Couldn't connect to server
+2020-02-02T03:45:59.097687388+00:00 stderr F Traceback (most recent call last):
+```
+
+The messages note whether they came from the application's stdout or stderr and Fluent Bit can parse this info and turn it into a structured field. For example:
+
+```
+{
+    "stream": "stderr",
+    "log": "curl: (7) Couldn't connect to server"
+}
+```
+
+All of the messages would be given the same [tag](https://docs.fluentbit.io/manual/concepts/key-concepts). Fluent Bit routing is based on tags, so this means the logs would all go to the same destination(s). 
+
+Normally, this is desirable as all of an application's log statements can be considered together in order of their time of emission. *If you want to send stdout and stderr to different destinations, then follow the techniques in this blog: [Splitting an application’s logs into multiple streams: a Fluent tutorial](https://aws.amazon.com/blogs/opensource/splitting-application-logs-multiple-streams-fluent/).*
+
+If you use Amazon ECS FireLens, then standard out and standard error will be collected and given the same log tag as well. See [FireLens Tag and Match Pattern and generated config](#firelens-tag-and-match-pattern-and-generated-config). The stream will be noted in the log JSON in the `source` field as shown in [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like):
+
+```
+{
+    "source": "stdout",
+    "log": "116.82.105.169 - Homenick7462 197 [2018-11-27T21:53:38Z] \"HEAD /enable/relationships/cross-platform/partnerships\" 501 13886",
+    "container_id": "e54cccfac2b87417f71877907f67879068420042828067ae0867e60a63529d35",
+    "container_name": "/ecs-demo-6-container2-a4eafbb3d4c7f1e16e00"
+}
+```
+
+
+
