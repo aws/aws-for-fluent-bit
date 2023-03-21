@@ -35,17 +35,12 @@ def execute_with_retry(max_retry_attempts, retriable_function, *argv):
 
 
 def validate_test_case(test_name, log_group, log_stream, validator_func):
-    ret = False
     print('RUNNING: ' + test_name)
-    for _ in range(RETRIES):
-        try: 
-            response = client.get_log_events(logGroupName=log_group, logStreamName=log_stream)
-        except Exception as e:
-            print(e)
-            continue
-        if response is not None:
-            break
-        time.sleep(RETRY_SLEEP)
+    try: 
+        response = client.get_log_events(logGroupName=log_group, logStreamName=log_stream)
+    except Exception as e:
+        print(e)
+        return False, 'TEST_FAILURE: API call failed'
         
     # test length
     if len(response['events']) != 1000:
