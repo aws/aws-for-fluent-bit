@@ -48,7 +48,7 @@
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
     - [Both CloudWatch Plugins: Create failures consume retries](#both-cloudwatch-plugins-create-failures-consume-retries)
-- [Best Practices]
+- [Best Practices](#best-practices)
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
