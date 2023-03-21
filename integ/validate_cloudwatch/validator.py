@@ -7,8 +7,9 @@ from datetime import datetime, timedelta
 
 client = boto3.client('logs', region_name=os.environ.get('AWS_REGION'))
 metrics_client = boto3.client("cloudwatch", region_name=os.environ["AWS_REGION"])
+# time range for EMF metric query
 start_time = datetime.utcnow() - timedelta(seconds=1200)
-end_time = datetime.utcnow() + timedelta(seconds=10)
+end_time = datetime.utcnow() + timedelta(seconds=30)
 
 LOG_GROUP_NAME = os.environ.get('LOG_GROUP_NAME')
 
