@@ -70,7 +70,7 @@ func main() {
 	s3Action := os.Getenv(envS3Action)
 	if s3Action == "validate" {
 		// Validate the data on the s3 bucket
-		for i := 0; i < retries; i++ {
+		for i := 0; i <= retries; i++ {
 			success, canRetry := validate(s3Client, prefix, bucket, testFile, numEvents)
 			if success {
 				fmt.Println("[VALIDATION SUCCESSFULL]")
@@ -82,7 +82,7 @@ func main() {
 		}
 	} else {
 		// Clean the s3 bucket-- delete all objects
-		for i := 0; i < retries; i++ {
+		for i := 0; i <= retries; i++ {
 			success := deleteS3Objects(s3Client, bucket, prefix)
 			if success {
 				break
