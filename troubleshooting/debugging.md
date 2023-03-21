@@ -71,6 +71,7 @@
     - [What to do when Fluent Bit memory usage is high](#what-to-do-when-fluent-bit-memory-usage-is-high)
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
     - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
+    - [Which version did I deploy?](#which-version-did-i-deploy)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
 
 
@@ -1308,7 +1309,7 @@ The first 4 fields are added by the [Fluentd Docker Log Driver](https://docs.doc
 
 If you are using CloudWatch as your destination, there are additional considerations if you use the `log_key` option to just send the raw log line: [What if I just want the raw log line to appear in CW?](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs#what-if-i-just-want-the-raw-log-line-from-the-container-to-appear-in-cloudwatch).
 
-#### What version did I deploy?
+#### Which version did I deploy?
 
 Check the log output from Fluent Bit. The first log statement printed by AWS for Fluent Bit is always the version used:
 
