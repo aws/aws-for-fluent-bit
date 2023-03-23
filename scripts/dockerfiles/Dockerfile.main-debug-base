@@ -1,30 +1,35 @@
 FROM amazon/aws-for-fluent-bit:build as builder
-COPY Dockerfile.build /Dockerfile.1.build
+COPY ./scripts/dockerfiles/Dockerfile.build /Dockerfile.1.build
 
-# Build Fluent Bit with release compiler flags
-RUN cmake -DFLB_RELEASE=On \
-          -DFLB_TRACE=Off \
+# Build Fluent Bit with debug compiler flags
+RUN cmake -DFLB_DEBUG=On \
+          -DFLB_DEV=On \
+          -DFLB_VALGRIND=On \
+          -DFLB_TRACE=On \
+          -DFLB_MTRACE=On \
+          -DFLB_BACKTRACE=On \
           -DFLB_JEMALLOC=On \
           -DFLB_TLS=On \
           -DFLB_SHARED_LIB=Off \
           -DFLB_EXAMPLES=Off \
           -DFLB_HTTP_SERVER=On \
           -DFLB_IN_SYSTEMD=On \
-          -DFLB_OUT_KAFKA=On \
-          -DFLB_ARROW=On ..
+          -DFLB_OUT_KAFKA=On ..
 
 RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
 
-# Build lightweight release image
-FROM public.ecr.aws/amazonlinux/amazonlinux:latest
+# Build lightweight debug image
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
     && yum install -y openssl11-devel \
           cyrus-sasl-devel \
           pkgconfig \
           systemd-devel \
           zlib-devel \
+          valgrind \
           libyaml \
+          gdb \
           nc && rm -fr /var/cache/yum
 
 COPY --from=builder /fluent-bit /fluent-bit
@@ -48,11 +53,19 @@ COPY --from=aws-fluent-bit-plugins:latest /kinesis-streams/THIRD-PARTY \
 COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
 ADD ecs /ecs/
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Optional Metrics endpoint
 EXPOSE 2020
+
+# Make a directory for our cores and apply loose permissions
+RUN mkdir /cores && chmod 777 /cores
+
+# Setting core pattern in /proc/sys/kernel/core_pattern requires privileged mode
+# And can only be done at container runtime
+# Default kernel core pattern for amazonlinux should be: '/cores/core_%e.%p'
+# However, we have seen that sometimes for unknown reasons cores are just dumped
+# to the current working directory. 
+# S0 change working directory to the cores folder to run fluent bit from there.
+WORKDIR /cores
 
 # Entry point
 CMD /entrypoint.sh

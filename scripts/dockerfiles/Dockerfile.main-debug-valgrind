@@ -1,0 +1,5 @@
+FROM amazon/aws-for-fluent-bit:main-debug-base
+COPY ./scripts/dockerfiles/Dockerfile.main-debug-base /Dockerfile.2.main-debug-base
+
+# Run under valgrind
+CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf

@@ -1,7 +1,6 @@
-
 FROM amazon/aws-for-fluent-bit:build-init as init-builder
-FROM amazon/aws-for-fluent-bit:vanilla-debug-base
-COPY Dockerfile.vanilla-debug-base /Dockerfile.1.vanilla-debug-base
+FROM amazon/aws-for-fluent-bit:main-debug-base
+COPY ./scripts/dockerfiles/Dockerfile.main-debug-base /Dockerfile.1.main-debug-base
 
 RUN mkdir -p /init
 

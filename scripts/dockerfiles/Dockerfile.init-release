@@ -1,6 +1,6 @@
 FROM amazon/aws-for-fluent-bit:build-init as init-builder
-FROM amazon/aws-for-fluent-bit:vanilla-release
-COPY Dockerfile.vanilla-release /Dockerfile.1.vanilla-release
+FROM amazon/aws-for-fluent-bit:main-release
+COPY ./scripts/dockerfiles/Dockerfile.main-release /Dockerfile.1.main-release
 
 RUN mkdir -p /init
 
