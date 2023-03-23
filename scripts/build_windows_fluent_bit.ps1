@@ -290,4 +290,4 @@ Copy-Item -Path "${AWSForFluentBitRootDir}\AWS_FOR_FLUENT_BIT_VERSION" -Destinat
 Copy-Item -Path "${AWSForFluentBitRootDir}\scripts\entrypoint.ps1" -Destination "${AWSForFluentBitRootDir}\build\windows\entrypoint.ps1"
 
 # Copy the dockerfile used to build an image. This would ensure that the images remains constant in time.
-Copy-Item -Path "${AWSForFluentBitRootDir}\Dockerfile.windows" -Destination "${AWSForFluentBitRootDir}\build\windows\Dockerfile.windows"
+Copy-Item -Path "${AWSForFluentBitRootDir}\scripts\dockerfiles\Dockerfile.windows" -Destination "${AWSForFluentBitRootDir}\build\windows\Dockerfile.windows"
