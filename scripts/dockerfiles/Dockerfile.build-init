@@ -15,7 +15,8 @@ ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/ver
 RUN go version
 
 ENV GO111MODULE on
-RUN go env -w GOPROXY=direct
+ARG LOCAL_BUILD=""
+RUN if [ "$LOCAL_BUILD" = "true" ];then go env -w GOPROXY=direct;fi
 
 # Build init process for Fluent Bit
 COPY /init/fluent_bit_init_process.go /
