@@ -135,17 +135,17 @@ ARCHITECTURES=("amd64" "arm64")
 init="init"
 
 docker_hub_login() {
-	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
-	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
+	# username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
+	# password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
 
-	# Logout when the script exits
-	trap cleanup EXIT
-	cleanup() {
-		docker logout
-	}
+	# # Logout when the script exits
+	# trap cleanup EXIT
+	# cleanup() {
+	# 	docker logout
+	# }
 
-	# login to DockerHub
-	docker login -u "${username}" --password "${password}"
+	# # login to DockerHub
+	# docker login -u "${username}" --password "${password}"
 }
 
 publish_to_docker_hub() {
