@@ -533,19 +533,11 @@ verify_ecr() {
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
-
-		# verify version number tag against public ECR
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
-
-		verify_sha $sha1 $sha2
-
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION})
-
-		verify_sha $sha1_init $sha2_init
 	fi
 
+	# in main pipeline when publishing a non-latest release
+	# we can't verify the SHA against any other tag
+	# only verification is the above steps to pull the image
 	if [ "${PUBLISH_LATEST}" = "true" ]; then
 	    # Also validate version number tag against latest tag
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
