@@ -71,7 +71,7 @@ eu-north-1
 ap-northeast-3
 "
 
-classic_regions_account_id="906394416424"
+classic_regions_account_id="308279032250"
 
 cn_regions="
 cn-north-1
