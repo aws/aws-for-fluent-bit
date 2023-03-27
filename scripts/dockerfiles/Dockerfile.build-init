@@ -15,11 +15,11 @@ ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/ver
 RUN go version
 
 ENV GO111MODULE on
-RUN go env -w GOPROXY=direct
 
 # Build init process for Fluent Bit
 COPY /init/fluent_bit_init_process.go /
 COPY /go.mod /
 COPY /go.sum /
-RUN go mod tidy \
-    && go build fluent_bit_init_process.go
+RUN go mod tidy || ( go env -w GOPROXY=direct && go mod tidy )
+RUN go build fluent_bit_init_process.go \
+    || ( go env -w GOPROXY=direct && go build fluent_bit_init_process.go )
