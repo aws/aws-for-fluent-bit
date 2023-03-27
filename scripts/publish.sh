@@ -64,7 +64,6 @@ eu-central-1
 ap-northeast-2
 ap-south-1
 us-east-2
-ca-central-1
 eu-west-2
 eu-west-3
 eu-north-1
@@ -996,6 +995,8 @@ if [ "${1}" = "cicd-publish" ]; then
 		for region in ${cn_regions}; do
 			sync_image_version ${region} ${cn_regions_account_id}
 		done
+	elif [ "${2}" = "ca-central-1" ]; then
+		sync_image_version "ca-central-1" 308279032250
 	elif [ "${2}" = "${bahrain_region}" ]; then
 		sync_image_version ${bahrain_region} ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
@@ -1045,6 +1046,8 @@ if [ "${1}" = "cicd-verify" ]; then
 		for region in ${cn_regions}; do
 			verify_ecr ${region} ${cn_regions_account_id} true
 		done
+	elif [ "${2}" = "ca-central-1" ]; then
+		verify_ecr "ca-central-1" 308279032250 true
 	elif [ "${2}" = "${bahrain_region}" ]; then
 		verify_ecr ${bahrain_region} ${bahrain_account_id} true
 	elif [ "${2}" = "${hongkong_region}" ]; then
@@ -1087,6 +1090,8 @@ if [ "${1}" = "cicd-publish-ssm" ]; then
 		for region in ${cn_regions}; do
 			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com.cn/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 		done
+	elif [ "${2}" = "ca-central-1" ]; then
+		publish_ssm "ca-central-1" 308279032250.dkr.ecr.ca-central-1.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	elif [ "${2}" = "${bahrain_region}" ]; then
 		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 	elif [ "${2}" = "${hongkong_region}" ]; then
@@ -1122,6 +1127,8 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 		for region in ${cn_regions}; do
 			verify_ssm ${region} true ${cn_regions_account_id}
 		done
+	elif [ "${2}" = "ca-central-1" ]; then
+		verify_ssm "ca-central-1" true 308279032250
 	elif [ "${2}" = "${bahrain_region}" ]; then
 		verify_ssm ${bahrain_region} true ${bahrain_account_id}
 	elif [ "${2}" = "${hongkong_region}" ]; then
