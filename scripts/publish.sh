@@ -133,7 +133,7 @@ ARCHITECTURES=("amd64" "arm64")
 # This variable is used in the image tag
 init="init"
 
-docker_hub_login() { }
+# docker_hub_login() { }
 	# username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
 	# password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
 
@@ -150,7 +150,7 @@ docker_hub_login() { }
 publish_to_docker_hub() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
 
-	docker_hub_login
+	# docker_hub_login
 
 	if [ $# -eq 2 ]; then
 		# Get the image SHA's
@@ -564,7 +564,7 @@ check_image_version() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
 	EXIT_CODE=0
 
-	docker_hub_login
+	# docker_hub_login
 	
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
 	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
@@ -595,7 +595,7 @@ verify_ecr_image_scan() {
 }
 
 verify_dockerhub() {
-	docker_hub_login
+	# docker_hub_login
 	
 	# Verify the image with stable tag
 	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
