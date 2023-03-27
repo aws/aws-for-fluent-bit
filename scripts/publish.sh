@@ -133,7 +133,7 @@ ARCHITECTURES=("amd64" "arm64")
 # This variable is used in the image tag
 init="init"
 
-docker_hub_login() {
+docker_hub_login() { }
 	# username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
 	# password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
 
@@ -145,7 +145,7 @@ docker_hub_login() {
 
 	# # login to DockerHub
 	# docker login -u "${username}" --password "${password}"
-}
+
 
 publish_to_docker_hub() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
