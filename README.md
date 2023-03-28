@@ -258,7 +258,13 @@ For example, you can pull the image with latest version by:
 docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
 ```
 
-If you see errors for image pull limits, try log into public ECR with your AWS credentials:
+If you see errors for image pull limits, or get the following error:
+
+```
+Error response from daemon: pull access denied for public.ecr.aws/amazonlinux/amazonlinux, repository does not exist or may require 'docker login': denied: Your authorization token has expired. Reauthenticate and try again.
+```
+
+Then try log into public ECR with your AWS credentials:
 
 ```
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
