@@ -13,11 +13,23 @@
 
 all: release
 
+local: export BUILD_TYPE = local
+release: export BUILD_TYPE = release
+
 # Improve build speeds during development by removing the --no-cache flag
 DOCKER_BUILD_FLAGS=--no-cache
 
 .PHONY: release
 release: build build-init
+	docker system prune -f
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
+	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest
+	docker system prune -f
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-latest -f ./scripts/dockerfiles/Dockerfile.init-release .
+
+.PHONY: local
+local: build
+	docker build --build-arg LOCAL_BUILD=true $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
 	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest

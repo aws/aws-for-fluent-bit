@@ -177,8 +177,12 @@ then
   echo "Copied plugin archive to the build output folder"
 fi
 
-if [ "$OS_TYPE" == "linux" ];
+if [ "$OS_TYPE" == "linux" ] && [ "$BUILD_TYPE" == "local" ];
+then
+  docker build --build-arg LOCAL_BUILD=true $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+fi
+
+if [ "$OS_TYPE" == "linux" ] && [ "$BUILD_TYPE" == "release" ];
 then
   docker build $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 fi
-
