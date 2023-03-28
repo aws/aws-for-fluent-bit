@@ -14,7 +14,6 @@ ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/ver
 RUN go version
 
 ENV GO111MODULE on
-RUN go env -w GOPROXY=direct
 
 # The TAG args should always be set to ""
 # The build_plugins.sh will set them from the windows.versions and linux.version files
@@ -34,7 +33,7 @@ RUN git clone $KINESIS_PLUGIN_CLONE_URL /kinesis-streams
 WORKDIR /kinesis-streams
 RUN if [ -n "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all && git checkout $KINESIS_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$KINESIS_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$KINESIS_PLUGIN_TAG -b $KINESIS_PLUGIN_TAG && git describe --tags;fi
-RUN go mod download
+RUN go mod download || ( go env -w GOPROXY=direct && go mod download )
 RUN make release
 
 # Firehose
@@ -43,7 +42,7 @@ RUN git clone $FIREHOSE_PLUGIN_CLONE_URL /kinesis-firehose
 WORKDIR /kinesis-firehose
 RUN if [ -n "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all && git checkout $FIREHOSE_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$FIREHOSE_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$FIREHOSE_PLUGIN_TAG -b $FIREHOSE_PLUGIN_TAG && git describe --tags;fi
-RUN go mod download
+RUN go mod download || ( go env -w GOPROXY=direct && go mod download )
 RUN make release
 
 # CloudWatch
@@ -52,5 +51,5 @@ RUN git clone $CLOUDWATCH_PLUGIN_CLONE_URL /cloudwatch
 WORKDIR /cloudwatch
 RUN if [ -n "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all && git checkout $CLOUDWATCH_PLUGIN_BRANCH && git remote -v;fi
 RUN if [ -z "$CLOUDWATCH_PLUGIN_BRANCH" ];then git fetch --all --tags && git checkout tags/$CLOUDWATCH_PLUGIN_TAG -b $CLOUDWATCH_PLUGIN_TAG && git describe --tags;fi
-RUN go mod download
+RUN go mod download || ( go env -w GOPROXY=direct && go mod download )
 RUN make release
