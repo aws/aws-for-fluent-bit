@@ -231,26 +231,26 @@ publish_to_public_ecr() {
 publish_ssm() {
 	# This optional parameter indicates if we should publish stable (defaults to false)
 	if [ ${4:-false} = true ]; then
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
+		aws ssm put-parameter --name /private/service/aws-for-fluent-bit/stable --overwrite \
 			--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:${3}
 	else
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
+		aws ssm put-parameter --name /private/service/aws-for-fluent-bit/${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:${3}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
+			aws ssm put-parameter --name /private/service/aws-for-fluent-bit/latest --overwrite \
 				--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:latest
 		fi
 		
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
+		aws ssm put-parameter --name /private/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:"$init"-${3}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
+			aws ssm put-parameter --name /private/service/aws-for-fluent-bit/"$init"-latest --overwrite \
 				--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:"$init"-latest
 		fi
@@ -258,13 +258,13 @@ publish_ssm() {
 }
 
 rollback_ssm() {
-	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
+	aws ssm delete-parameter --name /private/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
 
-	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
+	aws ssm delete-parameter --name /private/service/aws-for-fluent-bit/"$init"-${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
 }
 
 check_parameter() {
-	repo_uri=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/${2} --region ${1} --query 'Parameter.Value')
+	repo_uri=$(aws ssm get-parameter --name /private/service/aws-for-fluent-bit/${2} --region ${1} --query 'Parameter.Value')
 	IFS='.' read -r -a array <<<"$repo_uri"
 	region="${array[3]}"
 	if [ "${1}" != "${region}" ]; then
@@ -276,7 +276,7 @@ check_parameter() {
 	docker pull $repo_uri
 
 	if [ "${2}" != "stable" ]; then 
-		repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
+		repo_uri_init=$(aws ssm get-parameter --name /private/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
 		IFS='.' read -r -a array <<<"$repo_uri_init"
 		region="${array[3]}"
 		if [ "${1}" != "${region}" ]; then
@@ -385,10 +385,10 @@ sync_image_version() {
 
 	make_repo_public ${region}
 
-	sync_ssm "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-	sync_ssm "/aws/service/aws-for-fluent-bit/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+	sync_ssm "/private/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+	sync_ssm "/private/service/aws-for-fluent-bit/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 
-	stable_uri=$(aws ssm get-parameters --names /aws/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameters[0].Value')
+	stable_uri=$(aws ssm get-parameters --names /private/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameters[0].Value')
 	stable_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$stable_uri")
 
 	if [ "$stable_uri" != "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" ]; then
