@@ -11,6 +11,8 @@ phases:
     commands:
       # Check latest image versions from dockerhub and from GitHub source file
       - './scripts/publish.sh cicd-check-image-version'
+      # Command to build debug image
+      - make debug
       # Command to build your project
       - make release
 
@@ -22,12 +24,18 @@ phases:
       - aws ecr create-repository --repository-name amazon/aws-for-fluent-bit-test --image-scanning-configuration scanOnPush=true --region ${AWS_REGION}  || true
       - architecture=$(docker inspect --format='{{.Architecture}}'  amazon/aws-for-fluent-bit)
       - docker tag amazon/aws-for-fluent-bit:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
+      - docker tag amazon/aws-for-fluent-bit:debug ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture-debug
       - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
+      - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture-debug
       - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $architecture'
+      - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $architecture-debug'
       # Image with Init Process
       - docker tag amazon/aws-for-fluent-bit:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
+      - docker tag amazon/aws-for-fluent-bit:init-debug ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture-debug
       - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
+      - docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture-debug
       - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test init-$architecture'
+      - './scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test init-$architecture-debug'
 
        # Create manifest list
       - export DOCKER_CLI_EXPERIMENTAL=enabled
