@@ -1,7 +1,7 @@
 {
   "linux": {
     "version": "2.28.1",
-    "latest": "true",
+    "latest": "false",
     "build": "1",
     "fluent-bit": "1.9.10",
     "kinesis-plugin": "v1.10.1",
