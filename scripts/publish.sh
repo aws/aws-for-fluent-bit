@@ -366,7 +366,8 @@ sync_image_version() {
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}"
 	done
 
-	if [ "${account_id}" != "${classic_regions_account_id}" ]; then
+	# make sure this runs in test setup
+	if [ "${account_id}" != "foo" ]; then
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
 			create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 			create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
