@@ -226,10 +226,11 @@ def run_ecs_tests():
 
         # Wait until task stops and start validation
         for throughput in THROUGHPUT_LIST:
+            task_arn = names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn']
             waiter.wait(
                 cluster=ecs_cluster_name,
                 tasks=[
-                    names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn'],
+                    task_arn,
                 ],
                 WaiterConfig={
                     'MaxAttempts': 600
@@ -238,9 +239,11 @@ def run_ecs_tests():
             response = client.describe_tasks(
                 cluster=ecs_cluster_name,
                 tasks=[
-                    names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn'],
+                    task_arn,
                 ]
             )
+            print(f'task_arn={task_arn}')
+            print(f'response={response}')
             check_app_exit_code(response)
             input_record = calculate_total_input_number(throughput)
             start_time = response['tasks'][0]['startedAt']
