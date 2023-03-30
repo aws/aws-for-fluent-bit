@@ -82,9 +82,9 @@ If you think you’ve found a potentially sensitive security issue, please do no
 
 Our image repos contain the following types of tags, which are explained in the sections below:
 
-* `latest`: The most recently released image version. We do not recommend deploying this to production environments ever, see [Guidance on consuming versions](https://quip-amazon.com/b1uOAyKuVsSl#temp:C:STU6701d3a107a74362b4387b18b).
-* `Version number tag`: Each release has a version number, for example `2.28.4`. These are the only tags we recommend consuming in production environments: [Guidance on consuming versions](https://quip-amazon.com/b1uOAyKuVsSl#temp:C:STU6701d3a107a74362b4387b18b).
-* `stable`: Some time after a version is released, it may be designated as the latest stable. See [Latest stable version](https://quip-amazon.com/b1uOAyKuVsSl#temp:C:STU1a191c8f7941426f8c10ddb6e) and  [Guidance on consuming versions](https://quip-amazon.com/b1uOAyKuVsSl#temp:C:STU6701d3a107a74362b4387b18b).
+* `latest`: The most recently released image version. We do not recommend deploying this to production environments ever, see [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `Version number tag`: Each release has a version number, for example `2.28.4`. These are the only tags we recommend consuming in production environments: [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `stable`: Some time after a version is released, it may be designated as the latest stable. See [Latest stable version](#latest-stable-version) and  [Guidance on consuming versions](#guidance-on-consuming-versions).
 
 #### AWS Distro for Fluent Bit release testing
 
@@ -119,7 +119,7 @@ In addition, our stable release undergoes additional testing:
 
 #### Latest stable version
 
-Our latest stable version is the most recent version that we have high confidence is stable for AWS use cases. *We recommend using the stable version number in your prod deployments; see* [Guidance on consuming versions](https://quip-amazon.com/b1uOAyKuVsSl#temp:C:STU6701d3a107a74362b4387b18b)
+Our latest stable version is the most recent version that we have high confidence is stable for AWS use cases. *We recommend using the stable version number in your prod deployments; see* [Guidance on consuming versions](#guidance-on-consuming-versions)
 
 The latest stable version is marked with the tag `stable`/`windowsservercore-stable`. The version number that is currently designated as the latest stable can always be found in the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file in the root of this repo. 
 
