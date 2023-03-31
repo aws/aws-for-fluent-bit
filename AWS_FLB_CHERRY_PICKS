@@ -1,2 +1,54 @@
-# Different User Agent for Windows vs Linux
-https://github.com/PettitWesley/fluent-bit.git aws-windows-metrics d6d8c964b2814fe9c631b4f6a01ca4af4409779c
+# Revert datadog fix PR to resolve segfault
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert 98313ebf206eec4a4e5375b352fc36849b762323
+
+# Support Opensearch Serverless data ingestion
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 1633c49aadad55bac483c5e55772de0e6c29704a
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 e1301bc52e209b6c6de8602bff12e0a98aefa0c0
+https://github.com/matthewfala/fluent-bit.git aoss-1.9 1917a7760d1bd400ac987620661b48e1bbc001ae
+
+# Kinesis time format
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 dfeff9de13ba7f1bbebe08fef24ec993dee7e392
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 66e85a11590f0045294a3d1b104baf73569a1dd0
+https://github.com/Claych/fluent-bit.git clay-aws_strftime_precision-1.9 e225ff7374fbc5e290b0090652158e3d2db5d8a6
+
+# S3 log_key warn fix
+https://github.com/PettitWesley/fluent-bit.git s3-log-key-warn-1_9 308b73558fb2d3dafb3b80feb0c68dc9b2c18186
+
+# ECS Filter
+https://github.com/PettitWesley/fluent-bit.git ecs-empty-metadata-fix-one-commit 24934c938e8f63700edf1230a09e4483ac5df6a3
+
+# Add back Datadog fixes that do not trigger segfault
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert acc01a4bf4ce656023d82943bec2683b5b7755e5
+https://github.com/matthewfala/fluent-bit.git ecs-datadog-sequential-revert ac30b7c876a95d44c33a406b2b58ce08b978587e
+
+# Datadog Partial Fix Patch
+https://github.com/matthewfala/fluent-bit.git datadog-ecs-patch 3c1ad69ada5bb6f2e448c6f39a1a0ea6a6f4ff17
+
+# Resolve cloudwatch_logs duplicate tag match SIGSEGV issue
+https://github.com/matthewfala/fluent-bit.git sync-scheduler-fix-1.9 2614c46af3a051b2758bef57f01f6b10a8e73b62
+
+# resolve user agent wrong type
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 0642f42e8097c159d7364f1ff97c0196484815ce
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix ed21492a94e8ca156897afc32c73bcdc37bc6b0f
+https://github.com/PettitWesley/fluent-bit.git user-agent-type-fix 7c16af941bed91da9558e4e6b8cea98d3ef1fa0d
+
+# Resolve keepalive and priority scheduler issue
+https://github.com/PettitWesley/fluent-bit.git sync-io-keepalive-fix 7b4550486b7e8e02b773894d31a08b0cb18154e3
+
+https://github.com/PettitWesley/fluent-bit.git mk_event_inject_conn_fix 0f5efc921950feeee99d9251cb330b27d3639863
+
+https://github.com/PettitWesley/fluent-bit.git mk_event_add_corruption-one-commit 33651cca41e9f84ce8930a9bca9d3d7319e50fbd
+
+# Useful debug messages for input events
+# input chunk append message with input name context and number of records
+https://github.com/PettitWesley/fluent-bit.git chunk-append-context 8fc357c6f245a16c4a1e3355a8ccfc2571b876ea
+# in_tail file name context for inotify events
+https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutable-cherry-pick ab11d1d7438f5254d04eba8dfc2f10b78cc2244d
+
+# S3 tag corruption fix
+https://github.com/PettitWesley/fluent-bit.git s3-str-fixes 38303131e049265277881c0d79935ad31fdd3e13
+
+# User friend message when storage.total_limit_size causes fs chunk deletion, before there was no indication
+https://github.com/fluent/fluent-bit.git master b725d6b8b289fccde4e9b31d3f3ac61f13711ef9
+# use total_chunks_up in max_chunks_up memory overlimit warn message
+https://github.com/fluent/fluent-bit.git master 9c72f3ac6510b701277936897cd9701ffce3646e
