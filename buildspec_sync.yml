@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      python: 3.7
+      python: 3.x
   pre_build:
     commands:
       - echo Sync latest image from Amazon ECR Public Gallery
