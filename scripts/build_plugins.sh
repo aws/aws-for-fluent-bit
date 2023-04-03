@@ -33,13 +33,16 @@ PLUGIN_BUILD_ARGS=""
 
 # windows or linux
 # set by env var in Makefile right now
+# setting this by env var ensures it works even on platforms where getopt and longoptions does not work
 OS_TYPE="${OS_TYPE}"
+DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS}"
 
 # Go plugin versions can either be set by args to the script, or they will be sourced
 # from the windows.versions or linux.version file
 KINESIS_PLUGIN_TAG=""
 FIREHOSE_PLUGIN_TAG=""
 CLOUDWATCH_PLUGIN_TAG=""
+
 
 # Method to display usage of the script
 usage() {
@@ -161,6 +164,7 @@ then
 fi
 
 echo "Plugin build arguments for ${OS_TYPE} are: $PLUGIN_BUILD_ARGS"
+echo "Docker build flags are: $DOCKER_BUILD_FLAGS"
 
 # Run platform specific build commands
 if [ "$OS_TYPE" == "windows" ];
