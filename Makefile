@@ -14,7 +14,7 @@
 all: release
 
 # Improve build speeds during development by removing the --no-cache flag
-DOCKER_BUILD_FLAGS=--no-cache
+export DOCKER_BUILD_FLAGS=--no-cache
 
 .PHONY: release
 release: build build-init
