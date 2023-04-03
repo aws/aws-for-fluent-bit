@@ -529,7 +529,7 @@ The best option, which is most likely to catch any leak or segfault is to create
 
 1. Check out the git tag for the version that saw the problem
 2. Make sure the `FLB_VERSION` at the top of the `Dockerfile.debug` is set to the same version as the main Dockerfile for that tag. 
-3. Build this dockerfile with the `make debug` target. 
+3. Build this dockerfile with the `make valgrind` target. 
 
 ### Segfaults and crashes (SIGSEGV)
 
@@ -816,11 +816,11 @@ When you recieve a SIGSEGV/crash report from a FireLens customer, perform the fo
 
 ##### 1. Build and distribute a core dump S3 uploader image
 
-For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.debug-base` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
+For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.build` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
 
 Then simply run:
 ```
-make core
+make debug
 ```
 
 Push this image to AWS (ideally public ECR) so that you and the customer can download it. 
@@ -860,6 +860,16 @@ If you choose to deploy this, for the S3 upload on shutdown to work, you must:
 
 Make sure to edit the `Resource` section with your bucket name. 
 
+**RUN_ID Environment Variable**
+The RUN_ID environment variable is automatically set to a random value per each run and can be referenced in your Fluent Bit configuration file. It can be used to customize the log destination for each `aws-for-fluent-bit` execution, and help you to find the log destination when looking at a specific Fluent Bit service log. The following log line will appear before Fluent Bit is executed: `RUN_ID is set to $RUN_ID`.
+
+You can send logs to a specific RUN_ID via with a configuration such as:
+```
+[OUTPUT]
+     Name cloudwatch_logs
+     log_group_name my_unique_log_group_${RUN_ID}
+     ...
+```
 
 ##### 2. Setup your own repro attempt 
 
