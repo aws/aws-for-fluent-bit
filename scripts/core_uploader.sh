@@ -18,20 +18,19 @@
 #   <s3_key>_<date>_HOSTNAME_RANDOM.stacktrace
 #   <s3_key>_<date>_HOSTNAME_RANDOM.all.zip
 
-
 export S3_BUCKET=$1
 export S3_KEY_PREFIX=$2
-export CRASH_FOLDER="/cores-out"
+export RUN_ID=$3
+export CRASH_FOLDER="/cores-out" # Add all crash files to a cores-out folder for staging,
+                                 # then copy over to the mounted volume /cores
 
 # Folder Structure
 # $CRASH_FOLDER: All the crash symbol information is combined and added to this folder.
 #    It is uploaded to s3 and added to the /cores folder
 # /cores: Files are sent to the cores folder
 
-ls $CRASH_FOLDER/*
-
 # Process crash symbols
-export CORE_FILENAME=`basename $S3_KEY_PREFIX`_`date +"%FT%H%M%S"`${HOSTNAME+_host-$HOSTNAME}_${RANDOM_ID_VALUE}
+export CORE_FILENAME=`basename $S3_KEY_PREFIX`_`date +"%FT%H%M%S"`${HOSTNAME+_host-$HOSTNAME}_${RUN_ID}
 
 # Check if there is a corefile
 export NO_CORE_STR="ls: cannot access $CRASH_FOLDER/core*: No such file or directory"
@@ -60,7 +59,6 @@ else
     #   - CORE_FILENAME.core
 
     # Process corefile, get stack trace and fluent bit executable. Add to zip.
-    mv `ls $CRASH_FOLDER/core*` ${CORE_FILENAME}.core
     cp /fluent-bit/bin/fluent-bit ./${CORE_FILENAME}.executable
     gdb -batch -ex 'thread apply all bt full' -ex 'quit' '/fluent-bit/bin/fluent-bit' ${CORE_FILENAME}.core > $CRASH_FOLDER/${CORE_FILENAME}.stacktrace
 
@@ -71,7 +69,6 @@ else
 
     # Zip the crashfiles
     zip -r $CRASH_FOLDER/${CORE_FILENAME}.all.zip $CRASH_FOLDER
-    mv /${CORE_FILENAME}.all.zip $CRASH_FOLDER/${CORE_FILENAME}.all.zip
     rm $CRASH_FOLDER/${CORE_FILENAME}.core
     mv /tmp/${CORE_FILENAME}.core.zip $CRASH_FOLDER/${CORE_FILENAME}.core.zip
 

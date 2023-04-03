@@ -36,7 +36,7 @@ CMD echo "AWS for Fluent Bit Container Image Version `cat /AWS_FOR_FLUENT_BIT_VE
     if [ "$S3_KEY_PREFIX" == "issue" ]; then \
         echo "Note: Please set S3_KEY_PREFIX environment variable to a useful identifier - e.g. company name, team name, customer name"; \
     fi; \
-    export RANDOM_ID_VALUE=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
-    echo "RANDOM_ID is set to $RANDOM_ID_VALUE"; \
-    /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; \
-    /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX
+    export RUN_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
+    echo "RUN_ID is set to $RUN_ID"; \
+    /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf; \
+    /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX $RUN_ID

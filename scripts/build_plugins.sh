@@ -105,7 +105,7 @@ do
       if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_BRANCH=$2";fi
       shift 2;;
     --DOCKER_BUILD_FLAGS)
-      if [ -n "$2" ];then DOCKER_BUILD_FLAGS="$2";fi
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS $2";fi
       shift 2;;
     # End of arguments. End here and break.
     --) shift; break ;;
@@ -174,7 +174,7 @@ then
   echo "Created build output folder"
 
   # Build plugin image and then copy the windows plugins
-  docker build $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins-windows .
+  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins-windows .
   docker create -ti --name plugin-build-container aws-fluent-bit-plugins:latest bash
   docker cp plugin-build-container:/plugins_windows.tar ./build/windows/plugins_windows.tar
   docker rm -f plugin-build-container
@@ -183,6 +183,6 @@ fi
 
 if [ "$OS_TYPE" == "linux" ];
 then
-  docker build $PLUGIN_BUILD_ARGS $DOCKER_BUILD_FLAGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 fi
 
