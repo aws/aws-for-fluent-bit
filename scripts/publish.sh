@@ -170,19 +170,29 @@ publish_to_docker_hub() {
 		do
 			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+
+			docker tag ${1}:"$arch"-"debug" ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			
 			docker tag ${1}:"$init"-"$arch" ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
+			docker tag ${1}:"$init"-"$arch"-"debug" ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+
 		done
 
 		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${1} "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		create_manifest_list_init ${1} "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${1} "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
 			create_manifest_list ${1} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list ${1} "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 			create_manifest_list_init ${1} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${1} "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
@@ -209,22 +219,32 @@ publish_to_public_ecr() {
 			docker tag ${1}:"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
+			docker tag ${1}:"$arch"-"debug" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+
 			docker tag ${1}:"$init"-"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+
+			docker tag ${1}:"$init"-"$arch"-"debug" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
 			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
@@ -368,14 +388,18 @@ sync_image_version() {
 	done
 
 	if [ "${account_id}" != "${classic_regions_account_id}" ]; then
-		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-			create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
-		fi
-
 		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
 
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB} debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+			create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+
+			create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+			create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}
+		fi
 	fi
 
 	if [ "${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" != "${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}" ]; then
@@ -478,16 +502,26 @@ publish_ecr() {
 		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-"debug" \
+			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+
 		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch" \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-"debug" \
+			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 	done
 
 	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+	create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 	create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+	create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 	if [ "${PUBLISH_LATEST}" = "true" ]; then
 		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 	fi 
 
 	make_repo_public ${region}

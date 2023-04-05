@@ -21,6 +21,7 @@
         - [Amazon ECR Public Gallery](#amazon-ecr-public-gallery)
         - [Docker Hub](#docker-hub)
         - [Amazon ECR](#amazon-ecr)
+    - [Using the debug images](#Using-the-debug-images)
 - [Plugins](#plugins)
 - [Using the AWS Plugins outside of a container](#using-the-aws-plugins-outside-of-a-container)
 - [Running aws-for-fluent-bit Windows containers](#running-aws-for-fluent-bit-windows-containers)
@@ -285,6 +286,12 @@ The official way to find the ECR image URIs for your region is to use the SSM Pa
 ```
 aws ssm get-parameters-by-path --path /aws/service/aws-for-fluent-bit/
 ```
+
+#### Using the debug images
+
+Deploying AWS for Fluent Bit debug images can help the AWS team troubleshoot an issue. If you experience a bug, especially a [crash/SIGSEGV issue](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#caught-signal-sigsegv), then please consider deploying the debug version of the image. After a crash, the debug image can print out a stacktrace and upload a core dump to S3. See our [debugging guide](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#1-build-and-distribute-a-core-dump-s3-uploader-image) for more info on using debug images.
+
+For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`.
 
 ### Plugins
 

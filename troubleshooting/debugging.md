@@ -816,7 +816,7 @@ When you recieve a SIGSEGV/crash report from a FireLens customer, perform the fo
 
 ##### 1. Build and distribute a core dump S3 uploader image
 
-You need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.debug-base` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing. 
+For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.debug-base` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
 
 Then simply run:
 ```
