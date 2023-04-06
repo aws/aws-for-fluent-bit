@@ -4,6 +4,19 @@
 * Enhancement - Add clear info message when chunks are removed because `storage.total_limit_size` is reached [fluent-bit:6719](https://github.com/fluent/fluent-bit/pull/6719)
 
 
+### 2.31.8
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.3
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.7` this release adds:
+* New images - Added debug images to [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit), [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit) and Amazon ECR. For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`.
+
+*This release is a **CVE patch release for [2.31.7](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.7)**. It contains the same contents but re-built to uptake the most recent Amazon Linux packages with patches.*
+
+
 ### 2.28.5
 This release includes:
 * Fluent Bit [1.9.9](https://fluentbit.io/announcements/v1.9.9/)

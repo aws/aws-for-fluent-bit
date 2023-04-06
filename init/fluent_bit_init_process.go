@@ -195,20 +195,17 @@ func processConfigFile(path string) {
 	}
 }
 
-func getS3ConfigFile(userInput string) string {
+func getS3ConfigFile(arn string) string {
 	// Preparation for downloading S3 config files
 	if !s3ClientCreated {
 		createS3Client()
 	}
 
 	// e.g. "arn:aws:s3:::user-bucket/s3_parser.conf"
-	s3ARN, err := arn.Parse(userInput)
-	if err != nil {
-		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", userInput)
-	}
-	bucketAndFile := strings.SplitN(s3ARN.Resource, "/", 2)
+	arnBucketFile := arn[13:]
+	bucketAndFile := strings.SplitN(arnBucketFile, "/", 2)
 	if len(bucketAndFile) != 2 {
-		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", userInput)
+		logrus.Fatalf("[FluentBit Init Process] Unrecognizable arn: %s\n", arn)
 	}
 
 	bucketName := bucketAndFile[0]
