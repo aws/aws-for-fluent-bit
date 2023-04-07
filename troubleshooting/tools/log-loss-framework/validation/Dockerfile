@@ -16,4 +16,7 @@ FROM alpine:3
 
 COPY --from=build-env /usr/local/src/validation /usr/local/bin/validation
 
+# TODO CMD to remove arguments in favor of
+# providing environments variables for SIZE_IN_KB / TOTAL_SIZE_IN_MB to match the logger
+# the calculate the expected total messages (arg[0] here)
 CMD ["/usr/local/bin/validation", "10", "10"]
