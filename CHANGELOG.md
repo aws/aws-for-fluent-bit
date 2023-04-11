@@ -2,7 +2,6 @@
 
 
 * Enhancement - Add clear info message when chunks are removed because `storage.total_limit_size` is reached [fluent-bit:6719](https://github.com/fluent/fluent-bit/pull/6719)
-* Bug - Fix SIGSEGV on shutdown when multiple instances of the same go plugin are configured [aws-for-fluent-bit:613](https://github.com/aws/aws-for-fluent-bit/issues/613)
 
 
 ### 2.31.8

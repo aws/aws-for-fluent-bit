@@ -55,7 +55,3 @@ https://github.com/fluent/fluent-bit.git master 9c72f3ac6510b701277936897cd9701f
 
 # CloudWatch Logs options for connecting to CWL test destinations: tls verify and port
 https://github.com/matthewfala/fluent-bit.git immutable-cwl-net-options 5d9692f00b5295728bf0340d332896a7cc450a7e
-
-# Go exit fix
-https://github.com/PettitWesley/fluent-bit.git go-exit-fix-1_9-one-commit ce5739c20b972320dc485587d56c8b6b21f61934
-
