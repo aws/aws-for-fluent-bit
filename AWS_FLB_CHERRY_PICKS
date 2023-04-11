@@ -58,6 +58,8 @@ https://github.com/matthewfala/fluent-bit.git immutable-cwl-net-options 5d9692f0
 
 # Go exit fix
 https://github.com/PettitWesley/fluent-bit.git go-exit-fix-1_9-one-commit ce5739c20b972320dc485587d56c8b6b21f61934
+# fix build warning from original go fix
+https://github.com/PettitWesley/fluent-bit.git fix-proxy-go-destroy 79e4e10f31b7468496d4dddb784b502b3ba9e353
 
 # sds printf off by 1 fix: https://github.com/fluent/fluent-bit/issues/7143
 # from PR: https://github.com/fluent/fluent-bit/pull/7148/commits
