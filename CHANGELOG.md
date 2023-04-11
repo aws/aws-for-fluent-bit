@@ -1,6 +1,6 @@
 # Changelog
 
-### 2.31.8
+### 2.31.9
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.3
