@@ -52,6 +52,3 @@ https://github.com/PettitWesley/fluent-bit.git s3-str-fixes 38303131e04926527788
 https://github.com/fluent/fluent-bit.git master b725d6b8b289fccde4e9b31d3f3ac61f13711ef9
 # use total_chunks_up in max_chunks_up memory overlimit warn message
 https://github.com/fluent/fluent-bit.git master 9c72f3ac6510b701277936897cd9701ffce3646e
-
-# CloudWatch Logs options for connecting to CWL test destinations: tls verify and port
-https://github.com/matthewfala/fluent-bit.git immutable-cwl-net-options 5d9692f00b5295728bf0340d332896a7cc450a7e
