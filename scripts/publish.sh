@@ -382,7 +382,11 @@ sync_image_version() {
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}"
 
+		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}"
+
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${init}-${arch}-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}"
+
+		sync_public_and_repo ${region} ${account_id} ${endpoint} "${init}-${arch}-debug-${AWS_FOR_FLUENT_BIT_VERSION_DOCKERHUB}"
 
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-${AWS_FOR_FLUENT_BIT_STABLE_VERSION}"
 	done
