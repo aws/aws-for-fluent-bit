@@ -1,7 +1,20 @@
 # Changelog
 
+### 2.31.8
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.3
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
 
 * Enhancement - Add clear info message when chunks are removed because `storage.total_limit_size` is reached [fluent-bit:6719](https://github.com/fluent/fluent-bit/pull/6719)
+<<<<<<< HEAD
+=======
+* Bug - Fix S3 ARN parsing in [init image](https://github.com/aws/aws-for-fluent-bit/blob/mainline/use_cases/init-process-for-fluent-bit/README.md) that prevents it from being used in US Gov Cloud and China partitions [aws-for-fluent-bit:617](https://github.com/aws/aws-for-fluent-bit/issues/617)
+* Bug - Fix SIGSEGV on shutdown when multiple instances of the same go plugin are configured [aws-for-fluent-bit:613](https://github.com/aws/aws-for-fluent-bit/issues/613)
+* Bug - Fix off by one error that can lead to SDS string truncation [fluent-bit:7143](https://github.com/fluent/fluent-bit/issues/7143)
+* Bug - fix minor memory leak in cloudwatch_logs that leads no more than ~1KB of un-freed memory when the `log_stream_name` option is configured.
+>>>>>>> Changelog and cherry picks for 2.31.9
 
 
 ### 2.31.8
