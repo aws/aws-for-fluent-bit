@@ -103,7 +103,9 @@ Even if you see this message, you still have not lost logs yet. Since it will re
 [2022/02/16 20:11:36] [ warn] [engine] chunk '1-1645042288.260516436.flb' cannot be retried: task_id=0, input=tcp.3 > output=cloudwatch_logs.1
 ```
 
-When you see this message, you have lost logs. The other case that indicates log loss is when an input is paused, which is covered in the [overlimit error section](#overlimit-warnings).
+When you see this message, you have lost logs. 
+
+The main other case that indicates log loss is when an input is paused, which is covered in the [overlimit error section](#overlimit-warnings). Please also review our [Log Loss Summary: Common Causes](#log-loss-summary-common-causes).
 
 #### Common Network Errors
 
@@ -200,6 +202,10 @@ Search for "overlimit" in the Fluent Bit logs to find the paused and resume mess
 The `storage buf overlimit` occurs when the number of in memory ("up") chunks exceeds the `storage.max_chunks_up` and you have set `storage.type filesystem` and `storage.pause_on_chunks_overlimit On`. 
 
 The `mem buf overlimit` occurs when the input has exceeded the configured `Mem_Buf_Limit` and `storage.type memory` is configured. 
+
+When the input is able to receive logs again, you will see one of the `resume` messages above. 
+
+With some inputs, an overlimit warning indicates that you are losing logs- new logs will not be ingested. This is the case with most inputs that stream in data ([forward](https://docs.fluentbit.io/manual/pipeline/inputs/forward) and [TCP](https://docs.fluentbit.io/manual/pipeline/inputs/tcp), for example). If you use [ECS FireLens](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) with Fluent Bit, then the stdout/stderr log input is a forward input and an overlimit warning means that new logs will not be ingested and will be lost. The exception to this is the [tail](https://docs.fluentbit.io/manual/pipeline/inputs/tail) input, which can safely pause and resume without losing logs because it tracks its file offset. When it resumes, it can pick back up reading the file at the last offset (assuming the file was not deleted).
 
 #### invalid JSON message
 
