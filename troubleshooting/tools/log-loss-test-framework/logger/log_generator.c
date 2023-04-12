@@ -62,6 +62,31 @@ int main()
     int totalMessages = totalSizeInKb / sizeInKb;
     int messagesSent = 0;
     int messagesPerCycle = (throughputInKb * cycleTimeInS) / sizeInKb;
+    int messagesThisCycle = 0;
+
+    char *burst_enabled = getenv("BURST_SIZE_IN_MB");
+    int burstSizeInMB = 0;
+    int burstThroughputInKb = 0;
+    int burstMessagesPerCycle = 0;
+    int totalBurstMessages = 0;
+    int burstDelayInMB = 0;
+    int burstDelayMessages = 0;
+    if (burst_enabled != NULL) {
+        burstSizeInMB = atoi(burst_enabled);
+        burstThroughputInKb = atoi(getenv("BURST_THROUGHPUT_IN_KB"));
+        if ((burstSizeInMB * 2 * 1000) > totalSizeInKb) {
+            printf("ERROR: BURST_SIZE_IN_MB must be less than half of TOTAL_SIZE_IN_MB");
+            return 1;
+        }
+        totalBurstMessages = (burstSizeInMB * 1000) / sizeInKb;
+        burstDelayInMB = atoi(getenv("BURST_DELAY_IN_MB")); /* how far into the full output should burst start */
+        if ((burstDelayInMB + burstSizeInMB) >= (totalSizeInKb / 1000)) {
+            printf("ERROR: BURST_DELAY_IN_MB + BURST_SIZE_IN_MB >= TOTAL_SIZE_IN_MB");
+            return 1;
+        }
+        burstDelayMessages = (burstDelayInMB * 1000) / sizeInKb;
+        burstMessagesPerCycle = (burstThroughputInKb * cycleTimeInS) / sizeInKb;
+    }
 
     // build log message size
     for (int i = 0; i < sizeInKb; i++)
@@ -85,11 +110,18 @@ int main()
         j = 0;
         startSeconds = timeInMilliseconds();
 
+
+        if (messagesSent >= burstDelayMessages && messagesSent < (burstDelayMessages + totalBurstMessages)) {
+            messagesThisCycle = burstMessagesPerCycle;
+        } else {
+            messagesThisCycle = messagesPerCycle;
+        }
+
         /* 
          * from research, log4j and probably other logs do buffered flushing to files/stdout
          * so we write all messages per cycle, then fflush(stdout)
          */
-        while (j < messagesPerCycle && messagesSent < totalMessages) {
+        while (j < messagesThisCycle && messagesSent < totalMessages) {
             printf("%d_%lld_%s\n", idCounter, startSeconds, data);
             idCounter++;
             j++;
