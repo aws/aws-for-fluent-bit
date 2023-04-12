@@ -100,7 +100,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 	metadata.ECS_TASK_DEFINITION = metadata.ECS_FAMILY + ":" + metadata.ECS_REVISION
 
 	// set global ecs metadata region for S3 client
-	metadataRegion = reflect.ValueOf(metadata).Field(0).Interface().(string)
+	metadataRegion = metadata.AWS_REGION
 
 	return metadata
 }
