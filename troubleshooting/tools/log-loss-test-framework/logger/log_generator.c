@@ -149,5 +149,17 @@ int main()
     printf("emitted: %dkb\n", messagesSent * sizeInKb);
     printf("real throughput: %fKB/s\n", realThroughput);
 
+    /* write to file to save results when writing to remove log driver */
+    FILE *f = fopen("/results/throughput.txt", "w");
+    if (f == NULL)
+    {
+        printf("Error opening file!\n");
+        return 0;
+    }
+    fprintf(f, "real runtime: %lldms\n", timeDiff);
+    fprintf(f, "emitted: %dkb\n", messagesSent * sizeInKb);
+    fprintf(f, "real throughput: %fKB/s\n", realThroughput);
+    fclose(f);
+
     return 0;
 }
