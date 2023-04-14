@@ -389,7 +389,24 @@ And here is an example with `UDP`:
     net.dns.mode UDP
 ```
 
-This setting works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
+There is also another setting, called `net.dns.resolver` which takes values `LEGACY` and `ASYNC`. `ASYNC` is the default. We recommend trying out the settings above and if that does not resolve your issue, try changing the resolver. 
+
+Here's an example with `LEGACY`:
+
+```
+[OUTPUT]
+    Name cloudwatch_logs
+    Match   *
+    region us-east-1
+    log_group_name fluent-bit-cloudwatch
+    log_stream_prefix from-fluent-bit-
+    auto_create_group On
+    workers 1
+    net.dns.resolver LEGACY
+```
+
+These settings works with the `cloudwatch_logs`, `s3`, `kinesis_firehose`, `kinesis_streams`, and `opensearch` AWS output plugins. 
+
 
 #### Credential Chain Resolution Issues
 
