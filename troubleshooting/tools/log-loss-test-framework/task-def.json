@@ -1,0 +1,91 @@
+{
+    "family": "awslogs-benchmarking-test-the-bug",
+    "taskRoleArn": "arn:aws:iam::144718711470:role/ecs_task_role", 
+    "executionRoleArn": "arn:aws:iam::144718711470:role/ecsTaskExecutionRole",
+    "networkMode": "bridge",
+    "cpu": "1024",
+    "memory": "2048",
+    "containerDefinitions": [
+        {
+            "essential": false,
+            "image": "144718711470.dkr.ecr.us-west-2.amazonaws.com/log-loss-benchmark-logger:latest",
+            "name": "logger",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "awslogs-benchmarking-output",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "pre-testing-bug",
+                    "mode": "non-blocking"
+                }
+            },
+            "environment": [
+				{
+					"name": "SIZE_IN_KB",
+					"value": "1"
+				},
+                {
+					"name": "TOTAL_SIZE_IN_MB",
+					"value": "500"
+				},
+                {
+					"name": "THROUGHPUT_IN_KB",
+					"value": "7000"
+				},
+                {
+					"name": "CYCLE_TIME_IN_SECONDS",
+					"value": "1"
+				}
+			],
+            "memoryReservation": 50
+        },
+        {
+            "essential": true,
+            "image": "144718711470.dkr.ecr.us-west-2.amazonaws.com/cw-log-loss-framework-validator:latest",
+            "name": "validator",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "awslogs-benchmarking-results",
+                    "awslogs-region": "us-west-2",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "pre-testing-bug"
+                }
+            },
+            "dependsOn": [
+                {
+                  "containerName": "logger",
+                  "condition": "SUCCESS"
+                }
+            ],
+            "memoryReservation": 100,
+            "environment": [
+				{
+					"name": "SIZE_IN_KB",
+					"value": "1"
+				},
+                {
+					"name": "TOTAL_SIZE_IN_MB",
+					"value": "500"
+				},
+                {
+					"name": "THROUGHPUT_IN_KB",
+					"value": "7000"
+				},
+                {
+					"name": "TEST_NAME",
+					"value": "7MB_1KB_AWSLOGS_BUG_DEFAULT_BUFFER"
+				},
+                {
+					"name": "CW_LOG_GROUP_NAME",
+					"value": "awslogs-benchmarking-output"
+				},
+                {
+					"name": "CW_LOG_STREAM_PREFIX",
+					"value": "pre-testing-bug/logger/"
+				}
+			]
+        }
+    ]
+}
