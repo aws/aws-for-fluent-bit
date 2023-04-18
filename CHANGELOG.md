@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.31.10
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.3
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.9` this release adds:
+* Bug - Fix crash that occurs with tail plugin and debug logging enabled [aws-for-fluent-bit:637](https://github.com/aws/aws-for-fluent-bit/issues/637) [aws-for-fluent-bit:639](https://github.com/aws/aws-for-fluent-bit/issues/639)
+
 ### 2.31.9
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
