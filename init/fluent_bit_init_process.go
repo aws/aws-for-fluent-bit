@@ -88,16 +88,27 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 		logrus.Fatalf("[FluentBit Init Process] Failed to unmarshal ECS metadata: %s\n", err)
 	}
 
-	arn, err := arn.Parse(metadata.ECS_TASK_ARN)
+	taskARN, err := arn.Parse(metadata.ECS_TASK_ARN)
 	if err != nil {
-		logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS TaskARN: %s\n", err)
+		logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS TaskARN: %s %s\n", metadata.ECS_TASK_ARN, err)
 	}
 
-	resourceID := strings.Split(arn.Resource, "/")
+	resourceID := strings.Split(taskARN.Resource, "/")
 	taskID := resourceID[len(resourceID)-1]
 	metadata.ECS_TASK_ID = taskID
-	metadata.AWS_REGION = arn.Region
+	metadata.AWS_REGION = taskARN.Region
 	metadata.ECS_TASK_DEFINITION = metadata.ECS_FAMILY + ":" + metadata.ECS_REVISION
+
+	// per ECS task metadata docs, Cluster can be an ARN or the name
+	if (strings.Contains(metadata.ECS_CLUSTER, "/")) {
+		clusterARN, err := arn.Parse(metadata.ECS_CLUSTER)
+		if err != nil {
+			logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS Cluster ARN: %s %s\n", metadata.ECS_CLUSTER, err)
+		}
+		arnSplit := strings.Split(clusterARN.Resource, "/")
+		clusterName := arnSplit[len(arnSplit)-1]
+		metadata.ECS_CLUSTER = clusterName
+	}
 
 	// set global ecs metadata region for S3 client
 	metadataRegion = reflect.ValueOf(metadata).Field(0).Interface().(string)
