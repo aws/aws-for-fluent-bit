@@ -9,6 +9,7 @@ This release includes:
 
 Compared to `2.31.9` this release adds:
 * Bug - Fix crash that occurs with tail plugin and debug logging enabled [aws-for-fluent-bit:637](https://github.com/aws/aws-for-fluent-bit/issues/637) [aws-for-fluent-bit:639](https://github.com/aws/aws-for-fluent-bit/issues/639)
+* Bug - Fix init tag parsing of ECS Cluster name. ECS Cluster name can be returned as ARN or name, now init will always parse it and set the `ECS_CLUSTER` env var as just the name. [aws-for-fluent-bit:641](https://github.com/aws/aws-for-fluent-bit/pull/641)
 
 ### 2.31.9
 This release includes:
