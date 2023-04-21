@@ -525,11 +525,22 @@ CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /f
 
 ##### Option 2: Debug Build (More robust)
 
-The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the [`Dockerfile.debug`](https://github.com/aws/aws-for-fluent-bit/blob/mainline/Dockerfile.debug) in AWS for Fluent Bit. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be able to produce useful diagnostic information about the issue.
+The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the `make debug-valgrind` target. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be able to produce useful diagnostic information about the issue.
 
 1. Check out the git tag for the version that saw the problem
-2. Make sure the `FLB_VERSION` at the top of the `Dockerfile.debug` is set to the same version as the main Dockerfile for that tag. 
-3. Build this dockerfile with the `make valgrind` target. 
+2. Make sure the `FLB_VERSION` at the top of the `scripts/dockerfiles/Dockerfile.build` is set to the same version as the main Dockerfile for that tag.
+3. Build this dockerfile with the `make debug-valgrind` target. The image will be tagged with the `amazon/aws-for-fluent-bit:debug-valgrind` tag.
+
+##### Other Options: Other Debug Builds
+Several debug targets can be built via `make <target-name>`
+Here's a list of debug targets and what they do:
+- `debug` and `debug-s3`: these debug targets upload crash symbols, such as a compressed core dump, stack traces, and crashed Fluent Bit executable to an S3 bucket of your choosing. Symbols are also stored in the `/cores` directory. You can access this via a mounted volume. Stack trace is also printed out on crash. More information on how to use the debug image can be found in: [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
+- `debug-fs`: this is a light weight debug target that simply outputs the coredump crash file to the `/cores` directory which can be mounted to by a Docker volume. This image does not upload crash symbols to S3, and does not process stack traces.
+- `debug-valgrind`: this is an image that runs Fluent Bit with valrind to catch leaks and segfaults.
+- `init-debug` and `init-debug-s3`: same as `debug` and `debug-s3` images but with the init process
+- `init-debug-fs`: same as `debug-fs` but with the init process.
+- `main-debug-all`: builds `debug-s3`, `debug-fs`, and `debug-valgrind` efficiently without rebuilding dependencies.
+- `init-debug-all`: builds `init-debug-s3`, and `init-debug-fs` efficiently without rebuilding dependencies.
 
 ### Segfaults and crashes (SIGSEGV)
 
@@ -822,6 +833,7 @@ Then simply run:
 ```
 make debug
 ```
+The resulting image will be tagged `amazon/aws-for-fluent-bit:debug` and `amazon/aws-for-fluent-bit:debug-s3`.
 
 Push this image to AWS (ideally public ECR) so that you and the customer can download it. 
 
@@ -870,6 +882,13 @@ You can send logs to a specific RUN_ID via with a configuration such as:
      log_group_name my_unique_log_group_${RUN_ID}
      ...
 ```
+
+**Building init-debug Image**
+You can also build an `init-debug` image via
+```
+make init-debug
+```
+The configuration of the init-debug image is the same as the debug image, except it has the added features of the Init image.
 
 ##### 2. Setup your own repro attempt 
 

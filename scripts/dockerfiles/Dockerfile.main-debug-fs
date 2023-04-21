@@ -1,4 +1,4 @@
 FROM amazon/aws-for-fluent-bit:main-debug-base
 COPY ./scripts/dockerfiles/Dockerfile.main-debug-base /Dockerfile.2.main-debug-base
 
-CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; echo "Waiting 2 minutes for EFS core file transfers"; sleep 120
+CMD /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf; echo "Waiting 2 minutes for EFS core file transfers"; sleep 120

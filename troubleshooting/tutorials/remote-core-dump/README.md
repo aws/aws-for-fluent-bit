@@ -10,43 +10,109 @@ Once you have setup the debug build of Fluent Bit on your platform, you have two
 
 
 - [Step 1: Debug Build of Fluent Bit](#step-1-debug-build-of-fluent-bit)
-- [Step 2: Modifying your deployment to capture a core file](#step-2-modifying-your-deployment-to-capture-a-core-file)
+- [Step 2: Create an S3 Bucket to send crash symbols to (Only needed for crash uploads to S3)](##step-2-create-an-s3-bucket-to-send-crash-symbols-to-only-needed-for-crash-uploads-to-s3)
+- [Step 3: Modifying your deployment to capture a core file](#step-3-modifying-your-deployment-to-capture-a-core-file)
     - [Setup for Local Dev Machine or Instance](#setup-for-local-dev-machine-or-instance)
     - [Setup for ECS EC2](#setup-for-ecs-ec2)
     - [Setup for ECS Fargate](#setup-for-ecs-fargate)
     - [Setup for EKS EC2](#setup-for-eks-ec2)
-- [Step 3: Using GDB with a live Fluent Bit](#step-3-using-gdb-with-a-live-fluent-bit)
-- [Step 4: Using GDB with a core file (crashed Fluent Bit)](#step-4-using-gdb-with-a-core-file-crashed-fluent-bit)
+- [Step 4: Using GDB with a live Fluent Bit](#step-4-using-gdb-with-a-live-fluent-bit)
+- [Step 5: Using GDB with a core file (crashed Fluent Bit)](#step-5-using-gdb-with-a-core-file-crashed-fluent-bit)
 
 
 ## Step 1: Debug Build of Fluent Bit
 
-Clone the AWS for Fluent Bit source code, and then edit the `Dockerfile.debug` so that the valgrind entrypoint is removed and the core file debug entrypoint is un-commented. The final lines of the Dockerfile should be:
+Clone the AWS for Fluent Bit source code, and run `make debug` for a plain debug image, or `make init-debug` for an init debug image. The resulting images will be tagged `amazon/aws-for-fluent-bit:debug` and `amazon/aws-for-fluent-bit:init-debug`.
 
-```
-RUN mkdir /cores && chmod 777 /cores
-CMD /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
-```
+When Fluent Bit crashes, a zipped core file, stacktrace, and the Fluent Bit executable will be output to the `/cores` directory and the files will also be uploaded to S3.
 
-When Fluent Bit crashes, a core file will be dumped to the `/cores` directory because the default kernel core pattern in the image is: `/cores/core.%e.%p`.
-
-There are couple of things to note about the `Dockerfile.debug` for the core file debugging use case:
+There are couple of things to note about the debug target for the core file debugging use case:
 - The Fluent Bit upstream base version is specified with `ENV FLB_VERSION`
 - Fluent Bit is compiled with CMake flag `-DFLB_DEBUG=On`
 - `gdb` is installed in the final stage of the Docker build.
+- `aws` cli is installed to copy files to the S3 bucket.
 
-When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify the `ENV FLB_VERSION` at the top of the Dockerfile to install the desired Fluent Bit base version.
+When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify the `ENV FLB_VERSION` at the top of the `/scripts/dockerfiles/Dockerfile.build` to install the desired Fluent Bit base version.
 
 Once you are ready, build the debug image:
 
 ```
 make debug
 ```
+The resulting image will be tagged `amazon/aws-for-fluent-bit:debug`
 
-And then push this image to a container image repository such as Amazon ECR so that you can use it in your deployment in the next step. 
+And then push this image to a container image repository such as Amazon ECR so that you can use it in your deployment in the next step.
+
+#### Custom Entrypoints
+Please note that if you are customizing your aws-for-fluent-bit debug image with a custom entrypoint.sh, you need to add the following as the last line of your entrypoint.sh:
+```
+echo "AWS for Fluent Bit Container Image Version `cat /AWS_FOR_FLUENT_BIT_VERSION` - Debug Image with S3 Core Uploader"; \
+    if [ "$S3_BUCKET" == "" ]; then \
+        echo "Note: Please set S3_BUCKET environment variable to your crash symbol upload destination S3 bucket"; \
+    fi; \
+    if [ "$S3_KEY_PREFIX" == "issue" ]; then \
+        echo "Note: Please set S3_KEY_PREFIX environment variable to a useful identifier - e.g. company name, team name, customer name"; \
+    fi; \
+    export RANDOM_ID_VALUE=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
+    echo "RANDOM_ID is set to $RANDOM_ID_VALUE"; \
+    /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; \
+    /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX
+```
+
+If the following command exists in your entrypoint.sh file, remove it:
+```
+exec /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf
+```
+
+#### Crash Symbol Description
+The following crash symbols are output by the debug image:
+
+- .core.zip: A zipped core file
+- .stacktrace: a stack trace file from the core dump
+- .executable: the Fluent Bit executable that crashed
+
+All crash files are prefixed with:
+```
+<$S3_KEY_PREFIX>_<date in format"%FT%H%M%S>_<hostname>_<RUN_ID>.core.zip
+```
+
+These files are output to the /cores directory which can be mounted to with Docker volumes, or optionally sent to an S3 bucket. See how to configure your S3 bucket in step 2.
 
 
-## Step 2: Modifying your deployment to capture a core file
+## Step 2: Create an S3 Bucket to send crash symbols to (Only needed for crash uploads to S3)
+
+#### Bucket Setup
+1. In AWS S3 console, choose **Create bucket**.
+2. For **bucket name** enter a name (for example, my-aws-for-fluent-bit-crash-symbols)
+3. Choose **Create bucket**
+
+#### IAM Update for S3 Access
+For the IAM role or user which is used by aws-for-fluent-bit provide access to the created bucket with the following s3 policy:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+        "Effect": "Allow",
+        "Action": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject"
+        ],
+        "Resource": ["arn:aws:s3:::<my_bucket>"]
+    }
+  ]
+}
+```
+
+#### Sending crash symbols to an S3 bucket
+Set the following environment variables on your debug image to send crash symbols to your S3 bucket
+
+    a. `S3_BUCKET` => an S3 bucket that your task can upload too. 
+    b. `S3_KEY_PREFIX` => this is the key prefix in S3 for the core dump, set it to something useful like the ticket ID or a human readable string. It must be valid for an S3 key.
+
+## Step 3: Modifying your deployment to capture a core file
 
 Follow the version of this step that fits your deployment mode. 
 
@@ -57,6 +123,7 @@ Follow the version of this step that fits your deployment mode.
 
 ### Setup for Local Dev Machine or Instance
 
+#### Obtain crash symbols via a mounted volume
 Simply run the debug build of Fluent Bit with ulimit unlimited and with the `/cores` directory mounted onto your host:
 ```
 docker run --ulimit core=-1 -v /somehostpath:/cores -v $(pwd):/fluent-bit/etc amazon/aws-for-fluent-bit:debug
@@ -72,8 +139,22 @@ You may need to customize the Docker run command to mount additional files or yo
 
 When the Fluent Bit debug image crashes, a core file should be outputted to `/somehostpath`. When that happens, proceed to [Step 4: Using GDB with a core file (crashed Fluent Bit)](#step-4-using-gdb-with-a-core-file-crashed-fluent-bit).  Alternatively, you can use `docker exec` to get a terminal into the container and follow [Step 3: Using GDB with a live Fluent Bit](#step-3-using-gdb-with-a-live-fluent-bit).
 
+#### Obtain crash symbols via S3 bucket
+You can also send crash symbols to an S3 bucket when Fluent Bit crashes.
+Again, simply run the debug build of Fluent Bit with ulimit unlimited and with the `/cores` directory mounted onto your host, along with environment variable references to your S3 bucket.
+```
+docker run --ulimit core=-1 \
+    -v /somehostpath:/cores \
+    -v $(pwd):/fluent-bit/etc \
+	--env S3_BUCKET=<my_s3_bucket>  \
+	--env S3_KEY_PREFIX=<my_s3_key_prefix> \
+    amazon/aws-for-fluent-bit:debug
+```
+We recommend choosing an s3_key_prefix that is related to your company, team, or group's name.
+
 ### Setup for ECS EC2
 
+#### Obtain crash symbols via a mounted volume
 You will need to modify your existing Task Definition or CloudFormation or CDK or etc to include the following:
 
 1. A volume for the `/cores` directory in Fluent Bit that is mounted onto the host file system. This is necessary because when the core dump is produced, we need to save it somewhere, since containers are ephemeral. 
@@ -155,8 +236,36 @@ The tutorial explains how to:
 2. Launch a task with ECS Exec. You must enable ECS Exec in the AWS API when you launch a task in order to exec into it later. 
 3. Exec into your task once it is running and obtain a shell session. Once you have done this you can proceed to [Step 3: Using GDB with a live Fluent Bit](#step-3-using-gdb-with-a-live-fluent-bit).
 
+#### Obtain crash symbols via S3 Bucket
+Ensure that your task role arn has access to the S3 bucket created in step 2, and set `S3_BUCKET` and `S3_KEY_PREFIX` environment variables in your ECS Task definition. Here's an example task definition environment variable configuration:
+
+```
+{
+   ...
+    "containerDefinitions": [
+      {
+        ...
+        "environment": [
+          ...
+          {
+            "name": "S3_BUCKET",
+            "value": "<my_s3_bucket>"
+          },
+          {
+            "name": "S3_KEY_PREFIX",
+            "value": "<my_s3_key_prefix>"
+          }
+        ],
+      },
+    ]
+}
+```
+Upon crashing, symbols will be uploaded to S3.
+
+
 ### Setup for ECS Fargate
 
+#### Obtain crash symbols via a mounted volume
 You will need to modify your existing Task Definition or CloudFormation or CDK or etc to include the following:
 
 1. A volume for the `/cores` directory in Fluent Bit that is attached to an EFS file system. This is necessary because when the core dump is produced, we need to save it somewhere, and Fargate is a serverless platform. Thus, we use EFS for persistent storage. 
@@ -228,6 +337,33 @@ The tutorial explains how to:
 1. Grant the task role permissions for ECS Exec. 
 2. Launch a task with ECS Exec. You must enable ECS Exec in the AWS API when you launch a task in order to exec into it later. 
 3. Exec into your task once it is running and obtain a shell session. Once you have done this you can proceed to [Step 3: Using GDB with a live Fluent Bit](#step-3-using-gdb-with-a-live-fluent-bit).
+
+#### Obtain crash symbols via S3 Bucket
+Ensure that your task role arn has access to the S3 bucket created in step 2, and set `S3_BUCKET` and `S3_KEY_PREFIX` environment variables in your ECS Task definition. Here's an example task definition environment variable configuration:
+
+```
+{
+   ...
+    "containerDefinitions": [
+      {
+        ...
+        "environment": [
+          ...
+          {
+            "name": "S3_BUCKET",
+            "value": "<my_s3_bucket>"
+          },
+          {
+            "name": "S3_KEY_PREFIX",
+            "value": "<my_s3_key_prefix>"
+          }
+        ],
+      },
+    ]
+}
+```
+
+Upon crashing, symbols will be uploaded to S3.
 
 ### Setup for EKS EC2
 
