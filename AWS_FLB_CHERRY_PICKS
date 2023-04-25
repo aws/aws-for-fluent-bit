@@ -72,3 +72,5 @@ https://github.com/PettitWesley/fluent-bit.git sds-off-by-1-1_9 f45b3027dfd0ebac
 https://github.com/PettitWesley/fluent-bit.git cw-stream-free-fix 8e7809ee9f4e7837a5fff75842a47ca5fd42b526 
 
 
+# Messagepack Fix https://github.com/fluent/fluent-bit/commit/c0fc0374c54ae5967f12b5ac34ce89a0ca285210
+https://github.com/fluent/fluent-bit.git 1.9 c0fc0374c54ae5967f12b5ac34ce89a0ca285210
