@@ -59,3 +59,5 @@ https://github.com/matthewfala/fluent-bit.git immutable-cwl-net-options 5d9692f0
 # Go exit fix
 https://github.com/PettitWesley/fluent-bit.git go-exit-fix-1_9-one-commit ce5739c20b972320dc485587d56c8b6b21f61934
 
+# Messagepack Fix https://github.com/fluent/fluent-bit/commit/c0fc0374c54ae5967f12b5ac34ce89a0ca285210
+https://github.com/fluent/fluent-bit.git 1.9 c0fc0374c54ae5967f12b5ac34ce89a0ca285210
