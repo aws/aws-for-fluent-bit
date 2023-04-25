@@ -38,7 +38,7 @@ The version of the AWS for Fluent Bit image is not linked to the version of Flue
 
 **What does the version number signify?**
 
-We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. An update to the patch version indicates backwards compatible bug fixes, a minor version change indicates new backwards compatible functionality, and a major version change indicates backwards incompatible changes.
+We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. Bug fixes are released in patch version bumps. New features are released in new minor versions. We strive to only release backwards incompatible changes in new major versions. 
 
 The AWS for Fluent Bit image includes the following contents:
 * A base image (currently Amazon Linux or Windows Server Core 2019 or Windows Server Core 2022)
@@ -46,6 +46,13 @@ The AWS for Fluent Bit image includes the following contents:
 * Several Fluent Bit Go Plugins
 
 A change in any one of these pieces would lead to a change in our version number.
+
+**Are there edge cases to the rules on breaking backwards compatibility?**
+
+One edge case for the above semantic versioning rules is changes to configuration validation. Between Fluent Bit upstream versions 1.8 and 1.9, validation of config options was fixed/improved. Previous to this distro's upgrade to Fluent Bit upstream 1.9, configurations that included certain invalid options would run without error (the invalid options were ignored). After we released Fluent Bit usptream 1.9 support, these invalid options were validated and Fluent Bit would exit with an error. See the [issue discussion here](https://github.com/aws/aws-for-fluent-bit/issues/371#issuecomment-1160663682). 
+
+Another edge case to the above rules are bug fixes that require removing a change. We have and will continue to occasionally remove new changes in a patch version if they were found to be buggy. We do this to unblock customers who do not depend on the recent change. Please always check our release notes for the changes in a specific version. A past example of a patch release that removed something is [2.31.4](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.4). A prior release had fixed how S3 handles the timestamps in S3 keys and the `Retry_Limit` configuration option. Those changes were considered to be bug fixes. However, they introduced instability so we subsequently removed them in a patch. 
+
 
 **What about the 1.x image tags in your repositories?**
 
