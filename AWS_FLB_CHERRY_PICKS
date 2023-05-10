@@ -76,3 +76,19 @@ https://github.com/fluent/fluent-bit.git 1.9 c0fc0374c54ae5967f12b5ac34ce89a0ca2
 
 # STS response parsing improvement/fix
 https://github.com/PettitWesley/fluent-bit.git sts-response-parse-fix b1186b92b53466a240b1f16008995dc85afed892
+
+# upstream config map fix https://github.com/fluent/fluent-bit/pull/6874
+https://github.com/fluent/fluent-bit.git 1.9 81cdf7eced4e420043277237fba092157b17ffd9
+
+# upstream engine retry clean up fix https://github.com/fluent/fluent-bit/pull/6862
+https://github.com/fluent/fluent-bit.git 1.9 712e5fbe10bee44269d5dfed214c4e087ea1ec2a
+
+# TCP input: user friendly message for skipping logs https://github.com/fluent/fluent-bit/pull/6061
+https://github.com/fluent/fluent-bit.git 1.9 c5d57ccf4f85af77e2a2bbb1121df95887e2962f
+
+# ElasticSearch: fix buffer bulk over run https://github.com/fluent/fluent-bit/pull/5770
+https://github.com/fluent/fluent-bit.git 1.9 d3a0697c3c4a876250cc6c2c4ff44cd77908ea3c
+
+# windows: fix time zone offset https://github.com/fluent/fluent-bit/pull/6368
+https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e93cf0
+
