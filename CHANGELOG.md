@@ -1,5 +1,21 @@
 # Changelog
 
+### 2.31.11
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.3
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.10` this release adds:
+* Bug - Improve parsing of STS AssumeRole response [fluent-bit:7313](https://github.com/fluent/fluent-bit/pull/7313)
+* Bug - Fix potential null dereference in configuration parsing [fluent-bit:6874](https://github.com/fluent/fluent-bit/pull/6874)
+* Bug - ElasticSearch output: fix potential bulk buffer over-run [fluent-bit:5770](https://github.com/fluent/fluent-bit/pull/5770)
+* Bug - Fix parsing of time zone offsets on Windows [fluent-bit:6368](https://github.com/fluent/fluent-bit/pull/6368)
+* Bug - Fix memory cleanup of failed retries [fluent-bit:6862](https://github.com/fluent/fluent-bit/pull/6862)
+* Bug - Fix printf format string in flb_time_pop_from_mpack warning [fluent-bit:7262](https://github.com/fluent/fluent-bit/pull/7262)
+* Enhancement - TCP Input: user friendly warning message when records are skipped [fluent-bit:6061](https://github.com/fluent/fluent-bit/pull/6061)
+
 ### 2.31.10
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
