@@ -74,9 +74,14 @@
     - [Which version did I deploy?](#which-version-did-i-deploy)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
+- [Case Studies]()
+    - [FireLens Stability Tests]
+        - [Rate of network errors]
+        - [CPU and Memory]
+        - [Recommendations for high throughput]
 
 
-### Understanding Error Messages
+## Understanding Error Messages
 
 #### How do I tell if Fluent Bit is losing logs?
 
@@ -345,7 +350,7 @@ You can then configure this appender as the [failover appender](https://logging.
 
 Alternatively, you can use a [failover appender](https://logging.apache.org/log4j/2.x/manual/appenders.html#FailoverAppender) which just writes failed logs to a file. A Fluent Bit [Tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) can then collect the failed logs.
 
-### Basic Techniques
+## Basic Techniques
 
 #### Enable Debug Logging
 
@@ -503,7 +508,7 @@ Remember that we also have older Golang output plugins for AWS (no longer recomm
 
 Consequently, the AWS team contributed an `auto_retry_requests` config option for each of the core AWS outputs. This will issue an immediate retry for any connection issues. 
 
-### Memory Leaks or high memory usage
+## Memory Leaks or high memory usage
 
 #### High Memory usage does not always mean there is a leak/bug
 
@@ -565,7 +570,7 @@ Here's a list of debug targets and what they do:
 - `main-debug-all`: builds `debug-s3`, `debug-fs`, and `debug-valgrind` efficiently without rebuilding dependencies.
 - `init-debug-all`: builds `init-debug-s3`, and `init-debug-fs` efficiently without rebuilding dependencies.
 
-### Segfaults and crashes (SIGSEGV)
+## Segfaults and crashes (SIGSEGV)
 
 One technique is to use the Option 2 shown above for memory leak checking with Valgrind. It can also find the source of segmentation faults; when Fluent Bit crashes Valgrind will output a stack trace that shows which line of code caused the crash. That information will allow us to fix the issue. This requires the use of [Option 2: Debug Build](#option-2-debug-build-more-robust) above where you re-build AWS for Fluent Bit in debug mode. 
 
@@ -575,7 +580,7 @@ Alternatively, the best and most effective way to debug a crash is to get a core
 
 Follow our standalone core dump debugging tutorial which supports multiple AWS platforms: [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
 
-### Log Loss
+## Log Loss
 
 The most common cause of log loss is failed retries. Check your Fluent Bit logs for those error messages. Figure out why retries are failing, and then solve that issue.
 
@@ -597,7 +602,7 @@ The following are typical causes of log loss. Each of these have clear error mes
 In rare cases, we have also seen that lack of log deletion and tail settings can cause slowdown in Fluent Bit and loss of logs:
 * [Tail input Ignore_Older](#tail-input-ignore_older) and [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
 
-### Scaling
+## Scaling
 
 While the Fluent Bit maintainers are constantly working to improve its max performance, there are limitations. Carefully architecting your Fluent Bit deployment can ensure it can scale to meet your required throughput. 
 
@@ -610,7 +615,7 @@ If you are handling very high throughput of logs, consider the following:
     - https://docs.fluentbit.io/manual/pipeline/outputs/s3#worker-support 
 3. Use a log streaming model instead of tailing log files. The AWS team has repeatedly found that complaints of scaling problems usually are cases where the tail input is used. Tailing log files and watching for rotations is inherently costly and slower than a direct streaming model. [Amazon ECS FireLens](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) is one good example of direct streaming model (that also uses sidecar for more scalability)- logs are sent from the container stdout/stderr stream via the container runtime over a unix socket to a Fluent Bit [forward](https://docs.fluentbit.io/manual/pipeline/inputs/forward) input. Another option is to use the [TCP input which can work with some loggers, including log4j](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection#tutorial-3-using-log4j-with-tcp). 
 
-### Throttling, Log Duplication & Ordering
+## Throttling, Log Duplication & Ordering
 
 To understand how to deal with these issues, it's important to understand the Fluent Bit log pipeline. Logs are ingested from inputs and buffered in chunks, and then chunks are delivered to the output plugin. When an output plugin recieves a chunk it only has 3 options for its return value to the core pipeline:
 * FLB_OK: the entire chunk was successfully sent/handled
@@ -645,7 +650,7 @@ To summarize, log duplication is known to occur for the following reasons:
 * CloudWatch Logs [no longer has a per-log-stream ingestion limit](https://aws.amazon.com/about-aws/whats-new/2023/01/amazon-cloudwatch-logs-log-stream-transaction-quota-sequencetoken-requirement/). 
 * Read our [Checking Batch Sizes](#checking-batch-sizes) section to optimize how Fluent Bit flushes logs. This optimization can help ensure Fluent Bit does not make more requests than is necessary. However, please understand that in most cases of throttling, there is no setting change in the Fluent Bit client that can eliminate (or even reduce) throttling. Fluent Bit will and must send logs as quickly as it ingests them otherwise there will be a backlog/backpressure. 
 
-### Plugin Specific Issues
+## Plugin Specific Issues
 
 #### Tail input Ignore_Older
 
@@ -760,7 +765,7 @@ If you are concerned about this, the solution is to set a higher value for `Retr
 
 If you use the `log_group_name` or `log_stream_name` options, creation only happens on startup. If you use the `log_stream_prefix` option, creation happens the first time logs are sent with a new tag. Thus, in most cases resource creation is rare/only on startup. If you use the log group and stream templating options (these are different for each CloudWatch plugin, see [Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin)), then log groups and log streams are created on demand based on your templates.
 
-### Best Practices
+## Best Practices
 
 *Configuration changes which either help mitigate/prevent common issues, or help in debugging issues.*
 
@@ -810,7 +815,7 @@ A Tail configuration following the above best practices might look like:
     Ignore_Older 1h # ignore files not modified for 1 hour (->pick your own time)
 ```
 
-### Fluent Bit Windows containers
+## Fluent Bit Windows containers
 
 #### Enabling debug mode for Fluent Bit Windows images
 Debug mode can be enabled for Fluent Bit Windows images so that when Fluent Bit crashes, we are able to generate crash dumps which would help in debugging the issue. This can be accomplished by overriding the entrypoint command to include the `-EnableCoreDump` flag. For example-
@@ -841,7 +846,7 @@ To work around this issue, we suggest using the following option so that system 
 net.dns.mode LEGACY
 ```
 
-### Runbooks
+## Runbooks
 
 
 #### FireLens Crash Report Runbook
@@ -949,7 +954,7 @@ Perform the following steps:
     1. Make sure your networking setup is correct so that the task can access the internet/AWS APIs. There are different ways of doing this. We recommend using the CFN in [aws-samples/ecs-refarch-cloudformation](https://github.com/aws-samples/ecs-refarch-cloudformation/blob/master/infrastructure/vpc.yaml) to create a VPC with private subnsets that can access the internet over a NAT gateway. This way, your Fargate tasks do not need be assigned a public IP.
 6. Make sure your repro actually works. Verify that the task actually successfully ran and that Fluent Bit is functioning normally and sending logs. Check that the task proceeds to running in ECS and then check the Fluent Bit log output in CloudWatch.  
 
-### Testing
+## Testing
 
 #### Simple TCP Logger Script
 
@@ -1173,7 +1178,7 @@ To use the template:
 6. The `stdout-logger` sub-directory includes setup for a simple docker container that writes the `example.log` file to stdout every second. Fill `example.log` with case log content. Then use the instructions in `command.txt` to run the logger container. 
 7. The `tcp-logger` sub-directory includes setup for a simple script that writes the `example.log` file to a TCP port every second. Fill `example.log` with case log content. Then use the instructions in `command.txt` to run the logger script. 
 
-### FAQ
+## FAQ
 
 #### AWS Go Plugins vs AWS Core C Plugins
 
@@ -1497,6 +1502,58 @@ If you use Amazon ECS FireLens, then standard out and standard error will be col
     "container_name": "/ecs-demo-6-container2-a4eafbb3d4c7f1e16e00"
 }
 ```
+
+## Case Studies
+
+### 🚨 Warning 🚨
+
+The goal of the Case Studies section is to share useful insights and test results. These results however do not represent a guarantee of any kind. Your own results may vary significantly.
+
+Resource usage, error rates, and other findings vary based on many factors, including but not limited to: specific details in Fluent Bit configuration, the instance/runtime that a test was run on, the size and content of the log messages processed/parsed/sent, and various random factors including API and network latency. 
+
+### AWS for Fluent Bit Stability Tests
+
+The AWS Distro [stability tests](https://github.com/aws/aws-for-fluent-bit#aws-distro-for-fluent-bit-release-testing) are used to ensure our releases maintain a high quality bar and to select our stable version. 
+
+They use the [FireLens datajet project](https://github.com/aws/firelens-datajet) to run tasks on Amazon ECS that simulate real world scenarios. 
+
+#### Rate of network errors
+
+As noted in the [Common Network Errors](#common-network-errors) and [Network Connection Issues](#network-connection-issues) sections, Fluent Bit's http client is very low level and can emit many error messages during normal/typical operation. 
+
+If you experience these errors, the key is to look for [messages that indicate log loss](#how-do-i-tell-if-fluent-bit-is-losing-logs). These errors matter when they cause impact. 
+
+Users often ask us what is a "typical" rate of these errors. Please see, the [Case Studies Warning](#🚨-warning-🚨), there is not necessarily a "typical" rate. However, the following examples from our S3 stability tests may be interesting.
+
+The specific test cases involve [40 tasks](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/case-config.json) sending at [30 MB/s](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json) via one Fluent Bit [S3 output](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf).
+
+![Rate of broken connection errors for one task sending to S3](images/broken_connection_errors_one_task.png)
+
+Above is the rate of "broken connection" errors for a single task.
+
+![Rate of broken connection errors for 40 tasks sending to S3](images/broken_connection_errors_40_tasks.png)
+
+Above is the rate of "broken connection" errors for all 40 tasks. 
+
+![Rate of ioctl errors for 40 tasks sending to S3](images/ioctl_errors_40_tasks.png)
+
+Above is the rate of "ioctl" errors for all 40 tasks. 
+
+![Rate of tls errors for 40 tasks sending to S3](images/tls_errors_40_tasks.png)
+
+Above is the rate of "tls" errors for all 40 tasks. 
+
+![Rate of errno errors for 40 tasks sending to S3](images/errno_errors_40_tasks.png)
+
+Above is the rate of errors with an "errno" for all 40 tasks. 
+
+![Rate of all errors for 40 tasks sending to S3](images/all_errors_40_tasks.png)
+
+Above is the rate of all errors for all 40 tasks. 
+
+#### CPU and Memory 
+
+#### Recommendations for high throughput
 
 
 
