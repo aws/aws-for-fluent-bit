@@ -79,6 +79,7 @@
         - [Rate of network errors](#rate-of-network-errors)
         - [CPU and Memory](#cpu-and-memory)
         - [Recommendations for high throughput](#recommendations-for-high-throughput)
+            - [Finding your throughput](#finding-your-throughput)
 
 
 ## Understanding Error Messages
@@ -1556,21 +1557,21 @@ Above is the rate of all errors for all 40 tasks.
 The [Case Studies Warning](#🚨-warning-🚨) is very important for this data; resource usage can vary considerably based on many factors. 
 
 We run a number of different stability test cases against our `cloudwatch_logs` output which cover configurations with non-trivial complexity that are similar to real world cases:
-- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit.conf
-- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit-onepod.conf
+- [fluent-bit.conf](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit.conf)
+- [fluent-bit-onepod.conf](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit-onepod.conf)
 
 There are test cases at different throughputs, with some running at [10MB/s sustained throughput](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/collections/ecs-firelens-stability-tests/golden-path/cases/onepod-high-throughput.json), which is much higher than most real world use cases.
 
-Our CloudWatch Logs tests use a local network mock of the CloudWatch API, thus, these tests are not fully real world as there will be less network latency sending to the mock. 
+Our CloudWatch Logs tests use a local network mock of the CloudWatch API; thus, these tests are not fully real world as there will be less network latency sending to the mock. 
 
 We also run a number of tests against the S3 output which do send to Amazon S3:
-- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf
+- [fluent-bit.conf](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf)
 
 One of the S3 test cases runs at [30MB/s sustained throughput](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json). 
 
 All of tests run on Fargate and are provisioned with [1 vCPU and 4 GB of memory](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/task-definition.json#L159). 
 
-Finally, our tests mostly configure inputs with a [Mem_Buf_Limit 64M](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention).
+Finally, our tests mostly configure inputs with the default `storage.type memory` and with a [Mem_Buf_Limit 64M](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention).
 
 ![graph of memory usage](images/stability_test_memory.png)
 
@@ -1586,7 +1587,31 @@ The lesson here is that CPU usage can vary considerably.
 
 #### Recommendations for high throughput
 
-Define high throughput
+First of all, we must define "high throughput". The AWS Distro for Fluent Bit team generally considers a single Fluent Bit instance sending at a sustained rate of over 1MB/s to be "high throughput". Most Fluent Bit instances send at sustained rates that are below this. 
+
+##### Finding your throughput
+
+Note: *If you have multiple outputs sending to multiple destinations, make sure you compute this statistic for all outputs. Remember to divide the total ingestion rate by the number of Fluent Bit instances to get the ingestion rate for a single Fluent Bit.*
+
+* **CloudWatch Logs**: If you use CloudWatch, use the [`IncomingBytes` metric in CloudWatch Metrics to track the ingestion rate to your log group(s)](https://repost.aws/knowledge-center/cloudwatch-logs-bill-increase). Assuming that all Fluent Bit instances send at roughly the same rate, you can then divide the log group ingestion rate by the number of Fluent Bit instances. Then you have the rate for each individual Fluent Bit. 
+* **Kinesis Firehose**: If you use Firehose, use the [`IncomingBytes` and `IncomingRecords` metrics in CloudWatch Metrics to track the ingestion rate to your stream(s)](https://docs.aws.amazon.com/firehose/latest/dev/monitoring-with-cloudwatch-metrics.html). Assuming that all Fluent Bit instances send at roughly the same rate, you can then divide the stream ingestion rate by the number of Fluent Bit instances. Then you have the rate for each individual Fluent Bit. 
+* **Kinesis Streams**: If you use Kinesis, use the [`IncomingBytes` metric in CloudWatch Metrics to track the ingestion rate to your streams(s)](https://docs.aws.amazon.com/streams/latest/dev/monitoring-with-cloudwatch.html). Assuming that all Fluent Bit instances send at roughly the same rate, you can then divide the stream ingestion rate by the number of Fluent Bit instances. Then you have the rate for each individual Fluent Bit. 
+* **S3**: If you use S3, one option is simply to search objects by timestamp and sum the sizes for some time period. Alternativel, you can use the [`BytesUploaded` metric in CloudWatch Metrics to track the ingestion rate to your bucket(s)](https://docs.aws.amazon.com/AmazonS3/latest/userguide/metrics-dimensions.html#s3-request-cloudwatch-metrics). Assuming that all Fluent Bit instances send at roughly the same rate, you can then divide the bucket ingestion rate by the number of Fluent Bit instances. Then you have the rate for each individual Fluent Bit. 
+
+An alternative that works for all outputs is to use the [Fluent Bit monitoring server](https://docs.fluentbit.io/manual/administration/monitoring). You can access it after SSH into the instance/node that Fluent Bit is running on (or use [ECS Exec on ECS](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html), [kubectl exec on K8s](https://kubernetes.io/docs/tasks/debug/debug-application/get-shell-running-container/)). You must enable it in your configuration to use it. The monitoring server provides a `fluentbit_output_proc_bytes_total` counter metric for each output. Sum them together and divide by runtime to get the ingestion rate. 
+
+##### Recommendations
+
+If a single Fluent Bit instance will send (in total across all outputs) at a sustained rate of several MB/s or more, then we recommend:
+1. Ensure Fluent Bit has at least 0.5 vCPU dedicated to it.
+2. Ensure Fluent Bit has at least 250 MB of memory. If throughput may spike to 5MB/s or above, then 500MB or more of memory would be ideal. If you set a hard memory limit, please carefully follow our [OOMKill guide](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention) to calculte the memory buffer limit needed to reduce the likelihood of OOMKill. 
+3. If you have disk space AND disk IOPs available, follow the [OOMKill Guide Filesystem example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-2-filesystem-and-memory-buffering-storagetype-filesystem). This guide was written with Amazon ECS FireLens customers as the target audience, but its recommendations apply to all Fluent Bit users. Please carefully read the notes about using `max_chunks_up` and the calculation to estimate the total memory usage based on the `max_chunks_up`. Note that you must have [IOPs](https://en.wikipedia.org/wiki/IOPS) available to use filesystem buffering, if other components use disk and saturate IOPs, adding filesystem buffering to Fluent Bit is not wise. In Kubernetes, pod logs go to disk by default, and it common that these log files + Fluent Bit with filesystem buffering can saturate IOPs on the node disk. 
+
+If your consider losing logs to be more acceptable than high memory usage, then we additionally recommend the following:
+1. Follow the [OOMKill Guide Filesystem example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-2-filesystem-and-memory-buffering-storagetype-filesystem) and enable `storage.pause_on_chunks_overlimit On`. This will pause your input to stop ingesting data when it reaches the `max_chunks_up` limit. 
+2. Consider setting a low [Retry_Limit]() so that in the event of repeated failures Fluent Bit does not have to maintain a large backlog of logs that must be retried. 
+
+
 
 
 
