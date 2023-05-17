@@ -1523,9 +1523,9 @@ As noted in the [Common Network Errors](#common-network-errors) and [Network Con
 
 If you experience these errors, the key is to look for [messages that indicate log loss](#how-do-i-tell-if-fluent-bit-is-losing-logs). These errors matter when they cause impact. 
 
-Users often ask us what is a "typical" rate of these errors. Please see, the [Case Studies Warning](#🚨-warning-🚨), there is not necessarily a "typical" rate. However, the following examples from our S3 stability tests may be interesting.
+Users often ask us what is a "typical" rate of these errors. Please see, the [Case Studies Warning](#🚨-warning-🚨), there is not necessarily a "typical" rate. We want to be clear that we've seen test runs where the error rate was higher than is shown in these screenshots.
 
-The specific test cases involve [40 tasks](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/case-config.json) sending at [30 MB/s](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json) via one Fluent Bit [S3 output](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf).
+These specific test cases involve [40 tasks](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/case-config.json) sending at [30 MB/s](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json) via one Fluent Bit [S3 output](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf).
 
 ![Rate of broken connection errors for one task sending to S3](images/broken_connection_errors_one_task.png)
 
@@ -1553,7 +1553,40 @@ Above is the rate of all errors for all 40 tasks.
 
 #### CPU and Memory 
 
+The [Case Studies Warning](#🚨-warning-🚨) is very important for this data; resource usage can vary considerably based on many factors. 
+
+We run a number of different stability test cases against our `cloudwatch_logs` output which cover configurations with non-trivial complexity that are similar to real world cases:
+- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit.conf
+- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/fluent-bit-onepod.conf
+
+There are test cases at different throughputs, with some running at [10MB/s sustained throughput](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/collections/ecs-firelens-stability-tests/golden-path/cases/onepod-high-throughput.json), which is much higher than most real world use cases.
+
+Our CloudWatch Logs tests use a local network mock of the CloudWatch API, thus, these tests are not fully real world as there will be less network latency sending to the mock. 
+
+We also run a number of tests against the S3 output which do send to Amazon S3:
+- https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf
+
+One of the S3 test cases runs at [30MB/s sustained throughput](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json). 
+
+All of tests run on Fargate and are provisioned with [1 vCPU and 4 GB of memory](https://github.com/aws/firelens-datajet/blob/6eaeb5f8e15739e1caf96e2c61236912502da2a3/apps/firelens-stability/templates/golden-path-mountebank-fargate-v01-11-2023/task-definition.json#L159). 
+
+Finally, our tests mostly configure inputs with a [Mem_Buf_Limit 64M](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention).
+
+![graph of memory usage](images/stability_test_memory.png)
+
+We see memory usage vary considerably across test cases based on throughput, complexity of the configuration, and other unknown factors. We also typically see that memory can increase slightly over the lifetime of the Fluent Bit container, however, this does not by itself indicate a [memory leak](#memory-leaks-or-high-memory-usage).
+
+Memory usage for the lower throughput tests tends to vary around ~40MB to ~100MB, with high throughput tests consuming up to 400MB of memory or more. 
+
+![graph of CPU usage](images/stability_test_cpu.png)
+
+CPU usage varies considerably, especially over time within a single test case. ~25+% of 1vCPU is typical even for low throughput test runs, and CPU usage can easily be sustained at ~50% vCPU, with spikes at or above 1vCPU. In one past experiment, we saw [consistent CPU spikes once a day](https://github.com/fluent/fluent-bit/issues/6503) which we were not able to root cause. 
+
+The lesson here is that CPU usage can vary considerably.
+
 #### Recommendations for high throughput
+
+Define high throughput
 
 
 
