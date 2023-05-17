@@ -74,11 +74,11 @@
     - [Which version did I deploy?](#which-version-did-i-deploy)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
-- [Case Studies]()
-    - [FireLens Stability Tests]
-        - [Rate of network errors]
-        - [CPU and Memory]
-        - [Recommendations for high throughput]
+- [Case Studies](#case-studies)
+    - [AWS for Fluent Bit Stability Tests](#aws-for-fluent-bit-stability-tests)
+        - [Rate of network errors](#rate-of-network-errors)
+        - [CPU and Memory](#cpu-and-memory)
+        - [Recommendations for high throughput](#recommendations-for-high-throughput)
 
 
 ## Understanding Error Messages
