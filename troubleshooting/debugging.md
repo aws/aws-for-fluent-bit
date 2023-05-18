@@ -1516,41 +1516,7 @@ Resource usage, error rates, and other findings vary based on many factors, incl
 
 The AWS Distro [stability tests](https://github.com/aws/aws-for-fluent-bit#aws-distro-for-fluent-bit-release-testing) are used to ensure our releases maintain a high quality bar and to select our stable version. 
 
-They use the [FireLens datajet project](https://github.com/aws/firelens-datajet) to run tasks on Amazon ECS that simulate real world scenarios. 
-
-#### Rate of network errors
-
-As noted in the [Common Network Errors](#common-network-errors) and [Network Connection Issues](#network-connection-issues) sections, Fluent Bit's http client is very low level and can emit many error messages during normal/typical operation. 
-
-If you experience these errors, the key is to look for [messages that indicate log loss](#how-do-i-tell-if-fluent-bit-is-losing-logs). These errors matter when they cause impact. 
-
-Users often ask us what is a "typical" rate of these errors. Please see, the [Case Studies Warning](#🚨-warning-🚨), there is not necessarily a "typical" rate. We want to be clear that we've seen test runs where the error rate was higher than is shown in these screenshots.
-
-These specific test cases involve [40 tasks](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/case-config.json) sending at [30 MB/s](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json) via one Fluent Bit [S3 output](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf).
-
-![Rate of broken connection errors for one task sending to S3](images/broken_connection_errors_one_task.png)
-
-Above is the rate of "broken connection" errors for a single task.
-
-![Rate of broken connection errors for 40 tasks sending to S3](images/broken_connection_errors_40_tasks.png)
-
-Above is the rate of "broken connection" errors for all 40 tasks. 
-
-![Rate of ioctl errors for 40 tasks sending to S3](images/ioctl_errors_40_tasks.png)
-
-Above is the rate of "ioctl" errors for all 40 tasks. 
-
-![Rate of tls errors for 40 tasks sending to S3](images/tls_errors_40_tasks.png)
-
-Above is the rate of "tls" errors for all 40 tasks. 
-
-![Rate of errno errors for 40 tasks sending to S3](images/errno_errors_40_tasks.png)
-
-Above is the rate of errors with an "errno" for all 40 tasks. 
-
-![Rate of all errors for 40 tasks sending to S3](images/all_errors_40_tasks.png)
-
-Above is the rate of all errors for all 40 tasks. 
+They use the [FireLens datajet project](https://github.com/aws/firelens-datajet) to run tasks on Amazon ECS and AWS Fargate that simulate real world scenarios. 
 
 #### CPU and Memory 
 
@@ -1585,9 +1551,43 @@ CPU usage varies considerably, especially over time within a single test case. ~
 
 The lesson here is that CPU usage can vary considerably.
 
+#### Rate of network errors
+
+As noted in the [Common Network Errors](#common-network-errors) and [Network Connection Issues](#network-connection-issues) sections, Fluent Bit's http client is very low level and can emit many error messages during normal/typical operation. 
+
+If you experience these errors, the key is to look for [messages that indicate log loss](#how-do-i-tell-if-fluent-bit-is-losing-logs). These errors matter when they cause impact. 
+
+Users often ask us what is a "typical" rate of these errors. Please see, the [Case Studies Warning](#🚨-warning-🚨), there is not necessarily a "typical" rate. We want to be clear that we've seen test runs where the error rate was higher than is shown in these screenshots. The goal of these screenshots is to show that there can be many errors under "normal" operation without log loss.
+
+These specific test cases involve [40 tasks](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/case-config.json) sending at [30 MB/s](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/collections/ecs-firelens-stability-tests/s3-stability/cases/s3-throughput-30mbps.json) via one Fluent Bit [S3 output](https://github.com/aws/firelens-datajet/blob/stability-wip/apps/firelens-stability/templates/s3-fargate-v04-05-2023/fluent-bit.conf).
+
+![Rate of broken connection errors for one task sending to S3](images/broken_connection_errors_one_task.png)
+
+Above is the rate of "broken connection" errors for a single task.
+
+![Rate of broken connection errors for 40 tasks sending to S3](images/broken_connection_errors_40_tasks.png)
+
+Above is the rate of "broken connection" errors for all 40 tasks. 
+
+![Rate of ioctl errors for 40 tasks sending to S3](images/ioctl_errors_40_tasks.png)
+
+Above is the rate of "ioctl" errors for all 40 tasks. 
+
+![Rate of tls errors for 40 tasks sending to S3](images/tls_errors_40_tasks.png)
+
+Above is the rate of "tls" errors for all 40 tasks. 
+
+![Rate of errno errors for 40 tasks sending to S3](images/errno_errors_40_tasks.png)
+
+Above is the rate of errors with an "errno" for all 40 tasks. 
+
+![Rate of all errors for 40 tasks sending to S3](images/all_errors_40_tasks.png)
+
+Above is the rate of all errors for all 40 tasks. 
+
 #### Recommendations for high throughput
 
-First of all, we must define "high throughput". The AWS Distro for Fluent Bit team generally considers a single Fluent Bit instance sending at a sustained rate of over 1MB/s to be "high throughput". Most Fluent Bit instances send at sustained rates that are below this. 
+First of all, we must define "high throughput". The AWS Distro for Fluent Bit team generally considers a single Fluent Bit instance sending at a sustained rate at or over 2MB/s to be "high throughput". Most Fluent Bit instances send at sustained rates that are below this. 
 
 ##### Finding your throughput
 
