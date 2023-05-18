@@ -16,7 +16,7 @@ TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
 PREFIX = os.environ['PREFIX']
 EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
 LOGGER_RUN_TIME_IN_SECOND = 600
-BUFFER_TIME_IN_SECOND = 300
+BUFFER_TIME_IN_SECOND = 1000
 NUM_OF_EKS_NODES = 4
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
@@ -54,8 +54,8 @@ def get_log_delay(log_delay_epoch_time):
 # Set buffer for waiting all logs sent to destinations (~5min)
 def set_buffer(stop_epoch_time):
     curr_epoch_time = time.time()
-    if curr_epoch_time-stop_epoch_time < BUFFER_TIME_IN_SECOND:
-        time.sleep(int(BUFFER_TIME_IN_SECOND-curr_epoch_time+stop_epoch_time))
+    if (curr_epoch_time - stop_epoch_time) < BUFFER_TIME_IN_SECOND:
+        time.sleep(int(BUFFER_TIME_IN_SECOND - curr_epoch_time + stop_epoch_time))
 
 # convert datetime to epoch time
 def parse_time(time):
