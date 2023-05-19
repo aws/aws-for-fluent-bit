@@ -92,3 +92,12 @@ https://github.com/fluent/fluent-bit.git 1.9 d3a0697c3c4a876250cc6c2c4ff44cd7790
 # windows: fix time zone offset https://github.com/fluent/fluent-bit/pull/6368
 https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e93cf0
 
+# quick fix for S3 key $INDEX bug https://github.com/aws/aws-for-fluent-bit/issues/653
+https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e48218670681aef152aeedcf90a4593ac623470
+
+# Feature: AWS Profile support: https://github.com/fluent/fluent-bit/pull/7127
+https://github.com/PettitWesley/fluent-bit.git aws_distro_profile_support d7b5603aa69bc2fd57695748f9a0bf70330fd800
+
+# Feature: Amazon Managed Prometheus Support: https://github.com/fluent/fluent-bit/pull/6989/commits
+https://github.com/Claych/fluent-bit.git AMP-for-auth-1.9 8eb9212b7f53ee14b42bd51bfbe0231afe90fb12
+
