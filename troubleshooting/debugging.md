@@ -18,6 +18,7 @@
         - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
         - [Mitigation 3: Log4J Failover to a File](#mitigation-3-log4j-failover-to-a-file)
 - [Basic Techniques](#basic-techniques)
+    - [First things to try when something goes wrong?](#first-things-to-try-when-something-goes-wrong)
     - [Enable Debug Logging](#enable-debug-logging)
     - [Enabling Monitoring for Fluent Bit](#enabling-monitoring-for-fluent-bit)
     - [DNS Resolution Issues](#dns-resolution-issues)
@@ -370,6 +371,17 @@ You can then configure this appender as the [failover appender](https://logging.
 Alternatively, you can use a [failover appender](https://logging.apache.org/log4j/2.x/manual/appenders.html#FailoverAppender) which just writes failed logs to a file. A Fluent Bit [Tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) can then collect the failed logs.
 
 ## Basic Techniques
+
+#### First things to try when something goes wrong?
+
+When you experience a problem, before you cut us an issue, try the following.
+
+1. Search this guide for similar errors or problems.
+2. Search GitHub issues on [this repo](https://github.com/aws/aws-for-fluent-bit/issues) and [upstream](https://github.com/fluent/fluent-bit/issues) for similar problems or reports.
+3. [Enable debug logging](#enable-debug-logging)
+4. If you use Amazon ECS FireLens, enable the AWSLogs driver for Fluent Bit as shown in all of our [examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/cloudwatchlogs/task-definition-cloudwatch_logs.json#L14). 
+5. Try upgrading to our [latest](https://github.com/aws/aws-for-fluent-bit/releases) or [latest stable](https://github.com/aws/aws-for-fluent-bit/tree/mainline#latest-stable-version) version. 
+6. If you are using a Core Fluent Bit C plugin, consider switching to the Go plugin version if possible. Or switch from Go to C. See our guide on [C vs Go plugins](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins). Often an issue will only affect one version of the plugin.
 
 #### Enable Debug Logging
 
