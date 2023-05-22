@@ -191,7 +191,7 @@ This error is recoverable and Fluent Bit will keep retrying to scan the path.
 
 There are two cases which might apply to you if you experience this error:
 
-1. You need to fix your task definition: If you do not add a volume mount between the app container and FireLens container for your logs files, Fluent Bit can't find them and you'll get this error repeatedly.
+1. You need to fix your task definition: If you do not add a volume mount between the app container and FireLens container for your logs files, Fluent Bit can't find them and you'll get this error repeatedly. We recommend using [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) to exec into the Fluent Bit and app containers and check each of their filesystems. 
 
 2. This is normal, ignore the error: If you did set up the volume mount correctly, you will still always get this on startup. This is because ECS will start the FireLens container first, and so that path won't exist until the app container starts up, which is after FireLens. Thus it will always complain about not finding the path on startup. This can either be safely ignored or fixed by creating the full directory path for the log files in your Dockerfile so that it exists before any log files are written. The error will only happen on startup and once the log files exist, Fluent Bit will pick them up and begin reading them.
 
