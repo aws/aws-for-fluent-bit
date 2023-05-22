@@ -29,7 +29,8 @@
 - [Memory Leaks or high memory usage](#memory-leaks-or-high-memory-usage)
     - [High Memory usage does not always mean there is a leak/bug](#high-memory-usage-does-not-always-mean-there-is-a-leakbug)
     - [FireLens OOMKill Prevention Guide](#firelens-oomkill-prevention-guide)
-    - [Testing for real memory leaks using Valgrind](#testing-for-real-memory-leaks-using-valgrind)
+    - [Building a Container Image with Valgrind](#building-a-container-image-with-valgrind)
+    - [Tutorial: Using Valgrind with Fluent Bit](#tutorial-using-valgrind-with-fluent-bit)
 - [Segfaults and crashes (SIGSEGV)](#segfaults-and-crashes-sigsegv)
     - [Tutorial: Obtaining a core dump from Fluent Bit](#tutorial-obtaining-a-core-dump-from-fluent-bit)
 - [Log Loss](#log-loss)
@@ -518,9 +519,9 @@ Please see the Fluent Bit buffering documentation: https://docs.fluentbit.io/man
 
 Check out the FireLens example for preventing/reducing out of memory exceptions: [amazon-ecs-firelens-examples/oomkill-prevention](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention)
 
-#### Testing for real memory leaks using Valgrind
+#### Building a Container Image with Valgrind
 
-If you do think the cause of your high memory usage is a bug in the code, you can optionally help us out by attempting to profile Fluent Bit for the source of the leak. To do this, use the [Valgrind](https://valgrind.org/) tool.
+If you do think the cause of your high memory usage is a bug in the code, you can optionally help us out by attempting to profile Fluent Bit for the source of the leak. To do this, use the [Valgrind](https://valgrind.org/) tool. 
 
 There are some caveats when using Valgrind. Its a debugging tool, and so it significantly reduces the performance of Fluent Bit. It will consume more memory and CPU and generally be slower when debugging. Therefore, Valgrind images may not be safe to deploy to prod. 
 
@@ -564,6 +565,9 @@ Here's a list of debug targets and what they do:
 - `init-debug-fs`: same as `debug-fs` but with the init process.
 - `main-debug-all`: builds `debug-s3`, `debug-fs`, and `debug-valgrind` efficiently without rebuilding dependencies.
 - `init-debug-all`: builds `init-debug-s3`, and `init-debug-fs` efficiently without rebuilding dependencies.
+
+#### Tutorial: Using Valgrind with Fluent Bit
+Here is the [tutorial](tutorials/valgrind/README.md) about how to install and use Valgrind to detect Fluent-bit memory leaks.
 
 ### Segfaults and crashes (SIGSEGV)
 
