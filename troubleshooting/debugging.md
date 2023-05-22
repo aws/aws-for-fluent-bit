@@ -177,6 +177,11 @@ To prevent the error and log loss above, we can set our tail input to have:
     Skip_Long_Lines On # skip unexpectedly long lines instead of skipping the whole file
 ```
 
+If you set `Skip_Long_Lines On`, then Fluent Bit will emit the following [error message](https://github.com/fluent/fluent-bit/blob/v2.0.0/plugins/in_tail/tail_file.c#L1319) when it encounters lines longer than its `Buffer_Max_Size`:
+```
+[warn] file=/var/log/app.log have long lines. Skipping long lines.
+```
+
 
 #### Tail Permission Errors
 A common error message for ECS FireLens users who are reading log files is the following:
