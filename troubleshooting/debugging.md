@@ -184,7 +184,7 @@ If you set `Skip_Long_Lines On`, then Fluent Bit will emit the following [error 
 
 
 #### Tail Permission Errors
-A common error message for ECS FireLens users who are reading log files is the following:
+A common error message fgor ECS FireLens users who are reading log files is the following:
 
 ```
 [2022/03/16 19:05:06] [error] [input:tail:tail.5] read error, check permissions: /var/output/logs/service_log*
@@ -678,6 +678,8 @@ To summarize, log duplication is known to occur for the following reasons:
 * If you are using Kinesis Streams of Kinesis Firehose, scale your stream to handle your max required throughput. 
 * CloudWatch Logs [no longer has a per-log-stream ingestion limit](https://aws.amazon.com/about-aws/whats-new/2023/01/amazon-cloudwatch-logs-log-stream-transaction-quota-sequencetoken-requirement/). 
 * Read our [Checking Batch Sizes](#checking-batch-sizes) section to optimize how Fluent Bit flushes logs. This optimization can help ensure Fluent Bit does not make more requests than is necessary. However, please understand that in most cases of throttling, there is no setting change in the Fluent Bit client that can eliminate (or even reduce) throttling. Fluent Bit will and must send logs as quickly as it ingests them otherwise there will be a backlog/backpressure. 
+* The most ideal solution to throttling is almost always to scale up your destination to handle more incoming log records. If you can do that, then you do not need to modify your deployment. 
+* Scale out to more Fluent Bit instances. If you deployed a side-car model, this would mean scaling out to more tasks/pods so that each performs less work, emits logs at a slower rate, and thus each Fluent Bit has less work to process. If you deployed a daemon, then scaling out to more nodes/instances would have the same affect. This only works for throttling that is based on the rate at which a single Fluent Bit instance/connection sends data (vs throttling based on the total rate that all instances are sending at).
 
 ## Plugin Specific Issues
 
