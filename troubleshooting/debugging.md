@@ -8,6 +8,7 @@
     - [Tail Input Skipping File](#tail-input-skipping-file)
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
+    - [How do I tell if Fluent Bit is ingesting and sending data?](#how-do-i-tell-if-fluent-bit-is-ingesting-and-sending-data)
     - [invalid JSON message, skipping](#invalid-json-message)
     - [engine caught signal SIGTERM](#caught-signal-sigterm)
     - [engine caught signal SIGSEGV](#caught-signal-sigsegv)
@@ -226,6 +227,39 @@ The `mem buf overlimit` occurs when the input has exceeded the configured `Mem_B
 When the input is able to receive logs again, you will see one of the `resume` messages above. 
 
 With some inputs, an overlimit warning indicates that you are losing logs- new logs will not be ingested. This is the case with most inputs that stream in data ([forward](https://docs.fluentbit.io/manual/pipeline/inputs/forward) and [TCP](https://docs.fluentbit.io/manual/pipeline/inputs/tcp), for example). If you use [ECS FireLens](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) with Fluent Bit, then the stdout/stderr log input is a forward input and an overlimit warning means that new logs will not be ingested and will be lost. The exception to this is the [tail](https://docs.fluentbit.io/manual/pipeline/inputs/tail) input, which can safely pause and resume without losing logs because it tracks its file offset. When it resumes, it can pick back up reading the file at the last offset (assuming the file was not deleted).
+
+#### How do I tell if Fluent Bit is ingesting and sending data?
+
+*This requires that you [enabled debug logging](#enable-debug-logging*.
+
+*This section contains CloudWatch Insights queries that allow you to check the frequency of data ingestion/send.*
+
+Recall the [Checking Batch sizes](#checking-batch-sizes) section of this guide; you can check these messages to see if the outputs are active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'payload='
+```
+
+The actual debug messages look like:
+```
+[2022/05/06 22:43:17] [debug] [output:cloudwatch_logs:cloudwatch_logs.0] cloudwatch:PutLogEvents: events=6, payload=553 bytes
+[2022/05/06 22:43:17] [debug] [output:kinesis_firehose:kinesis_firehose.0] firehose:PutRecordBatch: events=10, payload=666000 bytes
+[2022/05/06 22:43:17] [debug] [output:kinesis_streams:kinesis_streams.0] kinesis:PutRecords: events=4, payload=4000 bytes
+```
+
+When an input appends data to a chunk, there is a [common message](https://github.com/fluent/fluent-bit/pull/6761) that is logged. This checks that the inputs are still active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'update output instances with new chunk size'
+```
+
+Most chunk related messages have `chunk` in them, which can be used in queries. 
+
+For both of these, checking the frequency of debug messages may be more interesting than the events themselves. 
 
 #### invalid JSON message
 
