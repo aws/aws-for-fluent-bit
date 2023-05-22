@@ -35,6 +35,7 @@
     - [Tutorial: Obtaining a core dump from Fluent Bit](#tutorial-obtaining-a-core-dump-from-fluent-bit)
 - [Log Loss](#log-loss)
     - [Log Loss Summary: Common Causes](#log-loss-summary-common-causes)
+- [Log Delay](#log-delay)
 - [Scaling](#scaling)
 - [Throttling, Log Duplication & Ordering](#throttling-log-duplication--ordering)
     - [Log Duplication Summary](#log-duplication-summary)
@@ -105,7 +106,7 @@ This is an error message indicating a chunk of logs failed and will be retried:
  [ warn] [engine] failed to flush chunk '1-1647467985.551788815.flb', retry in 9 seconds: task_id=0, input=forward.1 > output=cloudwatch_logs.0 (out_id=0)
 ```
 
-Even if you see this message, you still have not lost logs yet. Since it will retry. You have lost logs if you see something like the following message:
+Even if you see this message, you still have not lost logs yet. Since it will retry. Retries however can cause [Log Delay](#log-delay). You have lost logs if you see something like the following message:
 
 ```
 [2022/02/16 20:11:36] [ warn] [engine] chunk '1-1645042288.260516436.flb' cannot be retried: task_id=0, input=tcp.3 > output=cloudwatch_logs.1
@@ -617,7 +618,15 @@ The following are typical causes of log loss. Each of these have clear error mes
 In rare cases, we have also seen that lack of log deletion and tail settings can cause slowdown in Fluent Bit and loss of logs:
 * [Tail input Ignore_Older](#tail-input-ignore_older) and [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
 
-## Scaling
+### Log Delay
+
+Sometimes, Fluent Bit may deliver log messages many minutes after they were produced. If you are sending [EMF metrics as logs to CloudWatch](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs-emf) this may cause missing data points. 
+
+Log delay can happen for the following reasons:
+1. Fluent Bit is unable to handle your throughput of logs or a burst in throughput of logs. 
+2. Retries that succeed after backoff cause logs to be delivered some time after they were collected. Our [How do I tell if I am losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs) section shows retry messages. The delay/backoff for retries can be [configured in the [SERVICE] section](https://docs.fluentbit.io/manual/administration/scheduling-and-retries).
+
+### Scaling
 
 While the Fluent Bit maintainers are constantly working to improve its max performance, there are limitations. Carefully architecting your Fluent Bit deployment can ensure it can scale to meet your required throughput. 
 
