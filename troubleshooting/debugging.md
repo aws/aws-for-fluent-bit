@@ -12,6 +12,7 @@
     - [engine caught signal SIGTERM](#caught-signal-sigterm)
     - [engine caught signal SIGSEGV](#caught-signal-sigsegv)
     - [Too many open files](#too-many-open-files)
+    - [storage.path cannot initialize root path](#storagepath-cannot-initialize-root-path)
     - [Log4j TCP Appender Write Failure](#log4j-tcp-appender-write-failure)
         - [Mitigation 1: Enable Workers for all outputs](#mitigation-1-enable-workers-for-all-outputs)
         - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
@@ -51,6 +52,7 @@
 - [Best Practices](#best-practices)
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
+    - [Set Grace to 30](#set-grace-to-30)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
@@ -297,7 +299,15 @@ In Amazon ECS, [ulimit can be set in the container definition](https://docs.aws.
 
 In Kubernetes with Docker, you need to edit the `/etc/docker/daemon.json` to set the default ulimits for containers. In containerd Kubernetes, containers inherit the default ulimits from the node.  
 
+#### storage.path cannot initialize root path
 
+```
+[2023/02/03 23:38:21] [error] [storage] [chunkio] cannot initialize root path /var/log/flb-storage/
+[2023/02/03 23:38:21] [error] [lib] backend failed
+[2023/02/03 23:38:21] [error] [storage] error initializing storage engine
+```
+
+This happens when the `storage.path` in the `[SERVICE]` section is set to a path that is on a read-only volume. 
 
 #### Log4j TCP Appender Write Failure
 
@@ -820,7 +830,18 @@ A Tail configuration following the above best practices might look like:
     Ignore_Older 1h # ignore files not modified for 1 hour (->pick your own time)
 ```
 
-## Fluent Bit Windows containers
+#### Set Grace to 30
+
+The Fluent Bit `[SERVICE]` section `Grace` setting defaults to 30 seconds. This is the grace period for shut down. When Fluent Bit recieves a SIGTERM, it will pause inputs and attempt to finish flushing all pending data. After the Grace period expires, Fluent Bit will attempt to shut itself down. Shutdown can take longer if there is still pending data that it is trying to flush. 
+
+In Amazon EKS and Amazon ECS, the shutdown grace period for containers, the time between a SIGTERM and a SIGKILL is 30 seconds. Therefore we recommend setting:
+
+```
+[SERVICE]
+    Grace 30
+```
+
+### Fluent Bit Windows containers
 
 #### Enabling debug mode for Fluent Bit Windows images
 Debug mode can be enabled for Fluent Bit Windows images so that when Fluent Bit crashes, we are able to generate crash dumps which would help in debugging the issue. This can be accomplished by overriding the entrypoint command to include the `-EnableCoreDump` flag. For example-
