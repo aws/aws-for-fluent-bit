@@ -190,7 +190,7 @@ If you set `Skip_Long_Lines On`, then Fluent Bit will emit the following [error 
 
 
 #### Tail Permission Errors
-A common error message fgor ECS FireLens users who are reading log files is the following:
+A common error message for ECS FireLens users who are reading log files is the following:
 
 ```
 [2022/03/16 19:05:06] [error] [input:tail:tail.5] read error, check permissions: /var/output/logs/service_log*
@@ -231,7 +231,7 @@ With some inputs, an overlimit warning indicates that you are losing logs- new l
 
 #### How do I tell if Fluent Bit is ingesting and sending data?
 
-*This requires that you [enabled debug logging](#enable-debug-logging*.
+*This requires that you [enabled debug logging](#enable-debug-logging)*.
 
 *This section contains CloudWatch Insights queries that allow you to check the frequency of data ingestion/send.*
 
@@ -773,6 +773,7 @@ The following are typical causes of log loss. Each of these have clear error mes
 1. [Exhausted Retries](#how-do-i-tell-if-fluent-bit-is-losing-logs)
 2. [Input paused due to buffer overlimit](#overlimit-warnings)
 3. [Tail input skips files or lines](#tail-input-skipping-file)
+4. [Log Driver Buffer Limit in Amazon ECS FireLens](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/log-driver-buffer-limit): In some cases, the default buffer limit may not be large enough for high throughput logs. Pick a value based on your throughput that ensures the log driver can buffer all log output from your container for at least 5 seconds. In the AWS for Fluent Bit [load tests](https://github.com/aws/aws-for-fluent-bit/releases), we set the [buffer to the max allowed value](https://github.com/aws/aws-for-fluent-bit/blob/v2.31.11/load_tests/logger/stdout_logger/log_configuration/firehose.json#L7). On EC2, if the buffer overflows the Docker Daemon logs in the system journal will have messages like: `fluent#appendBuffer: Buffer full, limit 1048576`.
 
 In rare cases, we have also seen that lack of log deletion and tail settings can cause slowdown in Fluent Bit and loss of logs:
 * [Tail input Ignore_Older](#tail-input-ignore_older) and [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
