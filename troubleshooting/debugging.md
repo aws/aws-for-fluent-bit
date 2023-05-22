@@ -52,6 +52,8 @@
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
     - [Both CloudWatch Plugins: Create failures consume retries](#both-cloudwatch-plugins-create-failures-consume-retries)
+- [EKS](#eks)
+    - [Filesystem buffering and log files saturate node disk IOPs](#filesystem-buffering-and-log-files-saturate-node-disk-iops)
 - [Best Practices](#best-practices)
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
@@ -830,7 +832,19 @@ If you are concerned about this, the solution is to set a higher value for `Retr
 
 If you use the `log_group_name` or `log_stream_name` options, creation only happens on startup. If you use the `log_stream_prefix` option, creation happens the first time logs are sent with a new tag. Thus, in most cases resource creation is rare/only on startup. If you use the log group and stream templating options (these are different for each CloudWatch plugin, see [Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin)), then log groups and log streams are created on demand based on your templates.
 
-## Best Practices
+### EKS
+
+#### Filesystem buffering and log files saturate node disk IOPs
+
+Fluent Bit supports [storage.type filesystem](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-2-filesystem-and-memory-buffering-storagetype-filesystem) to buffer pending logs on disk for greater reliability. If Fluent Bit goes down, when it restarts it can pick up the pending disk buffers. 
+
+Thus, on Kubernetes most users run Fluent Bit as a daemonset pod with filesystem buffering. In Kubernetes, pod logs are sent to files in `/var/log/containers`. Fluent Bit reads these log files, and buffers them to disk before sending. Remember that when you enable `storage.type filesystem` with Fluent Bit, it buffers all logs collected to disk always to ensure reliability. Consequently, each log emitted by pods on your node will be written to the filesystem once first by the container runtime, and then a second time by Fluent Bit. 
+
+In cases of high log output rate from pods, or a large number of pods per node, this can lead to saturation of [IOPs](https://www.techtarget.com/searchstorage/definition/IOPS-input-output-operations-per-second) on your nodes. This can freeze your nodes and make them non-responsive. 
+
+Consequently, we recommend carefully monitoring your [EBS metrics in CloudWatch](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-io-characteristics.html) and considering switching to [storage.type memory](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-1-memory-buffering-only-default-or-storagetype-memory).
+
+### Best Practices
 
 *Configuration changes which either help mitigate/prevent common issues, or help in debugging issues.*
 
