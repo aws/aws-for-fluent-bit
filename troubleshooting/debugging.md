@@ -15,6 +15,7 @@
     - [Too many open files](#too-many-open-files)
     - [storage.path cannot initialize root path](#storagepath-cannot-initialize-root-path)
     - [multiline parser 'parser_name' not registered](#multiline-parser-parser_name-not-registered)
+    - [CloudWatch output parsing template error](#cloudwatch-output-parsing-template-error)
     - [Log4j TCP Appender Write Failure](#log4j-tcp-appender-write-failure)
         - [Mitigation 1: Enable Workers for all outputs](#mitigation-1-enable-workers-for-all-outputs)
         - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
@@ -373,6 +374,89 @@ The causes are:
 2. Fluent Bit could not load your multiline parser file or you did not specify your [multiline parser file](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/multiline-parsing) with `parsers_file` in the `[SERVICE]` section. 
 3. You attempted to use a standard `[PARSER]` as a `[MULTILINE_PARSER]`. The two are *completely different* and must be loaded from different files. See the [documentation](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/multiline-parsing). 
 
+#### CloudWatch output parsing template error
+
+Go `cloudwatch` plugin error:
+```
+time="2023-05-18T15:54:43Z" level=error msg="[cloudwatch 0] parsing log_group_name template '/aws/containerinsights/eksdemo1/$(kubernetes['namespace_name'])' (using value of default_log_group_name instead): kubernetes['namespace_name']: tag name not found" 
+```
+
+C `cloudwatch_logs` plugin error:
+```
+[record accessor] translation failed, root key=kubernetes
+```
+
+[Both CloudWatch outputs](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin) have templating support for log group and stream names. 
+
+A typical problem is failure in the templating. These errors mean that Fluent Bit could not find the requested metadata keys in a log message.
+
+This most commonly happens due to the [tag match pattern](https://docs.fluentbit.io/manual/concepts/key-concepts) on the output. The output matches logs that do not contain the desired metadata.
+
+Consider the example configuration below which has a tail input for kubernetes pod logs and a systemd input for kubelet logs. The kubernetes filter adds metadata to the pod logs from the tail input. However, kubernetes pod metadata will not be added to the kubelet logs. The output matches `*` which means all logs, and thus templating fails when the systemd kubelet logs are processed by the output. 
+
+```
+[INPUT]
+    name              tail
+    path              /var/log/containers/*.log
+    tag               app.*
+    multiline.parser  docker, cri
+
+[INPUT]
+    Name            systemd
+    Tag             host.*
+    Systemd_Filter  _SYSTEMD_UNIT=kubelet.service
+
+[FILTER]
+    Name             kubernetes
+    Match            app.*
+    Kube_URL         https://kubernetes.default.svc:443
+    Kube_Tag_Prefix  application.var.log.containers.
+
+[OUTPUT]
+    Name              cloudwatch
+    Match             *
+    region            us-east-1
+    log_group_name    /eks/$(kubernetes['namespace_name'])/$(kubernetes['pod_name'])
+    log_stream_name   $(kubernetes['namespace_name'])/$(kubernetes['container_name'])
+    auto_create_group true
+```
+
+This config can be fixed by changing the output match pattern to `Match app.*` and adding a second output for the systemd logs:
+
+```
+[INPUT]
+    name              tail
+    path              /var/log/containers/*.log
+    tag               app.*
+    multiline.parser  docker, cri
+
+[INPUT]
+    Name            systemd
+    Tag             host.*
+    Systemd_Filter  _SYSTEMD_UNIT=kubelet.service
+
+[FILTER]
+    Name             kubernetes
+    Match            app.*
+    Kube_URL         https://kubernetes.default.svc:443
+    Kube_Tag_Prefix  app.var.log.containers.
+
+[OUTPUT]
+    Name              cloudwatch
+    Match             app.*
+    region            us-east-1
+    log_group_name    /eks/$(kubernetes['namespace_name'])/$(kubernetes['pod_name'])
+    log_stream_name   $(kubernetes['namespace_name'])/$(kubernetes['container_name'])
+    auto_create_group true
+
+[OUTPUT]
+    Name              cloudwatch
+    Match             host.*
+    region            us-east-1
+    log_group_name    /eks/host
+    log_stream_prefix ${HOSTNAME}-
+    auto_create_group true
+```
 
 #### Log4j TCP Appender Write Failure
 
