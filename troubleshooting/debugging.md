@@ -13,6 +13,7 @@
     - [engine caught signal SIGSEGV](#caught-signal-sigsegv)
     - [Too many open files](#too-many-open-files)
     - [storage.path cannot initialize root path](#storagepath-cannot-initialize-root-path)
+    - [multiline parser 'parser_name' not registered](#multiline-parser-parser_name-not-registered)
     - [Log4j TCP Appender Write Failure](#log4j-tcp-appender-write-failure)
         - [Mitigation 1: Enable Workers for all outputs](#mitigation-1-enable-workers-for-all-outputs)
         - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
@@ -315,6 +316,27 @@ In Kubernetes with Docker, you need to edit the `/etc/docker/daemon.json` to set
 ```
 
 This happens when the `storage.path` in the `[SERVICE]` section is set to a path that is on a read-only volume. 
+
+#### multiline parser 'parser_name' not registered
+
+```
+[2023/05/22 04:03:11] [error] [multiline] parser 'parser_name' not registered
+[2023/05/22 04:03:11] [error] [input:tail:tail.0] could not load multiline parsers
+[2023/05/22 04:03:11] [error] Failed initialize input tail.0
+[2023/05/22 04:03:11] [error] [lib] backend failed
+```
+
+This error happens with the following config in the tail input or the multiline filter:
+
+```
+multiline.parser parser_name
+```
+
+The causes are:
+1. The name referenced is incorrect.
+2. Fluent Bit could not load your multiline parser file or you did not specify your [multiline parser file](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/multiline-parsing) with `parsers_file` in the `[SERVICE]` section. 
+3. You attempted to use a standard `[PARSER]` as a `[MULTILINE_PARSER]`. The two are *completely different* and must be loaded from different files. See the [documentation](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/multiline-parsing). 
+
 
 #### Log4j TCP Appender Write Failure
 
