@@ -119,6 +119,8 @@ First, please read the section [Network Connection Issues](#network-connection-i
 
 Your Fluent Bit deployment will occasionally log network connection errors. These are normal and should not cause concern unless they cause log loss. See [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs) to learn how to check for log loss from network issues. If you see network errors happen very frequently or they cause your retries to expire, then please cut us an issue.
 
+See [Case Studies: Rate of Network Errors](#rate-of-network-errors) for a real world example of the frequency of these errors. 
+
 The following are common network connection errors that we have seen frequently:
 
 ```
@@ -493,6 +495,8 @@ In the AWS for Fluent Bit repo, we always attempt to tag bug reports with which 
 One of the simplest causes of network connection issues is throttling, some AWS APIs will block new connections from the same IP for throttling (rather than wasting effort returning a throttling error in the response). We have seen this with the CloudWatch Logs API. So, the first thing to check when you experience network connection issues is your log ingestion/throughput rate and the limits for your destination. 
 
 Please see [Common Network Errors](#common-network-errors) for a list of common network errors outputted by Fluent Bit.
+
+See [Case Studies: Rate of Network Errors](#rate-of-network-errors) for a real world example of the frequency of these errors. 
 
 In addition, Fluent Bit's networking library and http client is very low level and simple. It can be normal for there to be occasional dropped connections or client issues. Other clients may silently auto-retry these transient issues; Fluent Bit by default will always log an error and issue a full retry with backoff for any networking error. 
 
@@ -1606,7 +1610,7 @@ If a single Fluent Bit instance will send (in total across all outputs) at a sus
 1. Ensure Fluent Bit has at least 0.5 vCPU dedicated to it.
 2. Ensure Fluent Bit has at least 250 MB of memory. If throughput may spike to 5MB/s or above, then 500MB or more of memory would be ideal. If you set a hard memory limit, please carefully follow our [OOMKill guide](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention) to calculte the memory buffer limit needed to reduce the likelihood of OOMKill. 
 3. If you have disk space AND disk IOPs available, follow the [OOMKill Guide Filesystem example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-2-filesystem-and-memory-buffering-storagetype-filesystem). This guide was written with Amazon ECS FireLens customers as the target audience, but its recommendations apply to all Fluent Bit users. Please carefully read the notes about using `max_chunks_up` and the calculation to estimate the total memory usage based on the `max_chunks_up`. Note that you must have [IOPs](https://en.wikipedia.org/wiki/IOPS) available to use filesystem buffering, if other components use disk and saturate IOPs, adding filesystem buffering to Fluent Bit is not wise. In Kubernetes, pod logs go to disk by default, and it common that these log files + Fluent Bit with filesystem buffering can saturate IOPs on the node disk. 
-4. If you use Amazon ECS FireLens, [increase the `log-driver-buffer-limit`](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/log-driver-buffer-limit). Pick a value based on your throughput that ensures the log driver can buffer all log output from your container for at least 5 seconds. 
+4. If you use Amazon ECS FireLens, [increase the `log-driver-buffer-limit`](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/log-driver-buffer-limit). Pick a value based on your throughput that ensures the log driver can buffer all log output from your container for at least 5 seconds. In the AWS for Fluent Bit [load tests](https://github.com/aws/aws-for-fluent-bit/releases), we set the [buffer to the max allowed value](https://github.com/aws/aws-for-fluent-bit/blob/v2.31.11/load_tests/logger/stdout_logger/log_configuration/firehose.json#L7). On EC2, if the buffer overflows the Docker Daemon logs in the system journal will have messages like: `fluent#appendBuffer: Buffer full, limit 1048576`. 
 
 If your consider losing logs to be more acceptable than high memory usage, then we additionally recommend the following:
 1. Follow the [OOMKill Guide Filesystem example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-2-filesystem-and-memory-buffering-storagetype-filesystem) and enable `storage.pause_on_chunks_overlimit On`. This will pause your input to stop ingesting data when it reaches the `max_chunks_up` limit. 
