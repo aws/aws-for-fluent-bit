@@ -307,6 +307,8 @@ Then, you can define the volume in the task definition to be your EFS filesystem
 
 As a sanity check that you setup the EFS filesystem correctly on the Fargate task, create a file in the EFS filesystem. For example, `touch my-efs-id.txt`. Then, when you later setup your Fargate task, you can use ECS Exec to check that you can see the file in the cores directory: `ls /cores`. 
 
+It should be noted that core files are often very large (hundreds of MB) and saving a core to an EFS filesystem permanently may take time. Consequently, the AWS for Fluent Bit pre-built debug images have a 2 minute sleep before shutdown to ensure that the file transfer can complete before task shutdown. 
+
 #### Set initProcessEnabled and enable SYS_PTRACE capability
 
 The flag `initProcessEnabled` ensures that when Fluent Bit crashes or is killed, orphaned processes will be cleaned up gracefully. This is primarily important if you are enabling ECS Exec, as it ensures the embedded SSM Agent and shell session are cleaned up gracefully if/when you terminate Fluent Bit. 
@@ -423,6 +425,8 @@ generate-core-file
 ```
 
 You can also run other GDB commands. Follow the next step to understand how to read the core file. 
+
+It should be noted that core files are often very large (hundreds of MB) and saving a core to an EFS filesystem permanently may take time. Consequently, the AWS for Fluent Bit pre-built debug images have a 2 minute sleep before shutdown to ensure that the file transfer can complete before task shutdown. 
 
 ## Step 4: Using GDB with a core file (crashed Fluent Bit)
 
