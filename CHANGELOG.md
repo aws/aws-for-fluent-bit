@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.32.0
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.3
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.11` this release adds:
+* Bug - Fix incorrect decrementing of s3_key_format $INDEX on Multipart Upload failure [aws-for-fluent-bit:653](https://github.com/aws/aws-for-fluent-bit/issues/653)
+* Feature - Support for Amazon Managed Prometheus in prometheus output [fluent-bit:6989](https://github.com/fluent/fluent-bit/pull/6989)
+* Feature - Support using a specific AWS Profile in each output definition [fluent-bit:7127](https://github.com/fluent/fluent-bit/pull/7127)
+
 ### 2.31.11
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
