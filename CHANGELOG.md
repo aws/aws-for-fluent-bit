@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.31.12
+This release includes:
+* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.11` this release adds:
+* Bug - Fix incorrect decrementing of s3_key_format $INDEX on Multipart Upload failure [aws-for-fluent-bit:653](https://github.com/aws/aws-for-fluent-bit/issues/653)
+* Bug - `cloudwatch` go plugin: fix utf-8 calculation of payload length to account for invalid unicode bytes that will be replaced with the 3 byte unicode replacement character. This bug can lead to an `InvalidParameterException` from CloudWatch when the payload sent is calculated to be over the limit due to character replacement.  [cloudwatch:330](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/330) 
+
 ### 2.31.11
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)

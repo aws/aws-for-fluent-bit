@@ -92,3 +92,7 @@ https://github.com/fluent/fluent-bit.git 1.9 d3a0697c3c4a876250cc6c2c4ff44cd7790
 # windows: fix time zone offset https://github.com/fluent/fluent-bit/pull/6368
 https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e93cf0
 
+# quick fix for S3 key $INDEX bug https://github.com/aws/aws-for-fluent-bit/issues/653
+https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e48218670681aef152aeedcf90a4593ac623470
+
+
