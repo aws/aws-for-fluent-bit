@@ -10,6 +10,7 @@ This release includes:
 Compared to `2.31.11` this release adds:
 * Bug - Fix incorrect decrementing of s3_key_format $INDEX on Multipart Upload failure [aws-for-fluent-bit:653](https://github.com/aws/aws-for-fluent-bit/issues/653)
 * Bug - `cloudwatch` go plugin: fix utf-8 calculation of payload length to account for invalid unicode bytes that will be replaced with the 3 byte unicode replacement character. This bug can lead to an `InvalidParameterException` from CloudWatch when the payload sent is calculated to be over the limit due to character replacement.  [cloudwatch:330](https://github.com/aws/amazon-cloudwatch-logs-for-fluent-bit/pull/330) 
+* Bug - fix SIGSEGV crash issue in exec input due to memory initialization [aws-for-fluent-bit:661](https://github.com/aws/aws-for-fluent-bit/issues/661)
 
 ### 2.31.11
 This release includes:
