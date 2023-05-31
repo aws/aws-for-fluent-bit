@@ -95,4 +95,7 @@ https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e
 # quick fix for S3 key $INDEX bug https://github.com/aws/aws-for-fluent-bit/issues/653
 https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e48218670681aef152aeedcf90a4593ac623470
 
-
+# upstream 2.x in_exec bug fixes
+# resolves https://github.com/aws/aws-for-fluent-bit/issues/661
+https://github.com/fluent/fluent-bit.git master 6ed4aaabd063b8fdf0c034729e45429da87dc142
+https://github.com/fluent/fluent-bit.git master 62431ad0aede70d9748c372ebc7ac9a9917f9c9d
