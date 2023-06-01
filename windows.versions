@@ -22,7 +22,7 @@
       "openssl": "3.0.7",
       "flexBison": "2.5.22",
       "latest": false,
-      "stable": false
+      "stable": true
     },
     {
       "version": "2.31.10",
@@ -214,7 +214,7 @@
       "openssl": "3.0.7",
       "flexBison": "2.5.22",
       "latest": false,
-      "stable": true
+      "stable": false
     }
   ]
 }
