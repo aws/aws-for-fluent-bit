@@ -14,6 +14,7 @@ Compared to `2.31.11` this release adds:
 * Bug - record_accessor/rewrite_tag fix to allow single character rules [fluent-bit:7330](https://github.com/fluent/fluent-bit/issues/7330)
 * Bug - filter_modify: fix memory clean up that can lead to crash [fluent-bit:7368](https://github.com/fluent/fluent-bit/issues/7368)
 * Bug - http input: fix memory initialization issue and enable on Windows [fluent-bit:7008](https://github.com/fluent/fluent-bit/issues/7008)
+* Enhancement - this version also includes a number of [patches](AWS_FLB_CHERRY_PICKS) from upstream 2.x releases and library upgrades which are not associated with any end-user impacting issue but should improve stability.
 
 ### 2.31.11
 This release includes:
