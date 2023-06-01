@@ -95,6 +95,15 @@ https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e
 # quick fix for S3 key $INDEX bug https://github.com/aws/aws-for-fluent-bit/issues/653
 https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e48218670681aef152aeedcf90a4593ac623470
 
+# lib upgrades: chunkio to 1.4.0 and monkey to commit 13a4ccd3
+https://github.com/PettitWesley/fluent-bit.git 2_31_12_lib_upgrades d56634674725aee5101fd17845730bbb66318928
+https://github.com/PettitWesley/fluent-bit.git 2_31_12_lib_upgrades e34af51fee5b5b11f0d239c80308a6bb80ab5f13
+# libbacktrace to 8602fda, cfl to v0.2.3, onigmo to 2bfee1eaf526ec2309822243a976cc792d99fbc3, lib: upgrade to 4bd9260
+https://github.com/PettitWesley/fluent-bit.git 2_31_12_lib_upgrades bd7ad8943e79d8515ceed8ef005a7440ef78ecf6
+
+# several upstream aws_util memory fixes (see commit message)
+https://github.com/PettitWesley/fluent-bit.git 2_31_12_lib_upgrades 97047e018cfcb1f79daecd7d3ccfbff21948e246
+
 # upstream 2.x in_exec bug fixes
 # resolves https://github.com/aws/aws-for-fluent-bit/issues/661
 https://github.com/fluent/fluent-bit.git master 6ed4aaabd063b8fdf0c034729e45429da87dc142
@@ -106,14 +115,13 @@ https://github.com/PettitWesley/fluent-bit.git upstream-tail-stat-fix 800bb813a0
 # in_http: fix memory initialization and enable it on windows https://github.com/fluent/fluent-bit/issues/7008
 https://github.com/fluent/fluent-bit.git master 7a882df735b28002983770f554b365dc63c0be7e
 
-# filter_modify: fix memory clean up: https://github.com/fluent/fluent-bit/issues/7368
-https://github.com/fluent/fluent-bit.git master 055704e1a5d047d81b2f4b861ccce79c72f80286
-
 # record_accessor/rewrite_tag fix to allow single character rules: https://github.com/fluent/fluent-bit/issues/7330
-https://github.com/fluent/fluent-bit.git master 415cf0ad4e4c85510bf371876b71cadd8940fcb8
+https://github.com/PettitWesley/fluent-bit.git 2_31_12_lib_upgrades 4c5c8ab56075b7ce63023f8c5c0c963200027a67
 
 # output thread, fix memory initialization: https://github.com/fluent/fluent-bit/pull/7303
 https://github.com/fluent/fluent-bit.git master 9a08168a8ab293fc8054180ee04e1176469df88b
 
+# filter_modify: fix memory clean up: https://github.com/fluent/fluent-bit/issues/7368
+https://github.com/PettitWesley/fluent-bit.git filter-modify-fix-aws-distro 1a72de13ad6cfd5a176e5d8712064a38a7d097f2
 
 
