@@ -15,7 +15,7 @@
 - [Public Images](#public-images)
     - [arm64 and x86 images](#arm64-and-amd64-images)
     - [Using the init tag](#using-the-init-tag)
-    - [Using SSM to find available versions](#using-ssm-to-find-available-versions)
+    - [Using SSM to find available versions and aws regions](#using-ssm-to-find-available-versions-and-aws-regions)
     - [Using SSM Parameters in CloudFormation Templates](#using-ssm-parameters-in-cloudFormation-templates)
     - [Using image tags](#using-image-tags)
         - [Amazon ECR Public Gallery](#amazon-ecr-public-gallery)
@@ -195,7 +195,7 @@ The `init` tags indicate that an image contains init process and supports multi-
 
 Note: Windows images with init tag are not available at the moment.
 
-#### Using SSM to find available versions
+#### Using SSM to find available versions and aws regions
 
 As of 2.0.0, there are SSM Public Parameters which allow you to see available versions. These parameters are available in every region that the image is available in. Any AWS account can query these parameters.
 
@@ -215,6 +215,8 @@ Example output:
     "/aws/service/aws-for-fluent-bit/2.0.0-windowsservercore"
 ]
 ```
+
+If there is no output, it means the aws for fluent bit image is not available in current region.
 
 To see the ECR repository ID for a given image tag, run the following:
 
