@@ -99,3 +99,21 @@ https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e4
 # resolves https://github.com/aws/aws-for-fluent-bit/issues/661
 https://github.com/fluent/fluent-bit.git master 6ed4aaabd063b8fdf0c034729e45429da87dc142
 https://github.com/fluent/fluent-bit.git master 62431ad0aede70d9748c372ebc7ac9a9917f9c9d
+
+# Tail memory fix picked from here: https://github.com/fluent/fluent-bit/commit/ed758a5eb85967cc66ca8dff269e7454b2394c3a
+https://github.com/PettitWesley/fluent-bit.git upstream-tail-stat-fix 800bb813a00f14a5f457cc69a89f8fb0f715e8c4
+
+# in_http: fix memory initialization and enable it on windows https://github.com/fluent/fluent-bit/issues/7008
+https://github.com/fluent/fluent-bit.git master 7a882df735b28002983770f554b365dc63c0be7e
+
+# filter_modify: fix memory clean up: https://github.com/fluent/fluent-bit/issues/7368
+https://github.com/fluent/fluent-bit.git master 055704e1a5d047d81b2f4b861ccce79c72f80286
+
+# record_accessor/rewrite_tag fix to allow single character rules: https://github.com/fluent/fluent-bit/issues/7330
+https://github.com/fluent/fluent-bit.git master 415cf0ad4e4c85510bf371876b71cadd8940fcb8
+
+# output thread, fix memory initialization: https://github.com/fluent/fluent-bit/pull/7303
+https://github.com/fluent/fluent-bit.git master 9a08168a8ab293fc8054180ee04e1176469df88b
+
+
+
