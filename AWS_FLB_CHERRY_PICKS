@@ -124,4 +124,14 @@ https://github.com/fluent/fluent-bit.git master 9a08168a8ab293fc8054180ee04e1176
 # filter_modify: fix memory clean up: https://github.com/fluent/fluent-bit/issues/7368
 https://github.com/PettitWesley/fluent-bit.git filter-modify-fix-aws-distro 1a72de13ad6cfd5a176e5d8712064a38a7d097f2
 
+# AWS core code self-review issue fixes
+# upstream version of this: https://github.com/fluent/fluent-bit/pull/7512/files
+# use calloc in all credential code to prevent freeing of garbage pointers 
+https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review eb48b79b34f91d36d28434390b976e882d553681 
+# fix brittle XML parsing
+https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review e6401ad3811b42dee0b7f92aba726cca4bee74ec
+# add pthread_mutex + trylock to protect cred providers
+https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review a1d7469da62a4b3ca869b10732f41562d668cfce
+# signv4: always use calloc
+https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review 3381c388ee956e7d0e7c0d5fc44683da75095a6a
 
