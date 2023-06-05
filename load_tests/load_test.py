@@ -285,7 +285,10 @@ def run_ecs_tests():
         # Wait until all subprocesses for validation completed
         for p in processes:
             p["process"].wait()
-            p["result"], err = p["process"].communicate()
+            stdout, stderr = p["process"].communicate()
+            print(f'raw validator stdout: {stdout}')
+            print(f'raw validator stderr: {stderr}')
+            p["result"] = stdout
         print(f'Test {input_logger["name"]} to {OUTPUT_PLUGIN} complete.')
 
         parsedValidationOutputs = list(map(lambda p: {
