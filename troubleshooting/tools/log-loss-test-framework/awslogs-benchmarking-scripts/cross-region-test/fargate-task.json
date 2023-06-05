@@ -1,0 +1,96 @@
+{
+    "family": "awslogs-benchmarking-fargate-cross-region-${MAX_BUFFER_SIZE}-buffer-automated-${SIZE_IN_KB}-log",
+    "taskRoleArn": "arn:aws:iam::144718711470:role/ecs_task_role", 
+    "executionRoleArn": "arn:aws:iam::144718711470:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "cpu": "1024",
+    "memory": "2048",
+    "containerDefinitions": [
+        {
+            "essential": false,
+            "image": "144718711470.dkr.ecr.us-west-2.amazonaws.com/log-loss-benchmark-logger:latest",
+            "name": "logger",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "awslogs-benchmarking-output",
+                    "awslogs-region": "${LOG_REGION}",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "cross-region-test",
+                    "mode": "non-blocking",
+                    "max-buffer-size": "${MAX_BUFFER_SIZE}"
+                }
+            },
+            "environment": [
+				{
+					"name": "SIZE_IN_KB",
+					"value": "${SIZE_IN_KB}"
+				},
+                {
+					"name": "TOTAL_SIZE_IN_MB",
+					"value": "${TOTAL_SIZE_IN_MB}"
+				},
+                {
+					"name": "THROUGHPUT_IN_KB",
+					"value": "${THROUGHPUT}"
+				},
+                {
+					"name": "CYCLE_TIME_IN_SECONDS",
+					"value": "1"
+				}
+			],
+            "memoryReservation": 50
+        },
+        {
+            "essential": true,
+            "image": "144718711470.dkr.ecr.us-west-2.amazonaws.com/cw-log-loss-framework-validator:latest",
+            "name": "validator",
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "awslogs-benchmarking-results",
+                    "awslogs-region": "${TASK_REGION}",
+                    "awslogs-create-group": "true",
+                    "awslogs-stream-prefix": "cross-region-test"
+                }
+            },
+            "dependsOn": [
+                {
+                  "containerName": "logger",
+                  "condition": "SUCCESS"
+                }
+            ],
+            "memoryReservation": 100,
+            "environment": [
+				{
+					"name": "SIZE_IN_KB",
+					"value": "${SIZE_IN_KB}"
+				},
+                {
+					"name": "TOTAL_SIZE_IN_MB",
+					"value": "${TOTAL_SIZE_IN_MB}"
+				},
+                {
+					"name": "THROUGHPUT_IN_KB",
+					"value": "${THROUGHPUT}"
+				},
+                {
+					"name": "TEST_NAME",
+					"value": "${TEST_NAME}"
+				},
+                {
+					"name": "AWS_REGION",
+					"value": "${LOG_REGION}"
+				},
+                {
+					"name": "CW_LOG_GROUP_NAME",
+					"value": "awslogs-benchmarking-output"
+				},
+                {
+					"name": "CW_LOG_STREAM_PREFIX",
+					"value": "cross-region-test/logger/"
+				}
+			]
+        }
+    ]
+}
