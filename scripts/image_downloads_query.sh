@@ -1,4 +1,11 @@
+#!/bin/bash
+
 VERSION=$1
+if [ -z "$VERSION" ]; then
+    echo "Usage $0 <version>"
+    echo "Example: $0 2.31.11 "
+    exit 1;
+fi
 
 image_shas=$(aws ecr describe-images --registry-id 906394416424 --repository-name aws-for-fluent-bit --region us-west-2 --image-ids imageTag=arm64-${VERSION} imageTag=amd64-${VERSION} imageTag=init-arm64-${VERSION} imageTag=init-amd64-${VERSION} imageTag=${VERSION}-ltsc2019 imageTag=${VERSION}-ltsc2022 | jq -r '.imageDetails[] | objects | .imageDigest')
 
@@ -34,3 +41,4 @@ WHERE
       requestparameters like '%${image_sha_array[5]}%'
     )
 "
+
