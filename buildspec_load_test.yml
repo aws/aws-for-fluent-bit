@@ -52,12 +52,6 @@ phases:
       - python -m venv venv
       - source venv/bin/activate
       - pip install -r ./load_tests/requirements.txt
-      # AWS configure sts temp credentials
-      - |
-        CREDS=`aws sts assume-role --role-arn ${LOAD_TEST_CFN_ROLE_ARN} --duration-seconds 900 --role-session-name load-test-cfn`
-        aws configure set aws_access_key_id `echo $CREDS | jq -r .Credentials.AccessKeyId`
-        aws configure set aws_secret_access_key `echo $CREDS | jq -r .Credentials.SecretAccessKey`
-        aws configure set aws_session_token `echo $CREDS | jq -r .Credentials.SessionToken`
       - |
         if [ "${PLATFORM}" == "EKS" ]; then
           aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
@@ -65,8 +59,6 @@ phases:
       # Create and set up related testing resources
       - python ./load_tests/load_test.py create_testing_resources
       - source ./load_tests/setup_test_environment.sh
-      # Remove sts temp credentials, delegate responsibility to py script
-      - rm ~/.aws/credentials
       # Run load tests on corresponding platform
       - python ./load_tests/load_test.py ${PLATFORM}
     finally:
