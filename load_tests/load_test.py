@@ -200,8 +200,6 @@ def run_ecs_tests():
         session = get_sts_boto_session()
 
         client = session.client('ecs')
-        
-        processes = []
 
         # Delete corresponding testing data for a fresh start
         delete_testing_data(session)
@@ -227,6 +225,7 @@ def run_ecs_tests():
     for input_logger in INPUT_LOGGERS:
         # Wait until task stops and start validation
         session = get_sts_boto_session()
+        processes = []
 
         client = session.client('ecs')
         waiter = client.get_waiter('tasks_stopped')
