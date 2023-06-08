@@ -200,7 +200,6 @@ def run_ecs_tests():
         session = get_sts_boto_session()
 
         client = session.client('ecs')
-        waiter = client.get_waiter('tasks_stopped')
         
         processes = []
 
@@ -224,7 +223,13 @@ def run_ecs_tests():
         # Validation input type banner
         print(f'\nTest {input_logger["name"]} to {OUTPUT_PLUGIN} in progress...')
 
+    # wait for tasks and validate
+    for input_logger in INPUT_LOGGERS:
         # Wait until task stops and start validation
+        session = get_sts_boto_session()
+
+        client = session.client('ecs')
+        waiter = client.get_waiter('tasks_stopped')
         for throughput in THROUGHPUT_LIST:
             task_arn = names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn']
             waiter.wait(
@@ -266,6 +271,9 @@ def run_ecs_tests():
                 os.environ['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
                 os.environ['DESTINATION'] = 's3'
 
+            # integ test sessions have expired due to long waits for tasks to complete
+            session = get_sts_boto_session()
+
             # Go script environment with sts cred variables
             credentials = session.get_credentials()
             auth_env = {
@@ -286,8 +294,8 @@ def run_ecs_tests():
         for p in processes:
             p["process"].wait()
             stdout, stderr = p["process"].communicate()
-            print(f'raw validator stdout: {stdout}')
-            print(f'raw validator stderr: {stderr}')
+            print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stdout: {stdout}')
+            print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stderr: {stderr}')
             p["result"] = stdout
         print(f'Test {input_logger["name"]} to {OUTPUT_PLUGIN} complete.')
 
@@ -513,7 +521,8 @@ def get_sts_boto_session():
     # ARN and a role session name.
     assumed_role_object = sts_client.assume_role(
         RoleArn=os.environ["LOAD_TEST_CFN_ROLE_ARN"],
-        RoleSessionName="load-test-cfn"
+        RoleSessionName="load-test-cfn",
+        DurationSeconds=3600
     )
 
     # From the response that contains the assumed role, get the temporary 
