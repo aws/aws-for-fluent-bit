@@ -520,7 +520,7 @@ def get_sts_boto_session():
     # ARN and a role session name.
     assumed_role_object = sts_client.assume_role(
         RoleArn=os.environ["LOAD_TEST_CFN_ROLE_ARN"],
-        RoleSessionName="load-test-python",
+        RoleSessionName="load-test-cfn",
         DurationSeconds=3600
     )
 
