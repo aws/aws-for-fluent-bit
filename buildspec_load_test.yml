@@ -56,7 +56,7 @@ phases:
         if [ "${PLATFORM}" == "EKS" ]; then
           aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
         fi
-      - CREDS==$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
+      - CREDS=$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
       - export CREDS
       - export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
       - export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
