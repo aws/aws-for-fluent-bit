@@ -80,10 +80,6 @@ def calculate_total_input_number(throughput):
 # 1. Configure task definition for each load test based on existing templates
 # 2. Register generated task definition
 def generate_task_definition(session, throughput, input_logger, s3_fluent_config_arn):
-    if not hasattr(generate_task_definition, "counter"):
-        generate_task_definition.counter = 0  # it doesn't exist yet, so initialize it
-    generate_task_definition.counter += 1
-
     # Generate configuration information for STD and TCP tests
     std_config      = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.STD_INPUT_PREFIX, throughput)
     custom_config   = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.CUSTOM_INPUT_PREFIX, throughput)
