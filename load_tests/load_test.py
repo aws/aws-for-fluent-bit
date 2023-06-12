@@ -394,7 +394,7 @@ def parse_json_template(template, dict):
     for key in dict:
             if(key[0] == '$'):
                 data = data.replace(key, dict[key])
-            elif(key == OUTPUT_PLUGIN):
+            else:
                 for sub_key in dict[key]:
                     data = data.replace(sub_key, dict[key][sub_key])
     return data
