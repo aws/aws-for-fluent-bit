@@ -210,7 +210,7 @@ def run_ecs_tests():
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
-                    taskDefinition=f'{PREFIX}{OUTPUT_PLUGIN}-{throughput}'
+                    taskDefinition=f'{PREFIX}{OUTPUT_PLUGIN}-{throughput}-{input_logger['name']}'
             )
             names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']
         
