@@ -220,12 +220,12 @@ def run_ecs_tests():
     # wait for tasks and validate
     for input_logger in INPUT_LOGGERS:
         # Wait until task stops and start validation
-        session = get_sts_boto_session()
         processes = []
-
-        client = session.client('ecs')
-        waiter = client.get_waiter('tasks_stopped')
+        
         for throughput in THROUGHPUT_LIST:
+            session = get_sts_boto_session()
+            client = session.client('ecs')
+            waiter = client.get_waiter('tasks_stopped')
             task_arn = names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn']
             waiter.wait(
                 cluster=ecs_cluster_name,
