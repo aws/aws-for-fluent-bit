@@ -1,5 +1,5 @@
 {
-	"family": "load-test-fluent-bit-s3-$THROUGHPUT",
+	"family": "load-test-fluent-bit-s3-$THROUGHPUT-$INPUT_NAME",
 	"taskRoleArn": "$TASK_ROLE_ARN",
 	"executionRoleArn": "$TASK_EXECUTION_ROLE_ARN",
 	"networkMode": "bridge",
