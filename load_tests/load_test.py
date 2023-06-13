@@ -197,9 +197,6 @@ def run_ecs_tests():
 
         client = session.client('ecs')
 
-        # Delete corresponding testing data for a fresh start
-        delete_testing_data(session)
-
         # S3 Fluent Bit extra config data
         s3_fluent_config_arn = publish_fluent_config_s3(session, input_logger)
 
@@ -411,27 +408,22 @@ def publish_fluent_config_s3(session, input_logger):
     )
     return f'arn:aws:s3:::{bucket_name}/{OUTPUT_PLUGIN}-test/{PLATFORM}/fluent-{input_logger["name"]}.conf'
 
-# The following method is used to clear data between
-# testing batches
+# The following method is used to clear data after all tests run
 def delete_testing_data(session):
-    # All testing data related to the plugin option will be deleted
-    if OUTPUT_PLUGIN == 'cloudwatch':
-        # Delete associated cloudwatch log streams
-        client = session.client('logs')
-        response = client.describe_log_streams(
-            logGroupName=os.environ['CW_LOG_GROUP_NAME']
+    # Delete associated cloudwatch log streams
+    client = session.client('logs')
+    response = client.describe_log_streams(
+        logGroupName=os.environ['CW_LOG_GROUP_NAME']
+    )
+    for stream in response["logStreams"]:
+        client.delete_log_stream(
+            logGroupName=os.environ['CW_LOG_GROUP_NAME'],
+            logStreamName=stream["logStreamName"]
         )
-        for stream in response["logStreams"]:
-            client.delete_log_stream(
-                logGroupName=os.environ['CW_LOG_GROUP_NAME'],
-                logStreamName=stream["logStreamName"]
-            )
-    else:
-        # Delete associated s3 bucket objects
-        s3 = session.resource('s3')
-        bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
-        s3_objects = bucket.objects.filter(Prefix=f'{OUTPUT_PLUGIN}-test/{PLATFORM}/')
-        s3_objects.delete()
+    # Empty s3 bucket
+    s3 = session.resource('s3')
+    bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
+    bucket.objects.all().delete()
 
 def generate_daemonset_config(throughput):
     daemonset_config_dict = {
@@ -484,15 +476,15 @@ def delete_testing_resources():
     # Create sts session
     session = get_sts_boto_session()
 
+    # delete all logs uploaded by Fluent Bit
+    # delete all S3 config files
+    delete_testing_data(session)
+
     # All related testing resources will be destroyed once the stack is deleted 
     client = session.client('cloudformation')
     client.delete_stack(
         StackName=TESTING_RESOURCES_STACK_NAME
     )
-    # Empty s3 bucket
-    s3 = session.resource('s3')
-    bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
-    bucket.objects.all().delete()
     # scale down eks cluster
     if PLATFORM == 'eks':
         os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
