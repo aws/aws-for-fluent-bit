@@ -212,7 +212,8 @@ def run_ecs_tests():
                     launchType='EC2',
                     taskDefinition=f'{PREFIX}{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
             )
-            names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']
+            print(f'run_task_response={response}')
+            names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']
         
         # Validation input type banner
         print(f'\nTest {input_logger["name"]} to {OUTPUT_PLUGIN} in progress...')
@@ -226,7 +227,7 @@ def run_ecs_tests():
             session = get_sts_boto_session()
             client = session.client('ecs')
             waiter = client.get_waiter('tasks_stopped')
-            task_arn = names[f'{OUTPUT_PLUGIN}_{throughput}_task_arn']
+            task_arn = names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn']
             waiter.wait(
                 cluster=ecs_cluster_name,
                 tasks=[
