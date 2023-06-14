@@ -11,6 +11,7 @@ import create_testing_resources.kinesis_s3_firehose.resource_resolver as resourc
 
 WAITER_SLEEP = 180
 MAX_WAITER_ATTEMPTS = 30
+MAX_WAITER_DESCRIBE_FAILURES = 5
 IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
@@ -189,6 +190,7 @@ def create_testing_resources():
 def wait_ecs_tasks(ecs_cluster_name, task_arn):
     running = True
     attempts = 0
+    failures = 0
     print(f'waiting on task_arn={task_arn}')
     client = boto3.client('ecs')
 
@@ -202,6 +204,13 @@ def wait_ecs_tasks(ecs_cluster_name, task_arn):
                 ]
             )
         print(f'describe_task_wait_on={response}')
+        if len(response['failures']) > 0:
+            # above we print the full actual reponse for debugging
+            print('decribe_task failure')
+            failures += 1
+            if failures >= MAX_WAITER_DESCRIBE_FAILURES:
+                break
+            continue
         status = response['tasks'][0]['lastStatus']
         print(f'task {task_arn} is {status}')
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-lifecycle.html
