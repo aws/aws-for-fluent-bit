@@ -81,7 +81,7 @@ def calculate_total_input_number(throughput):
 
 # 1. Configure task definition for each load test based on existing templates
 # 2. Register generated task definition
-def generate_task_definition(session, throughput, input_logger, s3_fluent_config_arn):
+def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     # Generate configuration information for STD and TCP tests
     std_config      = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.STD_INPUT_PREFIX, throughput)
     custom_config   = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.CUSTOM_INPUT_PREFIX, throughput)
@@ -144,7 +144,8 @@ def generate_task_definition(session, throughput, input_logger, s3_fluent_config
     if IS_TASK_DEFINITION_PRINTED:
         print("Registering task definition:")
         print(json.dumps(task_def, indent=4))
-        session.client('ecs').register_task_definition(
+        client = boto3.client('ecs')
+        client.register_task_definition(
             **task_def
         )
     else:
@@ -223,17 +224,15 @@ def run_ecs_tests():
     # Run ecs tests once per input logger type
     test_results = []
     for input_logger in INPUT_LOGGERS:
-        session = get_sts_boto_session()
-
-        client = session.client('ecs')
+        client = boto3.client('ecs')
 
         # S3 Fluent Bit extra config data
-        s3_fluent_config_arn = publish_fluent_config_s3(session, input_logger)
+        s3_fluent_config_arn = publish_fluent_config_s3(input_logger)
 
         # Run ecs tasks and store task arns
         for throughput in THROUGHPUT_LIST:
             os.environ['THROUGHPUT'] = throughput
-            generate_task_definition(session, throughput, input_logger, s3_fluent_config_arn)
+            generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
@@ -277,29 +276,23 @@ def run_ecs_tests():
             test_configuration = {
                 "input_configuration": input_configuration,
             }
-            if OUTPUT_PLUGIN == 'cloudwatch':
-                os.environ['LOG_PREFIX'] = resource_resolver.get_destination_cloudwatch_prefix(test_configuration["input_configuration"])
-                os.environ['DESTINATION'] = 'cloudwatch'
-            else:
-                os.environ['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
-                os.environ['DESTINATION'] = 's3'
 
-            # integ test sessions have expired due to long waits for tasks to complete
-            session = get_sts_boto_session()
-
-            # Go script environment with sts cred variables
-            credentials = session.get_credentials()
-            auth_env = {
+            validator_env = {
                 **os.environ.copy(),
-                "AWS_ACCESS_KEY_ID": credentials.access_key,
-                "AWS_SECRET_ACCESS_KEY": credentials.secret_key,
-                "AWS_SESSION_TOKEN": credentials.token
             }
+
+            if OUTPUT_PLUGIN == 'cloudwatch':
+                validator_env['LOG_PREFIX'] = resource_resolver.get_destination_cloudwatch_prefix(test_configuration["input_configuration"])
+                validator_env['DESTINATION'] = 'cloudwatch'
+            else:
+                validator_env['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
+                validator_env['DESTINATION'] = 's3'
+
             processes.append({
                 "input_logger": input_logger,
                 "test_configuration": test_configuration,
                 "process": subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay], stdout=subprocess.PIPE,
-                    env=auth_env
+                    env=validator_env
                 )
             })
 
@@ -418,9 +411,9 @@ def parse_json_template(template, dict):
     return data
 
 # Returns s3 arn
-def publish_fluent_config_s3(session, input_logger):
+def publish_fluent_config_s3(input_logger):
     bucket_name = os.environ['S3_BUCKET_NAME']
-    s3 = session.client('s3')
+    s3 = boto3.client('s3')
     s3.upload_file(
         input_logger["fluent_config_file_path"],
         bucket_name,
