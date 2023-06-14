@@ -14,6 +14,8 @@ stackOutputs=$(aws cloudformation describe-stacks --stack-name ${LOG_STORAGE_STA
 read -r -a outputArray <<< "$stackOutputs"
 export S3_BUCKET_NAME="${outputArray[0]}"
 
+export AWS_DEFAULT_REGION=${AWS_REGION}
+
 # Set necessary images as env vars
 export FLUENT_BIT_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest"
 export ECS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image:latest"
