@@ -9,8 +9,8 @@ import validation_bar
 from datetime import datetime, timezone
 import create_testing_resources.kinesis_s3_firehose.resource_resolver as resource_resolver
 
-WAITER_SLEEP = 180
-MAX_WAITER_ATTEMPTS = 30
+WAITER_SLEEP = 300
+MAX_WAITER_ATTEMPTS = 24
 MAX_WAITER_DESCRIBE_FAILURES = 5
 IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
