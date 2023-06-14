@@ -202,7 +202,7 @@ def wait_ecs_tasks(ecs_cluster_name, task_arn):
                 ]
             )
         print(f'describe_task_wait_on={response}')
-        status = response['lastStatus']
+        status = response['tasks'][0]['lastStatus']
         print(f'task {task_arn} is {status}')
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-lifecycle.html
         if status == 'STOPPED' or status == 'DELETED':
