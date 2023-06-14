@@ -9,6 +9,8 @@ import validation_bar
 from datetime import datetime, timezone
 import create_testing_resources.kinesis_s3_firehose.resource_resolver as resource_resolver
 
+WAITER_SLEEP = 180
+MAX_WAITER_ATTEMPTS = 30
 IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
@@ -181,6 +183,34 @@ def create_testing_resources():
         os.chdir(f'./load_tests/{sys.argv[1]}/{PLATFORM}')
         os.system('cdk deploy --require-approval never')
 
+# this function will log the state of the task at each iteration
+# to help debug
+def wait_ecs_tasks(ecs_cluster_name, task_arn):
+    running = True
+    attempts = 0
+    print(f'waiting on task_arn={task_arn}')
+    client = boto3.client('ecs')
+
+    while running:
+        time.sleep(WAITER_SLEEP)
+        attempts += 1
+        response = client.describe_tasks(
+                cluster=ecs_cluster_name,
+                tasks=[
+                    task_arn,
+                ]
+            )
+        print(f'describe_task_wait_on={response}')
+        status = response['lastStatus']
+        print(f'task {task_arn} is {status}')
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-lifecycle.html
+        if status == 'STOPPED' or status == 'DELETED':
+            running = False
+        if attempts >= MAX_WAITER_ATTEMPTS:
+            print(f'stopped tasks waiter failed after {MAX_WAITER_ATTEMPTS}')
+            running = False
+
+
 # For tests on ECS, we need to:
 #  1. generate and register task definitions based on templates at /load_tests/task_definitons
 #  2. run tasks with different throughput levels for 10 mins
@@ -188,7 +218,7 @@ def create_testing_resources():
 #  4. validate logs and print the result
 def run_ecs_tests():
     ecs_cluster_name = os.environ['ECS_CLUSTER_NAME']
-    names = locals()
+    names = {}
 
     # Run ecs tests once per input logger type
     test_results = []
@@ -221,19 +251,9 @@ def run_ecs_tests():
         processes = []
         
         for throughput in THROUGHPUT_LIST:
-            session = get_sts_boto_session()
-            client = session.client('ecs')
-            waiter = client.get_waiter('tasks_stopped')
+            client = boto3.client('ecs')
             task_arn = names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn']
-            waiter.wait(
-                cluster=ecs_cluster_name,
-                tasks=[
-                    task_arn,
-                ],
-                WaiterConfig={
-                    'MaxAttempts': 600
-                }
-            )
+            wait_ecs_tasks(ecs_cluster_name, task_arn)
             response = client.describe_tasks(
                 cluster=ecs_cluster_name,
                 tasks=[
@@ -241,7 +261,7 @@ def run_ecs_tests():
                 ]
             )
             print(f'task_arn={task_arn}')
-            print(f'response={response}')
+            print(f'describe_tasks_response={response}')
             check_app_exit_code(response)
             input_record = calculate_total_input_number(throughput)
             start_time = response['tasks'][0]['startedAt']
