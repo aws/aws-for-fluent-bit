@@ -253,6 +253,9 @@ def run_ecs_tests():
         # Validation input type banner
         print(f'\nTest {input_logger["name"]} to {OUTPUT_PLUGIN} in progress...')
 
+    # Tasks need time to run
+    time.sleep(600)
+
     # wait for tasks and validate
     for input_logger in INPUT_LOGGERS:
         # Wait until task stops and start validation
@@ -282,7 +285,6 @@ def run_ecs_tests():
                 # and ECS already reaped/deleted it
                 # try skipping straight to validation
                 log_delay = 'not supported' # we don't actually use this right now in results
-
 
             # Validate logs
             os.environ['LOG_SOURCE_NAME'] = input_logger["name"]
@@ -327,9 +329,6 @@ def run_ecs_tests():
         }, processes))
 
         test_results.extend(parsedValidationOutputs)
-
-        # Wait for task resources to free up
-        time.sleep(60)
 
     # Print output
     print("\n\nValidation results:\n")
