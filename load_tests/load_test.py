@@ -11,7 +11,7 @@ import create_testing_resources.kinesis_s3_firehose.resource_resolver as resourc
 
 WAITER_SLEEP = 300
 MAX_WAITER_ATTEMPTS = 24
-MAX_WAITER_DESCRIBE_FAILURES = 5
+MAX_WAITER_DESCRIBE_FAILURES = 2
 IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
@@ -270,12 +270,19 @@ def run_ecs_tests():
             )
             print(f'task_arn={task_arn}')
             print(f'describe_tasks_response={response}')
-            check_app_exit_code(response)
             input_record = calculate_total_input_number(throughput)
-            start_time = response['tasks'][0]['startedAt']
-            stop_time = response['tasks'][0]['stoppedAt']
-            log_delay = get_log_delay(parse_time(stop_time)-parse_time(start_time)-LOGGER_RUN_TIME_IN_SECOND)
-            set_buffer(parse_time(stop_time))
+            if len(response['failures']) == 0:
+                check_app_exit_code(response)
+                start_time = response['tasks'][0]['startedAt']
+                stop_time = response['tasks'][0]['stoppedAt']
+                log_delay = get_log_delay(parse_time(stop_time)-parse_time(start_time)-LOGGER_RUN_TIME_IN_SECOND)
+                set_buffer(parse_time(stop_time))
+            else:
+                # missing tasks might mean the task stopped some time ago
+                # and ECS already reaped/deleted it
+                # try skipping straight to validation
+                log_delay = 'not supported' # we don't actually use this right now in results
+
 
             # Validate logs
             os.environ['LOG_SOURCE_NAME'] = input_logger["name"]
