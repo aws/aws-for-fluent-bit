@@ -75,8 +75,8 @@ $env:FLUENT_BIT_IMAGE = $FluentBitImage
 $env:TAG = -join ((65..90) + (97..122) | Get-Random -Count 10 | % {[char]$_})
 # AWS_FOR_FLUENT_BIT_CONTAINER_NAME is the name for the fluent-bit container ran for each service.
 $env:AWS_FOR_FLUENT_BIT_CONTAINER_NAME = "aws-for-fluent-bit-$($env:TAG)"
-$env:CW_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator-windows"
-$env:S3_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/s3-integ-validator-windows"
+$env:CW_INTEG_VALIDATOR_IMAGE = "cw-integ-validator-windows:latest"
+$env:S3_INTEG_VALIDATOR_IMAGE = "s3-integ-validator-windows:latest"
 
 # Windows specific settings.
 $env:ARCHITECTURE= "x86-64"
@@ -114,6 +114,18 @@ Function Install-Package {
         Invoke-WebRequest "https://github.com/docker/compose/releases/download/v${DockerComposeVersion}/docker-compose-Windows-x86_64.exe" -UseBasicParsing -OutFile $Env:ProgramFiles\Docker\docker-compose.exe
     }
     Write-Host $( docker-compose version )
+
+    # build validator images
+    docker build -t $env:CW_INTEG_VALIDATOR_IMAGE --file "${IntegTestRoot}/validate_cloudwatch/Dockerfile" "${IntegTestRoot}/validate_cloudwatch/"
+    if ($LASTEXITCODE)
+    {
+        throw ("Failed to build $env:CW_INTEG_VALIDATOR_IMAGE image")
+    }
+    docker build -t $env:S3_INTEG_VALIDATOR_IMAGE --file "${IntegTestRoot}/s3/Dockerfile.windows" "${IntegTestRoot}/s3/"
+    if ($LASTEXITCODE)
+    {
+        throw ("Failed to build $env:S3_INTEG_VALIDATOR_IMAGE image")
+    }
 }
 
 Function Test-Command {

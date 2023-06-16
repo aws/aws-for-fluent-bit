@@ -2,7 +2,7 @@ version: "2"
 
 services:
     validate-s3:
-        image: ${S3_INTEG_VALIDATOR_IMAGE}:${ARCHITECTURE}
+        image: ${S3_INTEG_VALIDATOR_IMAGE}
         environment:
             - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
             - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
