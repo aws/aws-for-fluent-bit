@@ -75,8 +75,8 @@ $env:FLUENT_BIT_IMAGE = $FluentBitImage
 $env:TAG = -join ((65..90) + (97..122) | Get-Random -Count 10 | % {[char]$_})
 # AWS_FOR_FLUENT_BIT_CONTAINER_NAME is the name for the fluent-bit container ran for each service.
 $env:AWS_FOR_FLUENT_BIT_CONTAINER_NAME = "aws-for-fluent-bit-$($env:TAG)"
-$env:CW_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator:latest"
-$env:S3_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/s3-integ-validator:latest"
+$env:CW_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator-windows"
+$env:S3_INTEG_VALIDATOR_IMAGE = "906394416424.dkr.ecr.us-west-2.amazonaws.com/s3-integ-validator-windows"
 
 # Windows specific settings.
 $env:ARCHITECTURE= "x86-64"
