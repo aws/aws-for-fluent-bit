@@ -2,9 +2,17 @@
 export AWS_REGION="us-west-2"
 export PROJECT_ROOT="$(pwd)"
 export VOLUME_MOUNT_CONTAINER="/out"
+export ARCHITECTURE=$(uname -m)
+# For arm, uname evaluates to 'aarch64' but everywhere else in the pipline
+# we use 'arm64'
+if [ "$ARCHITECTURE" = "aarch64" ]; then
+    ARCHITECTURE="arm64"
+fi
+
+export CW_INTEG_VALIDATOR_IMAGE="${CW_INTEG_VALIDATOR_IMAGE_BASE}-${ARCHITECTURE}"
+export S3_INTEG_VALIDATOR_IMAGE="${S3_INTEG_VALIDATOR_IMAGE_BASE}-${ARCHITECTURE}"
 
 test_cloudwatch() {
-	export ARCHITECTURE=$(uname -m)
 	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
 	# Tag is used to name the log stream; each test run has a unique (random) log stream name
 	export TAG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
@@ -126,7 +134,6 @@ test_kinesis_firehose() {
 
 test_s3() {
 	# different S3 prefix for each test
-	export ARCHITECTURE=$(uname -m)
 	export S3_PREFIX_PUT_OBJECT="logs/${ARCHITECTURE}/putobject"
 	export S3_PREFIX_MULTIPART="logs/${ARCHITECTURE}/multipart"
 	# Tag is used in the s3 keys; each test run has a unique (random) tag
