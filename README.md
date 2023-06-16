@@ -26,7 +26,7 @@
 - [Using the AWS Plugins outside of a container](#using-the-aws-plugins-outside-of-a-container)
 - [Running aws-for-fluent-bit Windows containers](#running-aws-for-fluent-bit-windows-containers)
 - [Development](#development)
-    - [Releasing](#releasing)
+    - [Local testing](#local-testing)
     - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
 - [Fluent Bit Examples](#fluent-bit-examples)
 - [License](#license)
@@ -326,11 +326,16 @@ For more details about running Fluent Bit Windows containers in Amazon ECS, plea
 
 ### Development
 
-#### Releasing
+#### Local testing
 
 Use `make release` to build the image.
+
 To run the integration tests, run `make integ-dev`. The `make integ-dev` command will run the integration tests for all of our plugins-
 kinesis streams, kinesis firehose, and cloudwatch.
+
+The integ tests require the following env vars to be set:
+* `CW_INTEG_VALIDATOR_IMAGE`: Build the [integ/validate_cloudwatch/](integ/validate_cloudwatch/) folder with `docker build` and set the resulting image as the value of this env var.
+* `S3_INTEG_VALIDATOR_IMAGE`: Build the [integ/s3/](integ/s3/) folder with `docker build` and set the resulting image as the value of this env var.
 
 To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis` or `make integ-firehose`.
 

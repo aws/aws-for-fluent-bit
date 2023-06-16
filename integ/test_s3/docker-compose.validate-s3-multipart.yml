@@ -2,9 +2,7 @@ version: "2"
 
 services:
     validate-s3-multipart:
-        build:
-            context: ${PROJECT_ROOT}/integ/s3
-            dockerfile: ${ValidateS3Dockerfile}
+        image: ${S3_INTEG_VALIDATOR_IMAGE}
         environment:
             - "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
             - "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
