@@ -155,7 +155,7 @@ Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) call out
 
 *We strongly recommend that you always lock deployments to a specific immutable version tag, rather than using our `stable` or `latest` tags.* Using the `stable` or `latest` tag directly in prod has the following downsides:
 
-1. *Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. This is because the `stable` and `latest` tags are mutable and change over time. 
+1. *Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. Alternatively, you can check the version deployed via the Fluent Bit logs; see [what version did I deploy?](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#which-version-did-i-deploy). This is because the `stable` and `latest` tags are mutable and change over time. 
 2. *Mixed deployments*: If you are in the middle of a deployment when we release an update to the `stable` or `latest` immutable tags, some of your deployment may have deployed the previous version, and the rest will deploy the new version. 
 
 
