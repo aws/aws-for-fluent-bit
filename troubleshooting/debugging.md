@@ -64,10 +64,14 @@
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
 - [Runbooks](#runbooks)
-    - [FireLens Crash Report Runbook](#firelens-crash-report-runbook)
+    - [Centralized Issue Runbook](#centralized-issue-runbook)
+    - [Crash Report Runbook](#crash-report-runbook)
         - [1. Build and distribute a core dump S3 uploader image](#1-build-and-distribute-a-core-dump-s3-uploader-image)
         - [2. Setup your own repro attempt](#2-setup-your-own-repro-attempt)
         - [Template: Replicate FireLens case in Fargate](#template-replicate-firelens-case-in-fargate)
+    - [Log Loss Investigation Runbook](#log-loss-investigation-runbook)
+        - [CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending](#cloudwatch-log-insights-queries-to-check-if-fluent-bit-ingesting-data-and-sending)
+        - [CloudWatch Log Insights Queries to check Tail Input](#cloudwatch-log-insights-queries-to-check-tail-input)
 - [Testing](#testing)
     - [Simple TCP Logger Script](#simple-tcp-logger-script)
     - [Run Fluent Bit unit tests in a docker container](#run-fluent-bit-unit-tests-in-a-docker-container)
@@ -83,6 +87,7 @@
     - [Which version did I deploy?](#which-version-did-i-deploy)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
+    - [How to find image tag version from SHA or image SHA for tag using regional ECR repos?]
 - [Case Studies](#case-studies)
     - [AWS for Fluent Bit Stability Tests](#aws-for-fluent-bit-stability-tests)
         - [Rate of network errors](#rate-of-network-errors)
@@ -524,6 +529,7 @@ When you experience a problem, before you cut us an issue, try the following.
 4. If you use Amazon ECS FireLens, enable the AWSLogs driver for Fluent Bit as shown in all of our [examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/cloudwatchlogs/task-definition-cloudwatch_logs.json#L14). 
 5. Try upgrading to our [latest](https://github.com/aws/aws-for-fluent-bit/releases) or [latest stable](https://github.com/aws/aws-for-fluent-bit/tree/mainline#latest-stable-version) version. 
 6. If you are using a Core Fluent Bit C plugin, consider switching to the Go plugin version if possible. Or switch from Go to C. See our guide on [C vs Go plugins](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins). Often an issue will only affect one version of the plugin.
+7. See our [Centralized Issue Runbook](#centralized-issue-runbook) for deeper steps and links for investigating any issue. 
 
 #### Enable Debug Logging
 
@@ -1057,12 +1063,113 @@ net.dns.mode LEGACY
 
 ## Runbooks
 
+### Centralized Issue Runbook
 
-#### FireLens Crash Report Runbook
+This runbook collects all of the other runbooks and guidance for handling issue reports into a single guide. If you are a customer, this runbook covers the information we need from you, the mitigations we will recommend, and the steps we'll take to investigate your issue.
 
-When you recieve a SIGSEGV/crash report from a FireLens customer, perform the following steps. 
+#### 1. Information to request
 
-##### 1. Build and distribute a core dump S3 uploader image
+The following information should be obtained from the customer.
+
+1. Full **Fluent Bit configuration**, including parser files, multiline parser files, stream processing files.
+2. **Where/how is Fluent Bit deployed?**
+    * Deployment configuration: ECS Task Definition, K8s config map and deployment yaml, etc
+3. Which **image version** was used? AWS release or upstream release or custom build? Do you customize the Fluent Bit container entrypoint command?
+    1. From logs: [what version did I deploy?](#which-version-did-i-deploy)
+    2. From Dockerfile:
+        1. Dockerfile may directly specify a tag version
+        2. Dockerfile may specify a SHA: [How to find image tag version from SHA or image SHA for tag using regional ECR repos?](#how-to-find-image-tag-version-from-sha-or-image-sha-for-tag-using-regional-ecr-repos)
+        3. Internal build: See internal runbook notes.
+4. **Fluent Bit log output** 
+    * Ideally we want log output from some time before the issue occurred. Debug log output is most ideal. [How to enable debug logging](#enable-debug-logging).
+    * What error or warn logs do you see?
+5. Investigate **deep details** on the reported issue. 
+    * How did you determine that the issue occurred? (ex: How many logs were lost, from which output, from what time frame, was it before or after Fluent Bit stopped/restarted?). 
+    * Is the issue associated with a specific plugin/set of plugins used in your configuration?
+    * What steps have you attempted so far to mitigate/troubleshoot?
+6. **Fluent Bit load/throughput**: how much throughput does each output instance have to process? [How to find log throughput?](#finding-your-throughput)
+
+#### 2. Attempt to Mitigate First
+
+The following options require thought and consideration, they should not be simply made as suggestions in a robotic way.
+
+##### Out of Memory Kill (OOMKill)
+
+1. Recommend [Memory Limiting Guidance](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention)
+2. Follow [General Issue Mitigations](#general-issue-mitigations) to check if high memory usage/OOMKill is associated with any known bugs.
+
+##### Log loss report
+
+1. Check and recommend the notes in this guide first: [Log Loss Common Causes](#log-loss-summary-common-causes).
+2. Follow [General Issue Mitigations](#general-issue-mitigations).
+3. Obtaining Fluent Bit log send throughput is key. [How to find log throughput?](#finding-your-throughput). Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) contain log loss benchmarks.
+
+##### Use Case Questions
+
+*Be careful to search these links for multiple terms that may match your need. We probably have an answer/example which is similar to what you want but it may not be titled with the exact question/problem you are experiencing.*
+
+**Examples**
+* [aws-for-fluent-bit ECS and EKS Use Case Guide](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases)
+    * [customize log tag or group/stream using kubernetes metadata](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases)
+* [EKS Fargate side-car logging blog](https://aws.amazon.com/blogs/containers/how-to-capture-application-logs-when-using-amazon-eks-on-aws-fargate/)
+* [Amazon ECS Logging examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline)
+* [Delete old log files](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-deletion)
+* [Collect log4j logs](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection#tutorial-3-using-log4j-with-tcp)
+* [Fluent Bit Windows on EKS](https://aws.amazon.com/blogs/containers/centralized-logging-for-windows-containers-on-amazon-eks-using-fluent-bit/)
+* [Persist Kubernetes logs on Amazon EFS](https://aws.amazon.com/blogs/storage/persistent-storage-for-container-logging-using-fluent-bit-and-amazon-efs/)
+* [Fluent Bit Windows on ECS](https://aws.amazon.com/blogs/containers/centralized-logging-for-windows-containers-on-amazon-ecs-using-fluent-bit/)
+* [Splitting an application’s logs into multiple streams: a Fluent tutorial](https://aws.amazon.com/blogs/opensource/splitting-application-logs-multiple-streams-fluent/)
+* [Fluent Bit, K8s and OpenSearch on Bottlerocket AMI](https://opensearch.org/blog/bottlerocket-k8s-fluent-bit/)
+* [Log Collection on Bottlerocket AMI](https://github.com/aws-samples/amazon-cloudwatch-container-insights/issues/136)
+
+**Best Practices**
+* [Debugging Guide](#guide-to-debugging-fluent-bit-issues)
+* [Memory Limiting and OOMKill Guidance](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention)
+* [Send Fluent Bit Plugin Metrics to CloudWatch](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw)
+* [Fluent Bit Prometheus Monitoring](https://docs.fluentbit.io/manual/administration/monitoring)
+* [Heath Check Guidance](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/health-check)
+* [Configuration Best Practices notes in debugging guide](#best-practices)
+* [Scaling Best Practices for Fluent Bit on EKS](https://aws.amazon.com/blogs/containers/capturing-logs-at-scale-with-fluent-bit-and-amazon-eks/)
+
+
+##### General Issue Mitigations
+
+*Be careful to search these links for multiple terms that may match your need. We probably have an answer/example which is similar to what you want but it may not be titled with the exact question/problem you are experiencing.*
+
+1. Search [aws-for-fluent-bit/issues](https://github.com/aws/aws-for-fluent-bit/issues) for similar reports. 
+2. Search this guide for similar error messages or problems. Most common configuration errors and best practices that can solve issues are found in this document. Be careful to search for multiple terms, including parts of your error message and descriptions of the problem.
+3. Search [aws-for-fluent-bit/releases](https://github.com/aws/aws-for-fluent-bit/releases) for fixes that are related to the problem description.
+4. If internal, search the current known issues tracking document.
+5. Search upstream [fluent/fluent-bit/issues](https://github.com/fluent/fluent-bit/issues) for similar reports with clear mitigations/resolutions/analysis. Be careful because many upstream issues are the result of confusion among users and many issue reports that sound similar have different root causes and mitigations. 
+6. If the customer is experiencing a problem with a Go or C AWS output plugin, recommend trying migrating to the other version of the plugin. See [Go vs C plugins](#aws-go-plugins-vs-aws-core-c-plugins).
+7. Try upgrading to a newer version: If the customer uses an older version, a newer version may have fixed the issue even if the issue is not explicitly called out in our release notes.
+8. Try downgrading to an older version. The issue may be a not yet discovered bug introduced recently. Ideally this should be a previous [stable version](https://github.com/aws/aws-for-fluent-bit#latest-stable-version) that was/is still widely used. Take care to test/check that the customer's configuration will still work with the older version and that it does not lack any features they use. 
+9. Check/recommend known best practices. Even if these do not appear directly related to the issue, they should always be recommended.
+    * [Memory Limiting and OOMKill Guidance](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention)
+    * [Send Fluent Bit Plugin Metrics to CloudWatch](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw)
+    * [Fluent Bit Prometheus Monitoring](https://docs.fluentbit.io/manual/administration/monitoring)
+    * [Configuration Best Practices notes in debugging guide](#best-practices)
+    * [Heath Check Guidance](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/health-check)
+
+
+#### 3. Investigate Root Cause
+
+Determining the root cause may take significant time and some expertise on Fluent Bit. [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
+
+1. [Log Loss Investigation Runbook](#log-loss-investigation-runbook)
+2. [Crash Report Runbook](#crash-report-runbook)
+3. Others: The links above in the mitigation section should give an hint at where the root cause may be. For use case questions or common errors, the links in that section should have at least some guidance. For other problems, you may need to setup an isolated reproduction and investigate from there. 
+    * [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
+    * [Template: Replicate FireLens case in Fargate](#template-replicate-firelens-case-in-fargate)
+    * [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md)
+    * [Testing for real memory leaks using Valgrind](#testing-for-real-memory-leaks-using-valgrind)
+
+
+### Crash Report Runbook
+
+When you recieve a SIGSEGV/crash report from a customer, perform the following steps. 
+
+#### 1. Build and distribute a core dump S3 uploader image
 
 For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.build` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
 
@@ -1127,7 +1234,7 @@ make init-debug
 ```
 The configuration of the init-debug image is the same as the debug image, except it has the added features of the Init image.
 
-##### 2. Setup your own repro attempt 
+#### 2. Setup your own repro attempt 
 
 There are two options for reproducing a crash:
 1. [Tutorial: Replicate an ECS FireLens Task Setup Locally](#tutorial-replicate-an-ecs-firelens-task-setup-locally)
@@ -1135,8 +1242,118 @@ There are two options for reproducing a crash:
 
 Replicating the case in Fargate is recommended, since you can easily scale up the repro to N instances. This makes it much more likely that you can actually reproduce the issue. 
 
+### Log Loss Investigation Runbook
 
-##### Template: Replicate FireLens case in Fargate
+*Each investigation is unique and requires judgement and expertise. This runbook contains a set of tools and techniques that we have used in past investigations*.
+
+When you receive a report that a customer has losts logs, consider the following:
+
+1. Check the [Log Loss Summary](#log-loss-summary-common-causes) in this guide. Could any of those root causes apply?
+2. Generally double check the customer configuration for best practices and common issues. While they might not cause the log loss, getting everything in a good state can help.
+3. Query for all instances of `err` or `warn` in the Fluent Bit log output. Does it indicate any potential problems?
+4. Consider enabling [monitoring](https://docs.fluentbit.io/manual/administration/monitoring) for Fluent Bit. We have a [tutorial for ECS FireLens](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/send-fb-internal-metrics-to-cw), which can be re-worked for other platforms. 
+5. [Enable debug logging](#enable-debug-logging). And then after the log loss occurs again, use the CloudWatch Log Insights Queries (or equivalents for other systems) to check what is happening inside of Fluent Bit. 
+    1. [CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending](#cloudwatch-log-insights-queries-to-check-if-fluent-bit-ingesting-data-and-sending)
+    2. [CloudWatch Log Insights Queries to check Tail Input](#cloudwatch-log-insights-queries-to-check-tail-input)
+6. Consider deploying the [S3 File Uploader](https://github.com/aws/firelens-datajet/pull/32/files) which uses `aws s3 sync` to sync a directories contents to an S3 bucket. This can be used to determine which logs were actually lost. If the customer is using the tail input, it can sync the log files (you may need/want to remove log rotation if possible since the script will sync a directory). If the customer does not use a tail input, you could configure a Fluent Bit [file output](https://docs.fluentbit.io/manual/pipeline/outputs/file) to make Fluent Bit output all logs it captured to a directory and sync those. This can help determine if the problem is on the ingestion side or the sending side. We also have the [Magic Mirror tool](https://github.com/aws/firelens-datajet/tree/main/apps/magic-mirror) to sync one directory to another recursively.
+7. Consider adding new debug logs and instrumentation to check what is happening inside of Fluent Bit. We have some past examples here for checking the state of the event loop:
+    - [Print number of events in event loop](https://github.com/matthewfala/fluent-bit/commit/01f96376fb48da90ab0af8be4c89c6dfb2142453).
+    - [Instrumentation core](https://github.com/matthewfala/fluent-bit/commit/f8b91790c666df8077f01da9c32f3d98be936083). This core instrumentation library provides a common tag based api to output each thread's metrics to a different file. Counter, events, and delta time, can be collected. Will output results to FLB_INSTRUMENTATION_OUT_PATH folder. Used as a base for other instrumentation.
+    - [Event loop instrumentation to track coroutine count, event loop wait time, and network error count](https://github.com/matthewfala/fluent-bit/commits/1.8.12-instrumentation-evl-reorder-event-loop-r2). Use on top of instrumentation core.
+    - [Track Fluent Bit task count](https://github.com/matthewfala/fluent-bit/commit/95b733cf96de846132958e7857a191eeb9709e56). Use on top of instrumentation core.
+    - [Instrument sync dns getaddrinfo calls count over time](https://github.com/matthewfala/fluent-bit/commit/796a4ae043a63ae8bcefbf624f1825b0564cdac5).
+    - [Instrument Open SSL to track tls shutdowns, destroy_shutdowns, reads, writes, handshakes as well as stop and start event for the above](https://github.com/matthewfala/fluent-bit/commit/57645336f3fddcbd69633bc8dc1f517f7fdff153). Use on top of instrumentation core.
+    - [Instrument http client. Print out response data](https://github.com/matthewfala/fluent-bit/commit/fbe49292583e6453039b1355f468e03022adfa03). Use on top of instrumentation core.
+    - Various slowdowns by adding a delay to malloc. Helps at times repro concurrency dependant issues faster. [2ms](https://github.com/matthewfala/fluent-bit/commit/a9ce9f80544c0c97560f8c3a5c0833df6c55acaa), [7ms](https://github.com/matthewfala/fluent-bit/commit/335bd8e8981c566fa013fbf3146c05f40ef4c79f), [20ms](https://github.com/matthewfala/fluent-bit/commit/c89518e1f1f38ac316791a28c8d60c036b111d3b)
+    - [Trigger segfault artificially after 5 seconds](https://github.com/matthewfala/fluent-bit/commits/segfault)
+    - [AWS Client Request Logger](https://github.com/matthewfala/fluent-bit/commit/085aa7799768a1f2c58253b181e3d01bf3ddb452). Prints logs to a file in the following filename:   `AWS_Requests_Log_File_<today's date>.txt` and format:
+        ```
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                AWS Client Requests Logger 🪵             
+                Tue Nov  2 01:54:58 2021
+                
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AWS Client Request
+        Time: Tue Nov  2 01:58:22 2021
+        Host: logs.us-west-2.amazonaws.com
+        URI: /
+        Method: POST
+        Headers
+        | [X-Amz-Target]: Logs_20140328.CreateLogGroup
+        Body:
+
+        {"logGroupName":"my body"}
+
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        (...)
+        ```
+
+
+#### CloudWatch Log Insights Queries to check if Fluent Bit ingesting data and sending
+
+*This requires that the customer enabled debug logging*.
+
+One past cause of log loss was the [CloudWatch C Plugin Hang Issue](https://github.com/aws/aws-for-fluent-bit/issues/525) which caused Fluent Bit to freeze/hang and stop sending logs. 
+
+If you can verify that Fluent Bit is still actively ingesting and sending data, that is one data point against it being a freeze/hang/deadlock issue. 
+
+Recall the [Checking Batch sizes](#checking-batch-sizes) section of this guide; you can check these messages to see if the outputs are active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'payload='
+```
+
+When an input appends data to a chunk, there is a [common message](https://github.com/fluent/fluent-bit/pull/6761) that is logged. This checks that the inputs are still active. 
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'update output instances with new chunk size'
+```
+
+Most chunk related messages have `chunk` in them, that string can be used in queries. 
+
+For both of these, checking the frequency of debug messages may be more interesting than the events themselves. 
+
+#### CloudWatch Log Insights Queries to check Tail Input
+
+*This requires that the customer enabled debug logging*.
+
+If the log loss report specifically involves the tail input, there are many useful debug messages it outputs. 
+
+You can check for events for a specific file path/prefix:
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like '{log path/prefix}'
+```
+
+Check the output- does it make sense? One past issue we encountered was that Fluent Bit was stuck processing lots of events for old files, the solution for which was to configure `Ignore_Older`. See the section of this guide on that common issue. 
+
+This query checks for all instances where FLB picked up a new file:
+
+```
+fields @timestamp, @message, @logStream, @log
+| sort @timestamp desc
+| filter @message like 'inotify_fs_add'
+```
+
+Which can verify that new files are being picked up. This next query checks for all `IN_MODIFY` events, which happen when a log file is appended to.
+
+```
+fields @timestamp, @message, @logStream
+| sort @timestamp desc
+| filter @message like 'IN_MODIFY'
+```
+
+Depending on the results of the above queries, you may want to search for all messages for a specific inode ID or file name. 
+
+#### Template: Replicate FireLens case in Fargate
 
 In [troubleshooting/tutorials/cloud-firelens-crash-repro-template](tutorials/cloud-firelens-crash-repro-template/), you will find a template for setting up a customer repro in Fargate. 
 
@@ -1165,7 +1382,7 @@ Perform the following steps:
 
 ## Testing
 
-#### Simple TCP Logger Script
+### Simple TCP Logger Script
 
 Note: In general, the AWS for Fluent Bit team recommends the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project to send test logs to Fluent Bit. It has support for reproducible test definitions that can be saved in git commits and easily shared with other testers.
 
@@ -1193,7 +1410,7 @@ Save this as `tcp-logger.sh` and run `chmod +x tcp-logger.sh`. Then, create a fi
 ./tcp-logger.sh example.log 5170
 ```
 
-#### Run Fluent Bit Unit Tests in a Docker Container
+### Run Fluent Bit Unit Tests in a Docker Container
 
 You can use this Dockerfile:
 
@@ -1264,7 +1481,7 @@ And then you can `cd` into `/tmp/fluent-bit/build/bin`, select a unit test file,
 
 Upstream info on running integ tests can be found here: [Developer Guide: Testing](https://github.com/fluent/fluent-bit/blob/master/DEVELOPER_GUIDE.md#testing).
 
-#### Tutorial: Replicate an ECS FireLens Task Setup Locally
+### Tutorial: Replicate an ECS FireLens Task Setup Locally
 
 Given an ECS task definition that uses FireLens, this tutorial will show you have to replicate what FireLens does inside of ECS locally. This can help you reproduce issues in an isolated env. What FireLens does is not magic, its a fairly simple configuration feature. 
 
@@ -1374,7 +1591,7 @@ For reference, for this example, here is what the `fluent-bit.conf` should look 
     retry_limit 2
 ```
 
-##### FireLens Customer Case Local Repro Template
+#### FireLens Customer Case Local Repro Template
 
 In [troubleshooting/tutorials/local-firelens-crash-repro-template](tutorials/local-firelens-crash-repro-template) there are a set of files that you can use to quickly create the setup above. The template includes setup for outputting corefiles to a directory and optionally sending logs from stdout, file, and TCP loggers. Using the loggers is optional and we recommended considering [aws/firelens-datajet](https://github.com/aws/firelens-datajet) as another option to send log files. 
 
@@ -1389,7 +1606,7 @@ To use the template:
 
 ## FAQ
 
-#### AWS Go Plugins vs AWS Core C Plugins
+### AWS Go Plugins vs AWS Core C Plugins
 
 When AWS for Fluent Bit first launched in 2019, we debuted with a set of external output plugins written in [Golang and compiled using CGo](https://docs.fluentbit.io/manual/v/1.2/development/golang_plugins). These plugins are hosted in separate AWS owned and are still packaged with all AWS for Fluent Bit releases. There are only go plugins for Amazon Kinesis Data Firehose, Amazon Kinesis Streams, and Amazon CloudWatch Logs. They are differentiated from their C plugin counterparts by having names that are one word. This is the name that you use when you define an output configuration:
 
@@ -1413,7 +1630,7 @@ However, these plugins were not as performant as the core Fluent Bit C plugins f
 
 AWS debuted these plugins at KubeCon North America 2020; some [discussion of the improvement in performance can be found in our session](https://youtu.be/F73MgV_c2MM). 
 
-#### Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin
+### Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin
 
 The following options are only supported with `Name`  `cloudwatch_logs` and must be *removed* if you switch to `Name`  `cloudwatch`. 
 
@@ -1481,7 +1698,7 @@ The following options are only supported with `Name`  `cloudwatch` and must be *
 
 
 
-#### FireLens Tag and Match Pattern and generated config
+### FireLens Tag and Match Pattern and generated config
 
 If you use Amazon ECS FireLens to deploy Fluent Bit, then please be aware that some of the Fluent Bit configuration is managed by AWS. ECS will add a log input for your stdout/stderr logs. This single input captures all of the logs from each container that uses the `awsfirelens` log driver. 
 
@@ -1515,7 +1732,7 @@ Match *firelens*
 
 This may be useful if you have other streams of logs that are not stdout/stderr, for example as shown in the [ECS Log Collection Tutorial](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection).
 
-#### What to do when Fluent Bit memory usage is high
+### What to do when Fluent Bit memory usage is high
 
 If your Fluent Bit memory usage is unusually high or you have gotten an OOMKill, then try the following:
 
@@ -1529,7 +1746,7 @@ If your Fluent Bit memory usage is unusually high or you have gotten an OOMKill,
 5. *Test for real memory leaks*. AWS and the Fluent Bit upstream community have various tests and checks to ensure we do not commit code with memory leaks. Thus, real leaks are rare. If you think you have found a real leak, please try out the [investigation steps and advice in this guide](#memory-leaks-or-high-memory-usage) and then cut us an issue. 
 
 
-#### I reported an issue, how long will it take to get fixed?
+### I reported an issue, how long will it take to get fixed?
 
 Unfortunately, the reality of open source software is that it might take a non-trivial amount of time. 
 
@@ -1543,7 +1760,7 @@ If you provide us with an issue report, say a memory leak or a crash, then the A
 
 Thus, it can take up to a month from first issue report to the full release of a fix. Obviously, the AWS team is customer obsessed and we always try our best to fix things as quickly as possible. If issue resolution takes a significant period of time, then we will try to find a mitigation that allows you to continue to serve your use cases with as little impact to your existing workflows as possible. 
 
-#### What will the logs collected by Fluent Bit look like?
+### What will the logs collected by Fluent Bit look like?
 
 This depends on what input the logs were collected with. However, in general, the raw log line for a container is encapsulated in a `log` key and a JSON is created like:
 
@@ -1576,7 +1793,7 @@ The first 4 fields are added by the [Fluentd Docker Log Driver](https://docs.doc
 
 If you are using CloudWatch as your destination, there are additional considerations if you use the `log_key` option to just send the raw log line: [What if I just want the raw log line to appear in CW?](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/cloudwatchlogs#what-if-i-just-want-the-raw-log-line-from-the-container-to-appear-in-cloudwatch).
 
-#### Which version did I deploy?
+### Which version did I deploy?
 
 Check the log output from Fluent Bit. The first log statement printed by AWS for Fluent Bit is always the version used:
 
@@ -1594,7 +1811,7 @@ In general, we recommend locking your deployments to a specific version tag. Rat
 * Our [latest stable criteria is outlined in the repo README](https://github.com/aws/aws-for-fluent-bit#using-the-stable-tag).
 
 
-#### How is the timestamp set for my logs?
+### How is the timestamp set for my logs?
 
 This depends on a number of aspects in your configuration. You must consider:
 1. How is the timestamp set when my logs are ingested?
@@ -1602,13 +1819,13 @@ This depends on a number of aspects in your configuration. You must consider:
 
 Getting the right timestamp in your destination requires understanding the answers to both of these questions.
 
-##### Background
+#### Background
 
 To prevent confusion, understand the following:
 * **Timestamp in the log message string**: This is the timestamp in the log message itself. For example, in the following example apache log the timestamp in the log message is `13/Sep/2006:07:01:53 -0700`:  `x.x.x.90 - - [13/Sep/2006:07:01:53 -0700] "PROPFIND /svn/[xxxx]/Extranet/branches/SOW-101 HTTP/1.1" 401 587`.
 * **Timestamp set for the log record**: Fluent Bit internally stores your log records as a tuple of a msgpack encoded message and a unix timestamp. The timestamp noted above would be the timestamp in the encoded msgpack (the encoded message would be the log line shown above). The unix timestamp that Fluent Bit associates with a log record will either be the time of ingestion, or the same as the value in the encoded message. *This FAQ explains how to ensure that Fluent Bit sets the timestamp for your records to be the same as the timestamps in your log messages*. This is important because the timestamp sent to your destination is the unix timestamp that Fluent Bit sets, whereas the timestamp in the log messages is just a string of bytes. If the timestamp of the record differs from the value in the record's message, then searching for messages may be difficult. 
 
-##### 1. How is the timestamp set when my logs are ingested?
+#### 1. How is the timestamp set when my logs are ingested?
 
 Every log ingested into Fluent Bit must have a timestamp. Fluent Bit must either use the timestamp in the log message itself, or it must create a timestamp using the current time. *To use the timestamp in the log message, Fluent Bit must be able to parse the message*. 
 
@@ -1617,7 +1834,7 @@ The following are common cases for ingesting logs with timestamps:
 * **Tail Input**: When you read a log file with [tail](https://docs.fluentbit.io/manual/pipeline/inputs/tail), the timestamp in the log lines can be parsed and ingested if you specify a `Parser`. Your [parser](https://docs.fluentbit.io/manual/pipeline/parsers/configuring-parser) must set a `Time_Format` and `Time_Key` as explained below. It should be noted that if you use the [container/kubernetes built-in multiline parsers](https://docs.fluentbit.io/manual/pipeline/inputs/tail#multiline-and-containers-v1.8), then the timestamp from your container log lines will be parsed. However, user defined multiline parsers can not set the timestamp.
 * **Other Inputs**: Some other inputs, such as [systemd](https://docs.fluentbit.io/manual/pipeline/inputs/systemd) can function like the `forward` input explained above, and automatically ingest the timestamp from the log. Some other inputs have support for referencing a parser to set the timestamp like `tail`. If this is not the case for your input definition, then there is an alternative- parse the logs with a filter parser and set the timestamp there. *Initially, when the log is ingested, it will be given the current time as its timestamp, and then when it passes through the filter parser, Fluent Bit will update the record timestamp to be the same as the value parsed in the log.*
 
-##### Setting timestamps with a filter and parser
+#### Setting timestamps with a filter and parser
 
 The following example demonstrates a configuration that will parse the timestamp in the message and set it as the timestamp of the log record in Fluent Bit.
 
@@ -1654,7 +1871,7 @@ Consider the following log line which can be parsed by this parser:
 
 The parser will first parse out the `time` field `2007-01-20T11:02:09Z`. It will then match this against the time format `%Y-%m-%dT%H:%M:%S.%L`. Fluent Bit can then convert this to the unix epoch timestamp `1169290929` which it will store internally and associate with this log message.
 
-##### How is the timestamp set when my logs are sent?
+#### How is the timestamp set when my logs are sent?
 
 This depends on the output that you use. For the AWS Outputs:
 * `cloudwatch` and `cloudwatch_logs` will send the timestamp that Fluent Bit associates with the log record to CloudWatch as the message timestamp. *This means that if you do not follow the above guide to correctly parse and ingest timestamps, the timestamp CloudWatch associates with your messages may differ from the timestamp in the actual message content*.
@@ -1662,7 +1879,7 @@ This depends on the output that you use. For the AWS Outputs:
 * `s3`: Functions similarly to the Firehose and Kinesis outputs above, but its config options are called `json_date_key` and `json_date_format`. For the `json_date_format`, there is a [predefined list of supported values](https://docs.fluentbit.io/manual/pipeline/outputs/s3/).
 
 
-#### What are STDOUT and STDERR?
+### What are STDOUT and STDERR?
 
 Standard output (`stdout`) and standard error (`stderr`) are standard file handles attached to your application. Your application emits log messages to these pipes. Typically standard out is used for informational log output, and standard error is used for log output that indicates an error state. 
 
@@ -1711,6 +1928,27 @@ If you use Amazon ECS FireLens, then standard out and standard error will be col
     "container_name": "/ecs-demo-6-container2-a4eafbb3d4c7f1e16e00"
 }
 ```
+
+### How to find image tag version from SHA or image SHA for tag using regional ECR repos?
+
+Find registry IDs for our ECR repos in each region by querying SSM: [using SSM to find available versions and AWS regions](https://github.com/aws/aws-for-fluent-bit#using-ssm-to-find-available-versions-and-aws-regions).
+
+Find the SHA (imageDigest in output) for a version tag:
+
+```
+aws ecr describe-images --region us-west-2 \
+--registry-id 906394416424 --repository-name aws-for-fluent-bit \
+--image-ids imageTag=2.31.11
+```
+
+Find the image tag given a SHA:
+
+```
+aws ecr describe-images --region us-west-2 \
+--registry-id 906394416424 --repository-name aws-for-fluent-bit \
+--image-ids imageDigest=sha256:ff702d8e4a0a9c34d933ce41436e570eb340f56a08a2bc57b2d052350bfbc05d
+```
+
 
 ## Case Studies
 
