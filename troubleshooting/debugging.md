@@ -88,7 +88,7 @@
     - [Why do I still see the old version in my logs after a deployment?](#why-do-i-still-see-the-old-version-in-my-logs-after-a-deployment)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
-    - [How to find image tag version from SHA or image SHA for tag using regional ECR repos?]
+    - [How to find image tag version from SHA or image SHA for tag using regional ECR repos?](#how-to-find-image-tag-version-from-sha-or-image-sha-for-tag-using-regional-ecr-repos)
 - [Case Studies](#case-studies)
     - [AWS for Fluent Bit Stability Tests](#aws-for-fluent-bit-stability-tests)
         - [Rate of network errors](#rate-of-network-errors)
