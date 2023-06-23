@@ -85,6 +85,7 @@
     - [I reported an issue, how long will it take to get fixed?](#i-reported-an-issue-how-long-will-it-take-to-get-fixed)
     - [What will the logs collected by Fluent Bit look like?](#what-will-the-logs-collected-by-fluent-bit-look-like)
     - [Which version did I deploy?](#which-version-did-i-deploy)
+    - [Why do I still see the old version in my logs after a deployment?](#why-do-i-still-see-the-old-version-in-my-logs-after-a-deployment)
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
     - [How to find image tag version from SHA or image SHA for tag using regional ECR repos?]
@@ -1806,9 +1807,36 @@ Fluent Bit v1.9.9
 * https://fluentbit.io
 ```
 
+*In some customer reports, we have heard that the "AWS for Fluent Bit Container Image Version" line may be printed on shutdown instead of or in addition to on startup.*
+
+Another option to check the version deployed is to exec into your Fluent Bit container image and check the version number inside the container. This can be done with `docker exec`/`kubectl exec`/[ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html). The AWS version is always contained in a file at the root directory `/AWS_FOR_FLUENT_BIT_VERSION`.
+
 In general, we recommend locking your deployments to a specific version tag. Rather than our `latest` or `stable` tags which are dynamic and change over time. This ensures that your deployments are always predictable and all tasks/pods/nodes in the deployment use the same version. Check our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) and [latest stable version] and make a decision taking into consideration your use cases. 
 * Our latest [stable version is noted in this file](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION). 
 * Our [latest stable criteria is outlined in the repo README](https://github.com/aws/aws-for-fluent-bit#using-the-stable-tag).
+
+### Why do I still see the old version in my logs after a deployment?
+
+Please read the above first: [Which version did I deploy?](#which-version-did-i-deploy).
+
+You may still see the old version in your logs simply because your new task definition/pod definition does not actually contain the "new" version. Please double check everything. If everything looks correct, then the following may explain what happened. 
+
+*In some customer reports, we have heard that the "AWS for Fluent Bit Container Image Version" line may be printed on shutdown instead of or in addition to on startup.*
+
+Also, recall that with default deployment settings ECS will first start new task(s) (with new image) then stop old task(s) (with old image).
+
+Thus, the following can happen: 
+
+1. New task was started for deployment and logged the new image version 
+2. Old task was stopped and logged the old version on shutdown
+
+If this occurs and you see both the old and new version printed in your log group, you may have successfully deploy the new version for all new tasks. 
+
+If you use the [AWSLogs driver](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html) for log output from Fluent Bit, then the log stream name will have the Task ID as the final part of the log stream name. If necessary, you can correlate Task ID with your new vs old deployment. For each log statement in your log group that shows a print statement for the old/previous version, find the log stream name and obtain the task ID from it and then check the ECS Service events and determine when that task was deployed. Is the task with the old/previous version a part of your new deployment or an older one?
+
+Another option to check the version deployed is to exec into your Fluent Bit container image and check the version number inside the container. This can be done with `docker exec`/`kubectl exec`/[ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html). The AWS version is always contained in a file at the root directory `/AWS_FOR_FLUENT_BIT_VERSION`.
+
+
 
 
 ### How is the timestamp set for my logs?
