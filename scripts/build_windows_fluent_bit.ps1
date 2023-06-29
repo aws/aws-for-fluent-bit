@@ -283,8 +283,8 @@ Compress-Archive -Path "${StagingDirectory}\*" -Destination "${AWSForFluentBitRo
 # Compress ecs_windows_forward_daemon folder which needs to be added to the image
 Compress-Archive -Path "${AWSForFluentBitRootDir}\ecs_windows_forward_daemon\*" -Destination "${AWSForFluentBitRootDir}\build\windows\ecs_windows_forward_daemon.zip"
 
-# Copy the version of aws-for-fluent-bit
-Copy-Item -Path "${AWSForFluentBitRootDir}\AWS_FOR_FLUENT_BIT_VERSION" -Destination "${AWSForFluentBitRootDir}\build\windows\AWS_FOR_FLUENT_BIT_VERSION"
+# The version of aws-for-fluent-bit is set in each image from the env var, as the pipeline updates multiple
+# images found in the windows.versions file
 
 # Copy the entrypoint script which needs to be added to the image
 Copy-Item -Path "${AWSForFluentBitRootDir}\scripts\entrypoint.ps1" -Destination "${AWSForFluentBitRootDir}\build\windows\entrypoint.ps1"
