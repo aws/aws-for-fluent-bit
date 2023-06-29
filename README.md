@@ -40,7 +40,7 @@ The version of the AWS for Fluent Bit image is not linked to the version of Flue
 
 We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. Bug fixes are released in patch version bumps. New features are released in new minor versions. We strive to only release backwards incompatible changes in new major versions.
 
-Please read the below on CVE patches in base images and dependencies. The semantic version number applies to the Fluent Bit code and [AWS Go plugin](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins)) code compiled and installed in the image.
+Please read the below on CVE patches in base images and dependencies. The semantic version number applies to the Fluent Bit code and [AWS Go plugin](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins) code compiled and installed in the image.
 
 **Image Versions and CVE Patches**
 
