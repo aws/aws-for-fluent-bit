@@ -1,5 +1,10 @@
 # Changelog
 
+### 2.31.12.20230629 Linux re-build
+
+*This release has the same Fluent Bit contents as 2.31.12, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
+
+
 ### 2.31.12
 This release includes:
 * Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
