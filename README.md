@@ -38,14 +38,35 @@ The version of the AWS for Fluent Bit image is not linked to the version of Flue
 
 **What does the version number signify?**
 
-We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. Bug fixes are released in patch version bumps. New features are released in new minor versions. We strive to only release backwards incompatible changes in new major versions. 
+We use the standard `major.minor.patch` versioning scheme for our image, AKA Semantic Versioning. The initial release with this versioning scheme is `2.0.0`. Bug fixes are released in patch version bumps. New features are released in new minor versions. We strive to only release backwards incompatible changes in new major versions.
+
+Please read the below on CVE patches in base images and dependencies. The semantic version number applies to the Fluent Bit code and [AWS Go plugin](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins)) code compiled and installed in the image.
+
+**Image Versions and CVE Patches**
 
 The AWS for Fluent Bit image includes the following contents:
 * A base image (currently Amazon Linux or Windows Server Core 2019 or Windows Server Core 2022)
-* Fluent Bit
-* Several Fluent Bit Go Plugins
+* Runtime dependencies installed on top of the base image
+* Fluent Bit binary
+* Several Fluent Bit [Go Plugin binaries](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins)
 
-A change in any one of these pieces would lead to a change in our version number.
+The process for pushing out new builds with CVE patches in the base image or installed dependencies is different for Windows vs Linux. 
+
+For Windows, every month after the [B release date/"patch tuesday"](https://learn.microsoft.com/en-us/windows/deployment/update/release-cycle#monthly-security-update-release), we re-build and update all Windows images currently found in the [windows.versions](windows.versions) file in this repo with the newest base images from Microsoft. The Fluent Bit and go plugin binaries are copied into the newly released base windows image. Thus, the windows image tags are not immutable images; only the Fluent Bit and Go plugin binaries are immutable over time.
+
+For Linux, each image tag is immutable. When there is a report of high or critical CVEs reported in the base amazon linux image or installed linux packages, we will work to push out a new image [per our patching policy](#compliance-and-patching). However, we will not increment the semantic version number to simply re-build to pull in new linux dependencies. Instead, we will add a 4th version number signifying the date the image was built.
+
+For example, a series of releases in time might look like:
+
+1. `2.31.12`: New Patch release with changes in Fluent Bit code compared to `2.31.11`. This release will have standard release notes and will have images for both linux and windows. 
+2. `2.31.12-20230629`: Re-build of `2.31.12` just for Linux CVEs found in the base image or installed dependencies. The Fluent Bit code contents are the same as `2.31.12`. There only be linux images with this version tag, and no windows images. The `latest` tag for linux will be updated to point to this new image. There will be short release notes that call out it is simply a re-build for linux. 
+3. `2.31.12-20230711`: Another re-build of `2.31.12` for Linux CVEs on a subsequent date. This release is special as explained above in the way same as `2.31.12-20230629`.
+4. `2.31.13`: New Patch release with changes in Fluent Bit code compared to `2.31.12`. This might be for bugs found in the Fluent Bit code. It could also be for a CVE found in the Fluent Bit code. This release has standard release notes and linux and windows images. 
+
+
+**Why do some image tags contain 4 version numbers?**
+
+Please see the above explanation on our Linux image re-build process for CVEs found in dependencies. 
 
 **Are there edge cases to the rules on breaking backwards compatibility?**
 
