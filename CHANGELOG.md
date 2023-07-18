@@ -9,7 +9,7 @@
 
 ### 2.31.12
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.4
 * Amazon Kinesis Streams for Fluent Bit 1.10.2
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
@@ -25,7 +25,7 @@ Compared to `2.31.11` this release adds:
 
 ### 2.31.11
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.3
 * Amazon Kinesis Streams for Fluent Bit 1.10.2
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
@@ -41,7 +41,7 @@ Compared to `2.31.10` this release adds:
 
 ### 2.31.10
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.3
 * Amazon Kinesis Streams for Fluent Bit 1.10.2
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
@@ -52,7 +52,7 @@ Compared to `2.31.9` this release adds:
 
 ### 2.31.9
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.3
 * Amazon Kinesis Streams for Fluent Bit 1.10.2
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
@@ -67,7 +67,7 @@ This release includes:
 
 ### 2.31.8
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.3
 * Amazon Kinesis Streams for Fluent Bit 1.10.2
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
@@ -90,7 +90,7 @@ This release includes:
 
 ### 2.31.7
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.2
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -103,7 +103,7 @@ This release includes the same fixes and features that we are working on getting
 
 ### 2.31.6
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.2
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -116,7 +116,7 @@ This release includes the same fixes and features that we are working on getting
 
 ### 2.31.5
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -143,7 +143,7 @@ Same as `2.31.4`, this release includes the following fixes and features that we
 
 ### 2.31.4
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -165,7 +165,7 @@ Same as `2.31.3`, this release includes the following fixes and features that we
 
 ### 2.31.3
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -187,7 +187,7 @@ Same as `2.31.2`, this release includes the following fixes and features that we
 
 ### 2.31.2
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -208,7 +208,7 @@ Same as `2.31.1`, this release includes the following fixes and features that we
 
 ### 2.31.1
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -229,7 +229,7 @@ Same as `2.31.0`, this release includes the following fixes and features that we
 
 ### 2.31.0
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -247,7 +247,7 @@ Same as `2.30.0`, this release includes the following fixes and features that we
 
 ### 2.30.0
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -260,7 +260,7 @@ Same as `2.29.1`, this release includes the following fix that we are working on
 
 ### 2.29.1
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
@@ -270,7 +270,7 @@ Compared to `2.29.0`, this release includes the following fix that we are workin
 
 ### 2.29.0
 This release includes:
-* Fluent Bit [1.9.10](https://fluentbit.io/announcements/v1.9.10/)
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.1
 * Amazon Kinesis Streams for Fluent Bit 1.10.1
 * Amazon Kinesis Firehose for Fluent Bit 1.7.1
