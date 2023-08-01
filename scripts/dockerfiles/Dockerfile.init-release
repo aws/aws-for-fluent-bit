@@ -9,5 +9,8 @@ COPY --from=init-builder /fluent_bit_init_process /init/fluent_bit_init_process
 COPY init/fluent_bit_init_entrypoint.sh /init/fluent_bit_init_entrypoint.sh
 RUN chmod +x /init/fluent_bit_init_entrypoint.sh
 
+# Change to non-root user
+RUN groupadd -r user && useradd -r -g user user
+
 # Only last CMD command will be executed, automatically replaces the original entrypoint
 CMD /init/fluent_bit_init_entrypoint.sh
