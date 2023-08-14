@@ -124,6 +124,14 @@ hyderabad_region="ap-south-2"
 
 hyderabad_account_id="378905956269"
 
+tel_aviv_region="il-central-1"
+
+tel_aviv_account_id="279248816148"
+
+melbourne_region="ap-southeast-4"
+
+melbourne_account_id="577945010369"
+
 gamma_region="us-west-2"
 
 gamma_account_id="626332813196"
@@ -775,6 +783,14 @@ if [ "${1}" = "publish" ]; then
 		publish_ecr ${hyderabad_region} ${hyderabad_account_id}
 	fi
 
+	if [ "${2}" = "${tel_aviv_region}" ]; then
+		publish_ecr ${tel_aviv_region} ${tel_aviv_account_id}
+	fi
+
+	if [ "${2}" = "${melbourne_region}" ]; then
+		publish_ecr ${melbourne_region} ${melbourne_account_id}
+	fi
+
 	if [ "${2}" = "gamma" ]; then
 		publish_ecr ${gamma_region} ${gamma_account_id}
 	fi
@@ -839,6 +855,14 @@ if [ "${1}" = "verify" ]; then
 		verify_ecr ${hyderabad_region} ${hyderabad_account_id}
 	fi
 
+	if [ "${2}" = "${tel_aviv_region}" ]; then
+		verify_ecr ${tel_aviv_region} ${tel_aviv_account_id}
+	fi
+
+	if [ "${2}" = "${melbourne_region}" ]; then
+		verify_ecr ${melbourne_region} ${melbourne_account_id}
+	fi
+
 	if [ "${2}" = "gamma" ]; then
 		verify_ecr ${gamma_region} ${gamma_account_id}
 	fi
@@ -898,6 +922,14 @@ if [ "${1}" = "publish-ssm" ]; then
 	if [ "${2}" = "${hyderabad_region}" ]; then
 		publish_ssm ${hyderabad_region} ${hyderabad_account_id}.dkr.ecr.${hyderabad_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
 	fi
+
+	if [ "${2}" = "${tel_aviv_region}" ]; then
+		publish_ssm ${tel_aviv_region} ${tel_aviv_account_id}.dkr.ecr.${tel_aviv_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	fi
+
+	if [ "${2}" = "${melbourne_region}" ]; then
+		publish_ssm ${melbourne_region} ${melbourne_account_id}.dkr.ecr.${melbourne_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	fi
 fi
 
 if [ "${1}" = "verify-ssm" ]; then
@@ -953,6 +985,14 @@ if [ "${1}" = "verify-ssm" ]; then
 
 	if [ "${2}" = "${hyderabad_region}" ]; then
 		verify_ssm ${hyderabad_region} false ${hyderabad_account_id}
+	fi
+
+	if [ "${2}" = "${tel_aviv_region}" ]; then
+		verify_ssm ${tel_aviv_region} false ${tel_aviv_account_id}
+	fi
+
+	if [ "${2}" = "${melbourne_region}" ]; then
+		verify_ssm ${melbourne_region} false ${melbourne_account_id}
 	fi
 fi
 
@@ -1010,6 +1050,14 @@ if [ "${1}" = "rollback-ssm" ]; then
 	if [ "${2}" = "${hyderabad_region}" ]; then
 		rollback_ssm ${hyderabad_region}
 	fi
+
+	if [ "${2}" = "${tel_aviv_region}" ]; then
+		rollback_ssm ${tel_aviv_region}
+	fi
+
+	if [ "${2}" = "${melbourne_region}" ]; then
+		rollback_ssm ${melbourne_region}
+	fi
 fi
 
 # Publish using CI/CD pipeline
@@ -1045,6 +1093,10 @@ if [ "${1}" = "cicd-publish" ]; then
 		sync_image_version ${zurich_region} ${zurich_account_id}
 	elif [ "${2}" = "${hyderabad_region}" ]; then
 		sync_image_version ${hyderabad_region} ${hyderabad_account_id}
+	elif [ "${2}" = "${tel_aviv_region}" ]; then
+		sync_image_version ${tel_aviv_region} ${tel_aviv_account_id}
+	elif [ "${2}" = "${melbourne_region}" ]; then
+		sync_image_version ${melbourne_region} ${melbourne_account_id}
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			sync_image_version ${region} ${classic_regions_account_id}
@@ -1094,6 +1146,10 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_ecr ${zurich_region} ${zurich_account_id} true
 	elif [ "${2}" = "${hyderabad_region}" ]; then
 		verify_ecr ${hyderabad_region} ${hyderabad_account_id} true
+	elif [ "${2}" = "${tel_aviv_region}" ]; then
+		verify_ecr ${tel_aviv_region} ${tel_aviv_account_id} true
+	elif [ "${2}" = "${melbourne_region}" ]; then
+		verify_ecr ${melbourne_region} ${melbourne_account_id} true
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			verify_ecr ${region} ${classic_regions_account_id} true
@@ -1136,6 +1192,10 @@ if [ "${1}" = "cicd-publish-ssm" ]; then
 		publish_ssm ${zurich_region} ${zurich_account_id}.dkr.ecr.${zurich_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
 	elif [ "${2}" = "${hyderabad_region}" ]; then
 		publish_ssm ${hyderabad_region} ${hyderabad_account_id}.dkr.ecr.${hyderabad_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	elif [ "${2}" = "${tel_aviv_region}" ]; then
+		publish_ssm ${tel_aviv_region} ${tel_aviv_account_id}.dkr.ecr.${tel_aviv_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	elif [ "${2}" = "${melbourne_region}" ]; then
+		publish_ssm ${melbourne_region} ${melbourne_account_id}.dkr.ecr.${melbourne_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
 	else
 		for region in ${classic_regions}; do
 			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
@@ -1171,6 +1231,10 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 		verify_ssm ${zurich_region} true ${zurich_account_id}
 	elif [ "${2}" = "${hyderabad_region}" ]; then
 		verify_ssm ${hyderabad_region} true ${hyderabad_account_id}
+	elif [ "${2}" = "${tel_aviv_region}" ]; then
+		verify_ssm ${tel_aviv_region} true ${tel_aviv_account_id}
+	elif [ "${2}" = "${melbourne_region}" ]; then
+		verify_ssm ${melbourne_region} true ${melbourne_account_id}
 	elif [ $# -eq 3 ]; then
 		for region in ${classic_regions}; do
 			verify_ssm ${region} true ${classic_regions_account_id}
