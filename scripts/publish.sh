@@ -686,10 +686,10 @@ verify_public_ecr() {
 }
 
 verify_sha() {
-	sha1=${1}
-	sha2=${2}
+	_sha1=${1}
+	_sha2=${2}
 
-	match_two_sha $sha1 $sha2
+	match_two_sha $_sha1 $_sha2
 
 	if [ "$IMAGE_SHA_MATCHED" = "TRUE" ]; then
 		echo '[Publish Verification] Successfull'
@@ -701,12 +701,12 @@ verify_sha() {
 }
 
 match_two_sha() {
-	sha1=${1}
-	sha2=${2}
+	_sha1=${1}
+	_sha2=${2}
 
 	# Get the last 64 chars of the SHA string
-	last64_1=$(echo $sha1 | egrep -o '.{1,64}$')
-	last64_2=$(echo $sha2 | egrep -o '.{1,64}$')
+	last64_1=$(echo $_sha1 | egrep -o '.{1,64}$')
+	last64_2=$(echo $_sha2 | egrep -o '.{1,64}$')
 
 	if [ "$last64_1" = "$last64_2" ]; then
 		IMAGE_SHA_MATCHED="TRUE"
