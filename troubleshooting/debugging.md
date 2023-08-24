@@ -89,6 +89,7 @@
     - [How is the timestamp set for my logs?](#how-is-the-timestamp-set-for-my-logs)
     - [What are STDOUT and STDERR?](#what-are-stdout-and-stderr)
     - [How to find image tag version from SHA or image SHA for tag using regional ECR repos?](#how-to-find-image-tag-version-from-sha-or-image-sha-for-tag-using-regional-ecr-repos)
+    - [Why does Fluent Bit run as root user inside the container?](#why-does-fluent-bit-run-as-root-user-inside-the-container)
 - [Case Studies](#case-studies)
     - [AWS for Fluent Bit Stability Tests](#aws-for-fluent-bit-stability-tests)
         - [Rate of network errors](#rate-of-network-errors)
@@ -1977,6 +1978,107 @@ aws ecr describe-images --region us-west-2 \
 --image-ids imageDigest=sha256:ff702d8e4a0a9c34d933ce41436e570eb340f56a08a2bc57b2d052350bfbc05d
 ```
 
+### Why does Fluent Bit run as root user inside the container?
+
+In the AWS for Fluent Bit container images, Fluent Bit runs as root or user ID (UID) 0 by default. In Amazon ECS FireLens, this is required. In other deployments, you can run the Fluent Bit process as a non-root user. 
+
+* [EKS: non-root supported](#eks-non-root-supported)
+* [Amazon ECS without FireLens: non-root supported](#amazon-ecs-without-firelens-non-root-supported)
+* [Amazon ECS FireLens: root is required](#amazon-ecs-firelens-root-is-required)
+
+*Remember, just because a process is root inside a container, does not mean it has privileges over the entire host.* Root inside a container is not the same as privileged mode. Strictly speaking, root inside a container simply means the process has UID 0. The process can only access and modify files on the host if they are mounted into the container. 
+
+#### EKS: non-root supported
+
+In Kubernetes, you can use the [RunAsUser field in pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+
+```
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 3000
+```
+
+#### Amazon ECS without FireLens: non-root supported
+
+To run Fluent Bit as non-root in Amazon ECS (outside of FireLens), you can set the `user` field in the task definition. For example:
+
+```
+    "essential": true,
+    "image": "906394416424.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable",
+    "user": "9999",
+    "name": "log_router",
+```
+
+If you run Fluent Bit as a FireLens sidecar, please see [Amazon ECS FireLens: root is required](#amazon-ecs-firelens-root-is-required).
+
+#### Amazon ECS FireLens: root is required
+
+> Please see [containers-roadmap:2122](https://github.com/aws/containers-roadmap/issues/2122) for the feature request to support running Fluent Bit as non-root in ECS FireLens.
+
+As explained in [Under the Hood: FireLens for Amazon ECS Tasks](), container stdout & stderr logs are streamed by the [Fluentd Docker log driver]() over a unix socket to Fluent Bit (or Fluentd). 
+
+In linux systems, unix sockets are a type of socket represented by a file path. [Unix sockets require the following permissions](https://man7.org/linux/man-pages/man7/unix.7.html):
+* Creation: A process needs write & execute permissions in the directory to create a socket.
+* Connection: A process needs write permissions on the socket file to connect to it. 
+
+This means the following happens when a FireLens task starts up:
+1. The FireLens container starts first, and creates and listens on a unix domain socket at `/var/run/fluent.sock` in the container. This path is bind mounted onto the host in a sub-directory of the [ECS Agent](https://github.com/aws/amazon-ecs-agent) `ECS_HOST_DATA_DIR`, which is by default `/var/lib/ecs`. This means the Fluent Bit process in the FireLens container needs permissions to write & execute inside `/var/lib/ecs`. 
+2. The Fluentd log driver connects to the socket and begins streaming logs. The log driver is just some code inside of the Docker daemon; the log driver is the same process as the Docker daemon. (In Fargate, containerd is used with a [shim](https://github.com/aws/shim-loggers-for-containerd) that allows it to use the Docker log driver code, which is effectively equivalent.) The container runtime runs as root. Thus, the root user must be able to connect to the socket. 
+
+Since the ECS Agent runs as root inside its container, it creates the `ECS_HOST_DATA_DIR` directory with ownership by the root user:
+```
+$ ls -l
+drwxr-xr-x 2 root root 22 Aug 10 18:24 data
+```
+
+Thus, when Fluent Bit runs as root, it can create a socket file in this directory. When it runs as root and creates the socket file, it gets these permissions:
+
+```
+$ ls -l
+srwxr-xr-x 1 root root 0 Aug 23 21:01 fluent.sock
+```
+
+These permissions only allow the root user to connect to the socket. 
+
+At time of writing, Amazon ECS does not support rootless Docker, which means the container runtime must run as root. On an ECS Optimized EC2 AMI, Docker has PID 0 and GID 0:
+
+```
+$ ps -e | grep docker
+16846 ?        00:03:20 dockerd
+
+$ stat  /proc/16846
+  File: ‘/proc/16846’
+  Size: 0         	Blocks: 0          IO Block: 1024   directory
+Device: 4h/4d	Inode: 17642977    Links: 9
+Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+```
+
+Consequently, FireLens currently requires the process inside FireLens container to run as root. 
+
+If you attempt to register a task definition with the FireLens container set to run as a UID that is not zero, you will get:
+
+```
+An error occurred (ClientException) when calling the RegisterTaskDefinition operation: If 'user' field is specified on firelens container, then 'UID' has to be '0'.
+```
+
+This only happens when you specify a non-root user in the task definition:
+
+```
+    "essential": true,
+    "image": "906394416424.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable",
+    "user": "9999",
+    "name": "log_router",
+```
+
+If instead you specify a non-root user in a custom Dockerfile for Fluent Bit, then the task will fail at runtime. Fluent Bit will not be able to create the unix socket inside the ECS Agent `ECS_HOST_DATA_DIR` directory. The container will fail to start and its logs will contain:
+
+```
+[2023/08/24 00:28:59] [error] [plugins/in_forward/fw.c:59 errno=13] Permission denied
+[2023/08/24 00:28:59] [error] [input:forward:forward.0] could not listen on unix:///var/run/fluent.sock
+[2023/08/24 00:28:59] [error] Failed initialize input forward.0
+[2023/08/24 00:28:59] [error] [lib] backend failed
+```
 
 ## Case Studies
 
