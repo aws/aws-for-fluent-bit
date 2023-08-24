@@ -537,7 +537,36 @@ When you experience a problem, before you cut us an issue, try the following.
 
 Many Fluent Bit problems can be easily understood once you have full log output. Also, if you want help from the aws-for-fluent-bit team, we generally request/require debug log output.
 
-The log level for Fluent Bit can be set in the [Service section](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit), or by setting the env var `FLB_LOG_LEVEL=debug`.
+The log level for Fluent Bit can be set in the [Service section](https://docs.fluentbit.io/manual/administration/configuring-fluent-bit), or by setting the environment variable `FLB_LOG_LEVEL=debug`.
+
+For example, in the service section:
+```
+[SERVICE]
+    Log_Level debug
+```
+
+Remember, you can only have a single `[SERVICE]` configured across all of your configuration files for Fluent Bit.
+
+Alternatively, set the log level via an environment variable. In your ECS task definition:
+```
+"environment": [
+	{
+		"name": "FLB_LOG_LEVEL",
+		"value": "debug"
+	}
+],
+```
+
+In your kubernetes YAML:
+
+```
+    spec:
+      containers:
+      - name: fluent-bit
+        env:
+            - name: FLB_LOG_LEVEL
+              value: debug
+```
 
 #### Enabling Monitoring for Fluent Bit
 
