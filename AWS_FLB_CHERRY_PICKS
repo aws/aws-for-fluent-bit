@@ -135,3 +135,7 @@ https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review a1d
 # signv4: always use calloc
 https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review 3381c388ee956e7d0e7c0d5fc44683da75095a6a
 
+# Cloudwatch_logs sequence token deprecation
+https://github.com/matthewfala/fluent-bit.git immutable-sequence-token-deprecation 8ee560e388bbbf850069c81bbca06275f330baeb
+
+# Prometheus sigv4 aws-for-fluent-bit
