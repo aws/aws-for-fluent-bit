@@ -139,3 +139,6 @@ https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review 338
 https://github.com/matthewfala/fluent-bit.git immutable-sequence-token-deprecation 8ee560e388bbbf850069c81bbca06275f330baeb
 
 # Prometheus sigv4 aws-for-fluent-bit
+https://github.com/matthewfala/fluent-bit.git immutable-2.32.0-prometheus-sigv4 ca93bd1d43ebedeb8e81b46b800ea229fde66fa5
+
+# End of cherrypicks (end with a blank line)
