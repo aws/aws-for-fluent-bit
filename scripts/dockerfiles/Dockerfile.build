@@ -88,14 +88,15 @@ COPY AWS_FLB_CHERRY_PICKS \
 RUN git config --global user.email "aws-firelens@amazon.com" \
   && git config --global user.name "FireLens Team"
 
-RUN AWS_FLB_CHERRY_PICKS_COUNT=`cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' | sed '/^\s*$/d' | wc -l | awk '{ print $1 }'`; \
+RUN AWS_FLB_CHERRY_PICKS_COUNT=`awk '{print $0 }' /AWS_FLB_CHERRY_PICKS | sed '/^#/d' | sed '/^\s*$/d' | wc -l | awk '{ print $1 }'`; echo $AWS_FLB_CHERRY_PICKS_COUNT; \
   if [ $AWS_FLB_CHERRY_PICKS_COUNT -gt 0 ]; \
   then \
     cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' \
-    | xargs -l bash -c 'git fetch $0 $1 && git cherry-pick $2'; \
+    | xargs -l bash -c 'git fetch $0 $1 && git cherry-pick $2 || exit 255' && \
     \
-    echo "Cherry Pick Patch Summary:"; \
+    (echo "Cherry Pick Patch Summary:"; \
+    echo -n "Base "; \
     git log --oneline \
     -$((AWS_FLB_CHERRY_PICKS_COUNT+1)) \
-    | tac | awk '{ print "Commit",NR-1,"--",$0 }'; sleep 2; \
+    | tac | awk '{ print "Commit",NR-1,"--",$0 }'; sleep 2;)\
   fi

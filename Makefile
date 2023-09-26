@@ -17,7 +17,7 @@ all: release
 export DOCKER_BUILD_FLAGS=--no-cache
 
 .PHONY: release
-release: build build-init
+release: build build-init linux-plugins
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
 	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest
@@ -28,7 +28,7 @@ release: build build-init
 debug: main-debug init-debug
 
 .PHONY: build
-build: linux-plugins
+build:
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
 
@@ -118,7 +118,7 @@ init-debug-s3: main-debug-base build-init
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-s3   -f ./scripts/dockerfiles/Dockerfile.init-debug-s3 .
 
 .PHONY: main-debug-base
-main-debug-base: build
+main-debug-base: build linux-plugins
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-debug-base  -f ./scripts/dockerfiles/Dockerfile.main-debug-base .
 
 .PHONY: validate-version-file-format
