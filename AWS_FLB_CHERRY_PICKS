@@ -138,7 +138,11 @@ https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review 338
 # Cloudwatch_logs sequence token deprecation
 https://github.com/matthewfala/fluent-bit.git immutable-sequence-token-deprecation 8ee560e388bbbf850069c81bbca06275f330baeb
 
-# Prometheus sigv4 aws-for-fluent-bit
+# prometheus: sigv4 aws-for-fluent-bit
 https://github.com/matthewfala/fluent-bit.git immutable-2.32.0-prometheus-sigv4 ca93bd1d43ebedeb8e81b46b800ea229fde66fa5
+
+# multiline: remove incorrect flush
+https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 6431a4e584d52170dbe873d93ba532659921740a
+https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 35f23875ca356ea30e9aac19854b810cf8ecad8f
 
 # End of cherrypicks (end with a blank line)
