@@ -42,6 +42,7 @@ https://github.com/PettitWesley/fluent-bit.git mk_event_add_corruption-one-commi
 # Useful debug messages for input events
 # input chunk append message with input name context and number of records
 https://github.com/PettitWesley/fluent-bit.git chunk-append-context b671ed38e7ae87ab955083e2324ef1972298c5d7
+
 # in_tail file name context for inotify events
 https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutable-cherry-pick ab11d1d7438f5254d04eba8dfc2f10b78cc2244d
 https://github.com/PettitWesley/fluent-bit.git tail-modify-debug-context-immutable-cherry-pick 1f3bdeec49ac42b04b921303610ea0f53110ab2c
@@ -83,15 +84,6 @@ https://github.com/fluent/fluent-bit.git 1.9 81cdf7eced4e420043277237fba092157b1
 # upstream engine retry clean up fix https://github.com/fluent/fluent-bit/pull/6862
 https://github.com/fluent/fluent-bit.git 1.9 712e5fbe10bee44269d5dfed214c4e087ea1ec2a
 
-# TCP input: user friendly message for skipping logs https://github.com/fluent/fluent-bit/pull/6061
-https://github.com/fluent/fluent-bit.git 1.9 c5d57ccf4f85af77e2a2bbb1121df95887e2962f
-
-# ElasticSearch: fix buffer bulk over run https://github.com/fluent/fluent-bit/pull/5770
-https://github.com/fluent/fluent-bit.git 1.9 d3a0697c3c4a876250cc6c2c4ff44cd77908ea3c
-
-# windows: fix time zone offset https://github.com/fluent/fluent-bit/pull/6368
-https://github.com/fluent/fluent-bit.git 1.9 cae9a8f9cb6eab7449f14d914f9ba1d8d4e93cf0
-
 # quick fix for S3 key $INDEX bug https://github.com/aws/aws-for-fluent-bit/issues/653
 https://github.com/PettitWesley/fluent-bit.git index_s3_key_format_quick_fix 5e48218670681aef152aeedcf90a4593ac623470
 
@@ -127,7 +119,7 @@ https://github.com/PettitWesley/fluent-bit.git filter-modify-fix-aws-distro 1a72
 # AWS core code self-review issue fixes
 # upstream version of this: https://github.com/fluent/fluent-bit/pull/7512/files
 # use calloc in all credential code to prevent freeing of garbage pointers 
-https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review eb48b79b34f91d36d28434390b976e882d553681 
+https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review eb48b79b34f91d36d28434390b976e882d553681
 # fix brittle XML parsing
 https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review e6401ad3811b42dee0b7f92aba726cca4bee74ec
 # add pthread_mutex + trylock to protect cred providers
@@ -144,5 +136,3 @@ https://github.com/matthewfala/fluent-bit.git immutable-2.32.0-prometheus-sigv4 
 # multiline: remove incorrect flush
 https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 6431a4e584d52170dbe873d93ba532659921740a
 https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 35f23875ca356ea30e9aac19854b810cf8ecad8f
-
-# End of cherrypicks (end with a blank line)
