@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.32.0
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.12` this release adds:
+* Feature - Customers can send metrics to Amazon Managed Prometheus via added sigv4 authentication on `prometheus_remote_write`. Refer to [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/amazon-managed-service-for-prometheus/README.md) for information on how to export metrics to AMP on ECS [aws-for-fluent-bit:256](https://github.com/aws/aws-for-fluent-bit/issues/256)
+* Enhancement - Customers can route logs to CloudWatch Logs at higher throughputs by increasing number of output workers as `cloudwatch_logs` output plugin removed sequence tokens from API requests [aws-for-fluent-bit:526](https://github.com/aws/aws-for-fluent-bit/issues/526)
+* Fix - Fix multiline input behavior when multiple streams are parsed (stderr, stdout) together. Multiline logs are no longer terminated when streams are switched between [fluent-bit:7469](https://github.com/fluent/fluent-bit/pull/7469)
+
 ### 2.31.12.20231011 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.31.12, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
