@@ -17,9 +17,10 @@
     - [multiline parser 'parser_name' not registered](#multiline-parser-parser_name-not-registered)
     - [CloudWatch output parsing template error](#cloudwatch-output-parsing-template-error)
     - [Log4j TCP Appender Write Failure](#log4j-tcp-appender-write-failure)
-        - [Mitigation 1: Enable Workers for all outputs](#mitigation-1-enable-workers-for-all-outputs)
-        - [Mitigation 2: Log4J Failover to STDOUT with Appender Pattern](#mitigation-2-log4j-failover-to-stdout-with-appender-pattern)
-        - [Mitigation 3: Log4J Failover to a File](#mitigation-3-log4j-failover-to-a-file)
+        - [Mitigation 1: Check for overlimit warnings](#mitigation-1-check-for-overlimit-warnings)
+        - [Mitigation 2: Enable Workers for all outputs](#mitigation-2-enable-workers-for-all-outputs)
+        - [Mitigation 3: Log4J Failover to STDOUT with Appender Pattern](#mitigation-3-log4j-failover-to-stdout-with-appender-pattern)
+        - [Mitigation 4: Log4J Failover to a File](#mitigation-4-log4j-failover-to-a-file)
 - [Basic Techniques](#basic-techniques)
     - [First things to try when something goes wrong?](#first-things-to-try-when-something-goes-wrong)
     - [Enable Debug Logging](#enable-debug-logging)
@@ -60,6 +61,7 @@
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
     - [Set Grace to 30](#set-grace-to-30)
+    - [Use Lua script instead of filters](#use-lua-script-instead-of-filters)
 - [Fluent Bit Windows containers](#fluent-bit-windows-containers)
     - [Enabling debug mode for Fluent Bit Windows images](#enabling-debug-mode-for-fluent-bit-windows-images)
     - [Networking issue with Windows containers when using async DNS resolution by plugins](#networking-issue-with-windows-containers-when-using-async-dns-resolution-by-plugins)
@@ -487,13 +489,21 @@ Unfortunately, AWS has received occasional reports that log4j TCP appender will 
 
 While we can not prevent connection failures from occurring, we have found several mitigations.
 
-##### Mitigation 1: Enable Workers for all outputs
+##### Mitigation 1: Check for overlimit warnings
+
+When the memory limit is reached, the TCP input will be paused and an [overlimit warning message](#overlimit-warnings) will be emitted. Log4j will then experience write failure sending to the TCP input. 
+
+The solution is to ensure watch for overlimit warnings and ensure your memory limit is high enough that the buffered logs will never exceed the limit. There are two options to achieve this, please read our guide on memory limiting to understand:
+1. [Storage.type memory: Use Mem_Buf_Limit](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#storagetype-memory-what-happens-when-the-memory-limit-is-reached)
+2. [Storage.type filesystem: Inputs will not be paused by default](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#storagetype-filesystem-what-happens-when-the-memory-limit-is-reached)
+
+##### Mitigation 2: Enable Workers for all outputs
 
 AWS testing has found that TCP input throughput is maximized when Fluent Bit is performing well. If you enable at least one worker for all outputs, this ensures your outputs each have their own thread(s). This frees up the main Fluent Bit scheduler/input thread to focus on the inputs. 
 
 It should be noted that starting in Fluent Bit 1.9+ most outputs have [1 worker enabled by default](https://github.com/fluent/fluent-bit/commit/08e90f54d3b1dbfedcb963e9a293386dd682addf). This means that if you do not specify `workers` in your output config you will still get 1 worker enabled. You must set `workers 0` to disable workers. All AWS outputs have 1 worker enabled by default since v1.9.4.
 
-##### Mitigation 2: Log4J Failover to STDOUT with Appender Pattern
+##### Mitigation 3: Log4J Failover to STDOUT with Appender Pattern
 
 If the TCP plugin fails for Fluent Bit, you can configure a failover appender. The Log4J XML below configures logs to be retried to STDOUT failover. It is difficult to search stdout for these failed logs if/because STDOUT is cluttered with other non log4j logs. You might prefer to have a special pattern for logs that failover and go to stdout:
 
@@ -515,7 +525,7 @@ You can then configure this appender as the [failover appender](https://logging.
 </Failover>
 ```
 
-##### Mitigation 3: Log4J Failover to a File
+##### Mitigation 4: Log4J Failover to a File
 
 Alternatively, you can use a [failover appender](https://logging.apache.org/log4j/2.x/manual/appenders.html#FailoverAppender) which just writes failed logs to a file. A Fluent Bit [Tail input](https://docs.fluentbit.io/manual/pipeline/inputs/tail) can then collect the failed logs.
 
@@ -1060,6 +1070,16 @@ In Amazon EKS and Amazon ECS, the shutdown grace period for containers, the time
 [SERVICE]
     Grace 30
 ```
+
+#### Use Lua script instead of filters
+
+If you need to perform many manipulations to your logs, you may choose to use filters, such as:
+- [grep](https://docs.fluentbit.io/manual/pipeline/filters/grep)
+- [record_modifier](https://docs.fluentbit.io/manual/pipeline/filters/record-modifier)
+- [modify](https://docs.fluentbit.io/manual/pipeline/filters/modify)
+- [nest](https://docs.fluentbit.io/manual/pipeline/filters/nest)
+
+However, each filter instance that a log passes through incurs some overhead. Internally, Fluent Bit stores logs as msgpack, and each filter instance must deserialize and re-serialize every record. This incurs CPU and memory cost. Therefore, if the manipulations you need to perform on your logs require multiple filter steps, it is often more performant to write all of the logic in a single lua script and use the [lua filter](https://docs.fluentbit.io/manual/pipeline/filters/lua). It allows you to use code to modify each log. If all of your logic is placed in a single lua script, then there is only one filter definition, and thus only a single deserialize and re-serialize step for each log. 
 
 ### Fluent Bit Windows containers
 
