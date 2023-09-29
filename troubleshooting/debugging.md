@@ -2031,22 +2031,22 @@ aws ecr describe-images --region us-west-2 \
 
 In the AWS for Fluent Bit container images, Fluent Bit runs as root or user ID (UID) 0 by default. In Amazon ECS FireLens, this is required. In other deployments, you can run the Fluent Bit process as a non-root user. 
 
-* [EKS: non-root supported](#eks-non-root-supported)
+* [EKS: root is required](#eks-root-is-required)
 * [Amazon ECS without FireLens: non-root supported](#amazon-ecs-without-firelens-non-root-supported)
 * [Amazon ECS FireLens: root is required](#amazon-ecs-firelens-root-is-required)
 
 *Remember, just because a process is root inside a container, does not mean it has privileges over the entire host.* Root inside a container is not the same as privileged mode. Strictly speaking, root inside a container simply means the process has UID 0. The process can only access and modify files on the host if they are mounted into the container. 
 
-#### EKS: non-root supported
+#### EKS: root is required
 
-In Kubernetes, you can use the [RunAsUser field in pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+In Kubernetes, Fluent Bit is typically deployed to read pod log files in `/var/log/containers/` on the host. Additionally, Fluent Bit is typically configured with host mount volumes for its `storage.path` and tail input `DB` path; this allows Fluent Bit to restart without losing progress.
 
-```
-spec:
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 3000
-```
+The directory `/var/log/containers/` and pod log files are root owned, therefore, Fluent Bit must run as root to access them. 
+
+Please see:
+- https://github.com/aws/aws-for-fluent-bit/issues/729
+- https://github.com/fluent/fluent-bit/issues/872
+- https://github.com/fluent/helm-charts/issues/330
 
 #### Amazon ECS without FireLens: non-root supported
 
@@ -2065,7 +2065,7 @@ If you run Fluent Bit as a FireLens sidecar, please see [Amazon ECS FireLens: ro
 
 > Please see [containers-roadmap:2122](https://github.com/aws/containers-roadmap/issues/2122) for the feature request to support running Fluent Bit as non-root in ECS FireLens.
 
-As explained in [Under the Hood: FireLens for Amazon ECS Tasks](), container stdout & stderr logs are streamed by the [Fluentd Docker log driver]() over a unix socket to Fluent Bit (or Fluentd). 
+As explained in [Under the Hood: FireLens for Amazon ECS Tasks](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/), container stdout & stderr logs are streamed by the [Fluentd Docker log driver](https://docs.docker.com/config/containers/logging/fluentd/) over a unix socket to Fluent Bit (or Fluentd). 
 
 In linux systems, unix sockets are a type of socket represented by a file path. [Unix sockets require the following permissions](https://man7.org/linux/man-pages/man7/unix.7.html):
 * Creation: A process needs write & execute permissions in the directory to create a socket.
