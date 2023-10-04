@@ -136,3 +136,10 @@ https://github.com/matthewfala/fluent-bit.git immutable-2.32.0-prometheus-sigv4 
 # multiline: remove incorrect flush
 https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 6431a4e584d52170dbe873d93ba532659921740a
 https://github.com/matthewfala/fluent-bit.git immutable-multiline-incorrect-flush 35f23875ca356ea30e9aac19854b810cf8ecad8f
+
+# core: network event drop shutdown fix
+https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destruction 9e2e5d1bffca92bbcc5001fcfc34c1d9ae2716db
+https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destruction b2e8ff1ae738c1db7bf50942ef619609436ffe02
+
+# throttle: print_status configuration issue resolution
+https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7b05b7ebfe55261ed12d5006c8b682572b6abf4c
