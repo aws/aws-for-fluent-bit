@@ -122,7 +122,7 @@ data:
     [FILTER]
         Name                rewrite_tag
         Match               application.*
-        Rule                $kubernetes['namespace_name']  ^[a-zA-Z0-9-_]*$  applogs-$kubernetes['host'].$kubernetes['namespace_name'].$kubernetes['pod_name'].$kubernetes['container_name']  false
+        Rule                $kubernetes['namespace_name']  ^[\S]+$  applogs-$kubernetes['host'].$kubernetes['namespace_name'].$kubernetes['pod_name'].$kubernetes['container_name']  false
  
     [OUTPUT]
         Name                cloudwatch_logs
