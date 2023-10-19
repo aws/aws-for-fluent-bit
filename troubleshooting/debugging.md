@@ -49,6 +49,7 @@
     - [Tail Ignore_Older](#tail-input-ignore_older)
     - [Tail input performance issues and log file deletion](#tail-input-performance-issues-and-log-file-deletion)
     - [rewrite_tag filter and cycles in the log pipeline](#rewrite_tag-filter-and-cycles-in-the-log-pipeline)
+    - [rewrite_tag filter rule to match all logs](#rewrite_tag-filter-rule-to-match-all-logs)
     - [Use Rubular site to test regex](#use-rubular-site-to-test-regex)
     - [Chunk_Size and Buffer_Size for large logs in TCP Input](#chunk_size-and-buffer_size-for-large-logs-in-tcp-input)
     - [kinesis_streams or kinesis_firehose partially succeeded batches or duplicate records](#kinesisstreams-or-kinesisfirehose-partially-succeeded-batches-or-duplicate-records)
@@ -906,6 +907,32 @@ We have a [Log File Deletion example](https://github.com/aws-samples/amazon-ecs-
 The [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is a very powerful part of the log pipeline. It allows you to define a filter that is actually an input that will re-emit log records with a new tag. 
 
 However, with great power comes great responsibility... a common mistake that causes confusing issues is for the rewrite_tag filter to match the logs that it re-emits. This will make the log pipeline circular, and Fluent Bit will just get stuck. Your rewrite_tag filter should never match "*" and you must think very carefully about how you are configuring the Fluent Bit pipeline. 
+
+#### rewrite_tag filter rule to match all logs
+
+A common use case with the [rewrite_tag](https://docs.fluentbit.io/manual/pipeline/filters/rewrite-tag) filter is change the tag for all logs. The tag can be customized with metadata from the logs, and the customize tag can then be used in an S3 key format or a CloudWatch log group/stream name. The [example to customize the tag based on k8s metadata](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases/k8s-metadata-customize-tag) shows this.
+
+With this use case, every tag inputted must be changed to the customized tag with metadata. Therefore, a rewrite_tag rule is needed that matches any log. 
+
+From the [example to customize the tag based on k8s metadata](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases/k8s-metadata-customize-tag):
+
+```
+[FILTER]
+    Name                rewrite_tag
+    Match               application.*
+    Rule                $kubernetes['namespace_name']  ^[\S]+$  applogs-$kubernetes['host'].$kubernetes['namespace_name'].$kubernetes['pod_name'].$kubernetes['container_name']  false
+```
+
+The match rule `$kubernetes['namespace_name']  ^[\S]+$` will only match logs that have a non-empty value for a key named `namespace_name` underneath a key `kubernetes`. In other words, the log must contain:
+```
+{
+    "kubernetes": {
+        "namespace_name": "some non-empty string value..."
+    }
+}
+```
+
+Thus, the tag will be rewritten to contain k8s metadata if the log contains the k8s metadata.
 
 #### Use Rubular site to test regex
 
