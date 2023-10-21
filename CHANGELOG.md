@@ -28,8 +28,8 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
 
 Compared to `2.31.12` this release adds:
-* Feature - Customers can send metrics to Amazon Managed Prometheus via added sigv4 authentication on `prometheus_remote_write`. Refer to [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/amazon-managed-service-for-prometheus/README.md) for information on how to export metrics to AMP on ECS [aws-for-fluent-bit:256](https://github.com/aws/aws-for-fluent-bit/issues/256)
-* Feature - Support multiline parsers with the init tag. Multiline parsers can be specified same as a standard parser file [aws-for-fluent-bit:537](https://github.com/aws/aws-for-fluent-bit/issues/537)
+* Enhancement - Customers can send metrics to Amazon Managed Prometheus via added sigv4 authentication on `prometheus_remote_write`. Refer to [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/amazon-managed-service-for-prometheus/README.md) for information on how to export metrics to AMP on ECS [aws-for-fluent-bit:256](https://github.com/aws/aws-for-fluent-bit/issues/256)
+* Enhancement - Support multiline parsers with the init tag. Multiline parsers can be specified same as a standard parser file [aws-for-fluent-bit:537](https://github.com/aws/aws-for-fluent-bit/issues/537)
 * Enhancement - Customers can route logs to CloudWatch Logs at higher throughputs by increasing number of output workers as `cloudwatch_logs` output plugin removed sequence tokens from API requests [aws-for-fluent-bit:526](https://github.com/aws/aws-for-fluent-bit/issues/526)
 * Fix - Fix multiline input behavior when multiple streams are parsed (stderr, stdout) together. Multiline logs are no longer terminated when streams are switched between [fluent-bit:7469](https://github.com/fluent/fluent-bit/pull/7469)
 * Fix - Fix networking edgecase causing data loss and OOM related issues via net timeout event injection resolution [fluent-bit:7728](https://github.com/fluent/fluent-bit/pull/7728/files)
