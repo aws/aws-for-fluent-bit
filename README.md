@@ -161,7 +161,7 @@ Prior to being designated as the latest stable, a version must pass the followin
 
 * It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image. A version released for CVE patches can be made stable if the underlying if the underlying Fluent Bit code is already designated as stable.
 * No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
-* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
+* The version has passed our long running stability tests for at least 2 weeks or is a CVE patch with no Fluent Bit changes that has passed our long running stability tests for at least 1 day. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
 
 #### CVE scans and latest stable
 
