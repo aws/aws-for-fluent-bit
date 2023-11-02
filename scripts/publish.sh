@@ -136,10 +136,6 @@ gamma_region="us-west-2"
 
 gamma_account_id="626332813196"
 
-scanner_region="us-west-2"
-
-scanner_account_id="210752607241"
-
 DOCKER_HUB_SECRET="com.amazonaws.dockerhub.aws-for-fluent-bit.credentials"
 
 ARCHITECTURES=("amd64" "arm64")
@@ -795,10 +791,6 @@ if [ "${1}" = "publish" ]; then
 		publish_ecr ${melbourne_region} ${melbourne_account_id}
 	fi
 
-	if [ "${2}" = "${scanner_region}" ]; then
-		publish_ecr ${scanner_region} ${scanner_account_id}
-	fi
-
 	if [ "${2}" = "gamma" ]; then
 		publish_ecr ${gamma_region} ${gamma_account_id}
 	fi
@@ -869,10 +861,6 @@ if [ "${1}" = "verify" ]; then
 
 	if [ "${2}" = "${melbourne_region}" ]; then
 		verify_ecr ${melbourne_region} ${melbourne_account_id}
-	fi
-
-	if [ "${2}" = "${scanner_region}" ]; then
-		verify_ecr ${scanner_region} ${scanner_account_id}
 	fi
 
 	if [ "${2}" = "gamma" ]; then
@@ -1109,8 +1097,6 @@ if [ "${1}" = "cicd-publish" ]; then
 		sync_image_version ${tel_aviv_region} ${tel_aviv_account_id}
 	elif [ "${2}" = "${melbourne_region}" ]; then
 		sync_image_version ${melbourne_region} ${melbourne_account_id}
-	elif [ "${2}" = "${scanner_region}" ]; then
-		sync_image_version ${scanner_region} ${scanner_account_id}
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			sync_image_version ${region} ${classic_regions_account_id}
@@ -1164,8 +1150,6 @@ if [ "${1}" = "cicd-verify" ]; then
 		verify_ecr ${tel_aviv_region} ${tel_aviv_account_id} true
 	elif [ "${2}" = "${melbourne_region}" ]; then
 		verify_ecr ${melbourne_region} ${melbourne_account_id} true
-	elif [ "${2}" = "${scanner_region}" ]; then
-		verify_ecr ${scanner_region} ${scanner_account_id} true
 	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
 		for region in ${classic_regions}; do
 			verify_ecr ${region} ${classic_regions_account_id} true
