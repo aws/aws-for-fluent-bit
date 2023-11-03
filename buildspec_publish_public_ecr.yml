@@ -61,7 +61,7 @@ phases:
         fi
 
       # Pull the image from Public ECR and verify
-      - './scripts/publish.sh cicd-verify public-ecr'
+      - './scripts/publish.sh cicd-verify-publish public-ecr'
 artifacts:
   files:
     - '**/*'

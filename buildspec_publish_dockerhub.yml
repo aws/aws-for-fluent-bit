@@ -38,7 +38,7 @@ phases:
       - 'DRY_RUN="false" ./scripts/publish.sh cicd-publish dockerhub'
 
       # Pull the image from dockerhub and verify
-      - './scripts/publish.sh cicd-verify dockerhub'
+      - './scripts/publish.sh cicd-verify-publish dockerhub'
 artifacts:
   files:
     - '**/*'

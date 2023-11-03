@@ -14,15 +14,23 @@ phases:
       - aws --version
   build:
     commands:
+      # Note: The "sync" task is used both on the primary distribution account
+      #       and replica accounts. In the primary account, it is used for stable
+      #       tag updates exclusively and their respective ssm param updates.
+      #
+      #       In the replica accounts, it is used for replicating images to regional
+      #       Private ECRs from the primary Public ECR, and replicating ssm params.
+      
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
+            
+      # Replica accounts: Private ECR sync
+      - './scripts/publish.sh cicd-replicate ${AWS_REGION}'
       
-      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable' 
-
-      # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
-      - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
-      
-      # Assume role to publish, get the credentials, and set them as environment variables
+      # Primary account: Private ECR stable update
+      - './scripts/publish.sh cicd-publish private-ecr-stable'
+      - './scripts/publish.sh cicd-publish dockerhub-stable'
+        # Assume role to publish, get the credentials, and set them as environment variables
       - |
         if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then
           CREDS=`aws sts assume-role --role-arn ${PUBLISH_ROLE_ARN_PUBLIC_ECR} --role-session-name publicECR`
@@ -30,11 +38,8 @@ phases:
           export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
           export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
         fi
-      
-      # Publish stable tag to Public ECR when AWS_REGION is us-west-2
-      - './scripts/publish.sh cicd-publish public-ecr-stable ${AWS_REGION}'
-
-      # Nullify the temporary credentials for the assumed role to publish
+      - './scripts/publish.sh cicd-publish public-ecr-stable'
+        # Nullify the temporary credentials for the assumed role to publish
       - |
         if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then
           export AWS_ACCESS_KEY_ID=
@@ -50,17 +55,24 @@ phases:
       - export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r .Credentials.SecretAccessKey`
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
-      # Verify from the verification account
-      - './scripts/publish.sh cicd-verify ${AWS_REGION} stable'
-      - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
+      # Replica accounts: Verify from the verification account
+      - './scripts/publish.sh cicd-verify-replicate ${AWS_REGION}'
+
+      # Primary account: Verify stable update
+      - './scripts/publish.sh cicd-verify-publish private-ecr-stable'
+      - './scripts/publish.sh cicd-verify-publish dockerhub-stable'
+      - './scripts/publish.sh cicd-verify-publish public-ecr-stable'
+
+      # Note: stable updates on primary account and sync task includes SSM updates
+
+      # Replica & primary accounts: Verify ssm update
+      - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} true'
 
        # Nullify the temporary credentials for the assumed role to verify
       - export AWS_ACCESS_KEY_ID=
       - export AWS_SECRET_ACCESS_KEY=
       - export AWS_SESSION_TOKEN=
 
-      # Verify the publishing on Public ECR and Dockerhub when AWS_REGION is us-west-2
-      - './scripts/publish.sh cicd-verify stable ${AWS_REGION}'
 artifacts:
   files:
     - '**/*'

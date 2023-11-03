@@ -36,7 +36,7 @@ phases:
         fi
 
       # Push the image to ECR
-      - './scripts/publish.sh cicd-publish ${REGION_TO_PUSH}'
+      - './scripts/publish.sh cicd-publish private-ecr'
 
       # Nullify the temporary credentials for the assumed role to publish
       - |
@@ -55,7 +55,7 @@ phases:
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
       # Verify from the verification account
-      - './scripts/publish.sh cicd-verify ${REGION_TO_PUSH}'
+      - './scripts/publish.sh cicd-verify-publish private-ecr'
 artifacts:
   files:
     - '**/*'

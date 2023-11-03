@@ -11,7 +11,7 @@ phases:
     commands:
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
-      - './scripts/publish.sh cicd-publish-ssm ${AWS_REGION}'
+      - './scripts/publish.sh cicd-publish-ssm'
 
       # Assume role to verify, get the credentials, and set them as environment variables.
       # Verification should be done using the credentials from a different account. It ensures that
