@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VERSION=$1
-if [ -z "$VERSION" ]; then
+if [ -z "${VERSION}" ]; then
     echo "Usage $0 <version>"
     echo "Example: $0 2.31.11 "
     exit 1;
@@ -11,19 +11,38 @@ image_shas=$(aws ecr describe-images --registry-id 906394416424 --repository-nam
 
 image_sha_array=($image_shas)
 
-echo "Paste below query into Athena console and replace eventTime with desired data range"
-echo "This can be used to obtain 'private' ECR download count"
-echo "The query is for classic regions but can be used in other regions by changing the table name to 'cloudtrail_fluentbit'"
-echo "-------"
-echo ""
+if [ -z "${TABLE_NAME}" ]; then
+    echo "The query is for classic regions but can be used in other regions by changing the table name to 'cloudtrail_fluentbit'"
+    echo "TABLE_NAME env var not set, setting it to Classic regions cloudtrail_fluentbitimage"
+    TABLE_NAME="cloudtrail_fluentbitimage"
+fi
+
+if [ -z "${YEAR}" ]; then
+    YEAR=YYYY
+fi
+
+if [ -z "${START}" ]; then
+    START=MM
+fi
+
+if [ -z "${END}" ]; then
+    END=MM
+fi
+
+if [ "${2}" != "-s" ]; then
+  echo "Paste below query into Athena console and replace eventTime with desired data range"
+  echo "This can be used to obtain 'private' ECR download count"
+  echo "-------"
+  echo ""
+fi
 echo "
 SELECT COUNT(*) as call_count
-FROM cloudtrail_fluentbitimage
+FROM ${TABLE_NAME}
 WHERE
     eventsource = 'ecr.amazonaws.com' AND
     eventname in ('GetDownloadUrlForLayer', 'BatchGetImage') AND
-    eventTime > 'YYYY-MM-DDT00:00:00Z' AND
-    eventTime < 'YYYY-MM-DDT00:00:00Z' AND (
+    eventTime > '${YEAR}-${START}-01T00:00:00Z' AND
+    eventTime < '${YEAR}-${END}-01T00:00:00Z' AND (
       requestparameters like '%"imageTag":"${VERSION}"%' OR
       requestparameters like '%"imageTag":"amd64-${VERSION}"%' OR
       requestparameters like '%"imageTag":"arm64-${VERSION}"%' OR
