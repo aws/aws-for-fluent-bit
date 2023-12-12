@@ -17,21 +17,13 @@ phases:
       nodejs: 14
   pre_build:
     commands:
-      - echo Running the load tests
+      - echo Running the ecs load test infrastructure creation
       # upgrade node version
       - npm install -g n
       - n stable
       # install cdk
       - npm config set prefix /usr/local
       - npm install -g aws-cdk@2.38.1
-      # install eksctl
-      - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-      - mv /tmp/eksctl /usr/local/bin
-      # install kubectl
-      - curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
-      - chmod +x ./kubectl
-      - mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
-      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
       # install aws
       - pip3 uninstall awscli -y
       - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -39,11 +31,6 @@ phases:
       - ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/bin --update
       - which aws
       - aws --version
-      # install aws-iam-authenticator
-      - curl -o aws-iam-authenticator https://amazon-eks.s3.us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
-      - chmod +x ./aws-iam-authenticator
-      - mkdir -p $HOME/bin && cp ./aws-iam-authenticator $HOME/bin/aws-iam-authenticator && export PATH=$PATH:$HOME/bin
-      - echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
       # pre-config
       - aws configure set default.region us-west-2
   build:
@@ -52,10 +39,6 @@ phases:
       - python -m venv venv
       - source venv/bin/activate
       - pip install -r ./load_tests/requirements.txt
-      - |
-        if [ "${PLATFORM}" == "EKS" ]; then
-          aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-        fi
       - CREDS=$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
       - export CREDS
       - export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
