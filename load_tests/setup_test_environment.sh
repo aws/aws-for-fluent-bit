@@ -18,9 +18,9 @@ export AWS_DEFAULT_REGION=${AWS_REGION}
 
 # Set necessary images as env vars
 export FLUENT_BIT_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest"
-export ECS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image:latest"
-export EKS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-eks-app-image:latest"
-export ECS_APP_IMAGE_TCP="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image-tcp:latest"
+export ECS_APP_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/load-test-fluent-bit-ecs-app-image:latest"
+export EKS_APP_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/load-test-fluent-bit-eks-app-image:latest"
+export ECS_APP_IMAGE_TCP="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/load-test-fluent-bit-ecs-app-image-tcp:latest"
 # Label EKS nodes
 if [ $PLATFORM == "EKS" ]
 then

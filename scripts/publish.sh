@@ -14,6 +14,21 @@
 
 set -xeuo pipefail
 
+# Environment configuration list (defaults included)
+PRIMARY_ACCOUNT_ID="${AWS_FOR_FLUENT_BIT_PRIMARY_ACCOUNT_ID:-"906394416424"}"
+PUBLIC_ECR_REGISTRY_URI="${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REGISTRY_URI:-"public.ecr.aws/aws-observability"}"
+PUBLIC_ECR_REPOSITORY_NAME="${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_NAME:-"aws-for-fluent-bit"}"
+PUBLIC_ECR_REGION="${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REGION:="us-east-1"}"
+PUBLIC_ECR_URL="${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_URL:="https://public.ecr.aws/v2/aws-observability/aws-for-fluent-bit"}"
+DOCKER_HUB_REPOSITORY_URI="${AWS_FOR_FLUENT_BIT_DOCKER_HUB_REPOSITORY_URI:="amazon/aws-for-fluent-bit"}"
+DOCKER_HUB_SECRET_ID="${AWS_FOR_FLUENT_BIT_DOCKER_HUB_SECRET_ID:="com.amazonaws.dockerhub.aws-for-fluent-bit.credentials"}"
+DOCKER_HUB_SECRET_REGION="${AWS_FOR_FLUENT_BIT_DOCKER_HUB_SECRET_REGION:="us-west-2"}"
+PRIVATE_ECR_REGION="${AWS_FOR_FLUENT_BIT_PRIVATE_ECR_REGION:="us-west-2"}"
+PRIVATE_ECR_ACCOUNT_ID="${AWS_FOR_FLUENT_BIT_PRIVATE_ECR_ACCOUNT_ID:="906394416424"}"
+SSM_PREFIX="${AWS_FOR_FLUENT_BIT_SSM_PREFIX:="/aws/service/aws-for-fluent-bit"}"
+
+AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI="${PUBLIC_ECR_REGISTRY_URI}/${PUBLIC_ECR_REPOSITORY_NAME}"
+
 scripts=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${scripts}"
 
@@ -33,24 +48,25 @@ echo "Publish Latest? ${PUBLISH_LATEST}"
 # this code currenly works because DockerHub returns the only last 100 tags and as of March 2023 we only have 64
 # and it should keep working because dockerhub returns the latest tags first
 public_ecr_image_tags_token=$(curl -s -S -k https://public.ecr.aws/token/ | jq -r '.token')
-public_ecr_image_tags=$(curl -s -S -k -H "Authorization: Bearer $public_ecr_image_tags_token" 'https://public.ecr.aws/v2/aws-observability/aws-for-fluent-bit/tags/list' | jq -r '.tags[]' | sort -rV)
+public_ecr_image_tags=$(curl -s -S -k -H "Authorization: Bearer $public_ecr_image_tags_token" "${PUBLIC_ECR_URL}/tags/list" | jq -r '.tags[]' | sort -rV)
 tag_array=(`echo ${public_ecr_image_tags}`)
-AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR=$(./get_latest_dockerhub_version.py linux latest ${tag_array[@]})
 
-# If the AWS_FOR_FLUENT_BIT_VERSION is an older version which is already published to dockerhub
-# and latest is set to false in linux.version, then we sync an older non-latest version.
-# otherwise, normal behavior, sync latest version found in dockerhub
-if [ "${PUBLISH_LATEST}" = "false" ]; then
-	PUBLISH_NON_LATEST=$(./get_latest_dockerhub_version.py linux ${AWS_FOR_FLUENT_BIT_VERSION} ${tag_array[@]})
-	if [ "${PUBLISH_NON_LATEST}" = "true" ]; then
-		AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR=${AWS_FOR_FLUENT_BIT_VERSION}
+if [ ${#tag_array[@]} -gt 0 ]; then
+	AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR=$(./get_latest_dockerhub_version.py linux latest ${tag_array[@]})
+
+	# If the AWS_FOR_FLUENT_BIT_VERSION is an older version which is already published to dockerhub
+	# and latest is set to false in linux.version, then we sync an older non-latest version.
+	# otherwise, normal behavior, sync latest version found in dockerhub
+	if [ "${PUBLISH_LATEST}" = "false" ]; then
+		PUBLISH_NON_LATEST=$(./get_latest_dockerhub_version.py linux ${AWS_FOR_FLUENT_BIT_VERSION} ${tag_array[@]})
+		if [ "${PUBLISH_NON_LATEST}" = "true" ]; then
+			AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR=${AWS_FOR_FLUENT_BIT_VERSION}
+		fi
 	fi
 fi
 
-
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
-
 
 classic_regions="
 us-east-1
@@ -71,76 +87,22 @@ eu-west-3
 eu-north-1
 ap-northeast-3
 "
-
-classic_regions_account_id="906394416424"
+classic_regions_account_id=$PRIMARY_ACCOUNT_ID
 
 cn_regions="
 cn-north-1
 cn-northwest-1
 "
-
 cn_regions_account_id="128054284489"
 
 gov_regions="
 us-gov-east-1
 us-gov-west-1
 "
-
 gov_regions_account_id="161423150738"
 
-hongkong_region="ap-east-1"
-
-hongkong_account_id="449074385750"
-
-bahrain_region="me-south-1"
-
-bahrain_account_id="741863432321"
-
-cape_town_region="af-south-1"
-
-cape_town_account_id="928143927712"
-
-milan_region="eu-south-1"
-
-milan_account_id="960320637246"
-
-jakarta_region="ap-southeast-3"
-
-jakarta_account_id="921575906885"
-
-uae_region="me-central-1"
-
-uae_account_id="358001906437"
-
-spain_region="eu-south-2"
-
-spain_account_id="146576467002"
-
-zurich_region="eu-central-2"
-
-zurich_account_id="269912160255"
-
-hyderabad_region="ap-south-2"
-
-hyderabad_account_id="378905956269"
-
-tel_aviv_region="il-central-1"
-
-tel_aviv_account_id="279248816148"
-
-melbourne_region="ap-southeast-4"
-
-melbourne_account_id="577945010369"
-
 gamma_region="us-west-2"
-
 gamma_account_id="626332813196"
-
-scanner_region="us-west-2"
-
-scanner_account_id="210752607241"
-
-DOCKER_HUB_SECRET="com.amazonaws.dockerhub.aws-for-fluent-bit.credentials"
 
 ARCHITECTURES=("amd64" "arm64")
 
@@ -148,8 +110,8 @@ ARCHITECTURES=("amd64" "arm64")
 init="init"
 
 docker_hub_login() {
-	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.username')"
-	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET --region us-west-2 | jq -r '.SecretString | fromjson.password')"
+	username="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET_ID --region $DOCKER_HUB_SECRET_REGION | jq -r '.SecretString | fromjson.username')"
+	password="$(aws secretsmanager get-secret-value --secret-id $DOCKER_HUB_SECRET_ID --region $DOCKER_HUB_SECRET_REGION | jq -r '.SecretString | fromjson.password')"
 
 	# Logout when the script exits
 	trap cleanup EXIT
@@ -163,101 +125,110 @@ docker_hub_login() {
 
 publish_to_docker_hub() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
-
 	docker_hub_login
 
+	# Stable tag update on DockerHub
 	if [ $# -eq 2 ]; then
+		# For stable updates, we are explicitly ignoring the ${1} amazon/aws-for-fluent-bit parameter for stable updates since
+		# we pull from the dockerhub repository wherever that is at. The image is not local when.
+
 		# Get the image SHA's
-		docker pull ${1}:stable || echo "0"
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${1}:stable || echo "0")
-		docker pull ${1}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${1}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:stable || echo "0"
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:stable || echo "0")
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		match_two_sha $sha1 $sha2
 
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
-			create_manifest_list ${1} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+			create_manifest_list ${DOCKER_HUB_REPOSITORY_URI} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
+
+	# Publish new image version to DockerHub
 	else
 		for arch in "${ARCHITECTURES[@]}"
 		do
-			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch" ${DOCKER_HUB_REPOSITORY_URI}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${DOCKER_HUB_REPOSITORY_URI}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$arch"-"debug" ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-"debug" ${DOCKER_HUB_REPOSITORY_URI}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${DOCKER_HUB_REPOSITORY_URI}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			
-			docker tag ${1}:"$init"-"$arch" ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch" ${DOCKER_HUB_REPOSITORY_URI}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${DOCKER_HUB_REPOSITORY_URI}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"-"debug" ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-"debug" ${DOCKER_HUB_REPOSITORY_URI}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${DOCKER_HUB_REPOSITORY_URI}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		done
 
-		create_manifest_list ${1} ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-		create_manifest_list ${1} "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${DOCKER_HUB_REPOSITORY_URI} ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${DOCKER_HUB_REPOSITORY_URI} "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		create_manifest_list_init ${1} "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-		create_manifest_list_init ${1} "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${DOCKER_HUB_REPOSITORY_URI} "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${DOCKER_HUB_REPOSITORY_URI} "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			create_manifest_list ${1} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-			create_manifest_list ${1} "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
-			create_manifest_list_init ${1} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-			create_manifest_list_init ${1} "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list ${DOCKER_HUB_REPOSITORY_URI} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list ${DOCKER_HUB_REPOSITORY_URI} "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${DOCKER_HUB_REPOSITORY_URI} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${DOCKER_HUB_REPOSITORY_URI} "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
 
 publish_to_public_ecr() {
+
+	# Stable tag update to Public ECR
 	if [ $# -eq 2 ]; then
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:stable || echo "0"
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:stable || echo "0")
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+		aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:stable || echo "0"
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:stable || echo "0")
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		match_two_sha $sha1 $sha2
 
 		if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
-			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+			aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+			create_manifest_list ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
+
+	# Publish new image to Public ECR
 	else
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+		aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
 
 		for arch in "${ARCHITECTURES[@]}"
 		do
-			docker tag ${1}:"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch" ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$arch"-"debug" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-"debug" ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch" ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"-"debug" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-"debug" ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 
-		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+		create_manifest_list ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		
-		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
+		aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+		create_manifest_list_init ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+			create_manifest_list ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
-			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
-			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI}
+			create_manifest_list_init ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI} "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
@@ -265,26 +236,26 @@ publish_to_public_ecr() {
 publish_ssm() {
 	# This optional parameter indicates if we should publish stable (defaults to false)
 	if [ ${4:-false} = true ]; then
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
+		aws ssm put-parameter --name "${SSM_PREFIX}/stable" --overwrite \
 			--description 'Regional Amazon ECR Image URI for the latest stable AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:${3}
 	else
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/${3} --overwrite \
+		aws ssm put-parameter --name "${SSM_PREFIX}/${3}" --overwrite \
 			--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:${3}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/latest --overwrite \
+			aws ssm put-parameter --name "${SSM_PREFIX}/latest" --overwrite \
 				--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:latest
 		fi
 		
-		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
+		aws ssm put-parameter --name "${SSM_PREFIX}/${init}-${3}" --overwrite \
 			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:"$init"-${3}
 
 		if [ "${PUBLISH_LATEST}" = "true" ]; then
-			aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-latest --overwrite \
+			aws ssm put-parameter --name "${SSM_PREFIX}/${init}-latest" --overwrite \
 				--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:"$init"-latest
 		fi
@@ -292,13 +263,13 @@ publish_ssm() {
 }
 
 rollback_ssm() {
-	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
+	aws ssm delete-parameter --name "${SSM_PREFIX}/${AWS_FOR_FLUENT_BIT_VERSION}" --region ${1}
 
-	aws ssm delete-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${AWS_FOR_FLUENT_BIT_VERSION} --region ${1}
+	aws ssm delete-parameter --name "${SSM_PREFIX}/${init}-${AWS_FOR_FLUENT_BIT_VERSION}" --region ${1}
 }
 
 check_parameter() {
-	repo_uri=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/${2} --region ${1} --query 'Parameter.Value')
+	repo_uri=$(aws ssm get-parameter --name "${SSM_PREFIX}/${2}" --region ${1} --query 'Parameter.Value')
 	IFS='.' read -r -a array <<<"$repo_uri"
 	region="${array[3]}"
 	if [ "${1}" != "${region}" ]; then
@@ -310,7 +281,7 @@ check_parameter() {
 	docker pull $repo_uri
 
 	if [ "${2}" != "stable" ]; then 
-		repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
+		repo_uri_init=$(aws ssm get-parameter --name "${SSM_PREFIX}/${init}-${2}" --region ${1} --query 'Parameter.Value')
 		IFS='.' read -r -a array <<<"$repo_uri_init"
 		region="${array[3]}"
 		if [ "${1}" != "${region}" ]; then
@@ -329,8 +300,8 @@ sync_public_and_repo() {
 	endpoint=${3}
 	tag=${4}
 
-	docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag}
-	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag})
+	docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${tag}
+	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${tag})
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 	repoList=$(aws ecr describe-repositories --region ${region})
 	repoName=$(echo $repoList | jq .repositories[0].repositoryName)
@@ -350,7 +321,7 @@ sync_public_and_repo() {
 
 	if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
 		aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
-		push_image_ecr public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag} \
+		push_image_ecr ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${tag} \
 			${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag}
 	fi
 }
@@ -392,7 +363,7 @@ sync_image_version() {
 	
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
+		aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI} || echo "0"
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}"
 
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-debug-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}"
@@ -427,10 +398,10 @@ sync_image_version() {
 
 	make_repo_public ${region}
 
-	sync_ssm "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	sync_ssm "/aws/service/aws-for-fluent-bit/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+	sync_ssm "${SSM_PREFIX}/${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	sync_ssm "${SSM_PREFIX}/stable" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 
-	stable_uri=$(aws ssm get-parameters --names /aws/service/aws-for-fluent-bit/stable --region ${region} --query 'Parameters[0].Value')
+	stable_uri=$(aws ssm get-parameters --names "${SSM_PREFIX}/stable" --region ${region} --query 'Parameters[0].Value')
 	stable_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$stable_uri")
 
 	if [ "$stable_uri" != "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}" ]; then
@@ -570,13 +541,13 @@ verify_ecr() {
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})
 
 		# verify version number tag against public ECR
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})
 
 		verify_sha $sha1 $sha2
 
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:init-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:init-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})
 
 		verify_sha $sha1_init $sha2_init
 	else
@@ -611,7 +582,7 @@ check_image_version() {
 	docker_hub_login
 	
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
-	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
+	docker manifest inspect ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${1} > /dev/null || EXIT_CODE=$?
 	if [ "${EXIT_CODE}" = "0" ]; then
 		echo "Accidental release: current image version from github source file match a previous version from dockerhub."
 		exit 1
@@ -644,54 +615,54 @@ verify_dockerhub() {
 	# Verify the image with stable tag
 	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
-		docker pull amazon/aws-for-fluent-bit:stable
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:stable)
-		docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:stable
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:stable)
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		verify_sha $sha1 $sha2
 	else
 		# Get the image SHA's
-		docker pull amazon/aws-for-fluent-bit:latest
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:latest)
-		docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:latest
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:latest)
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1 $sha2
 
-		docker pull amazon/aws-for-fluent-bit:"$init"-latest
-		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-latest)
-		docker pull amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:"$init"-latest
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:"$init"-latest)
+		docker pull ${DOCKER_HUB_REPOSITORY_URI}:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${DOCKER_HUB_REPOSITORY_URI}:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
 		verify_sha $sha1_init $sha2_init
 	fi
 }
 
 verify_public_ecr() {
-	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
+	aws ecr-public get-login-password --region ${PUBLIC_ECR_REGION} | docker login --username AWS --password-stdin ${PUBLIC_ECR_REGISTRY_URI} || echo "0"
 
 	# Verify the image with stable tag
 	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:stable
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:stable)
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:stable
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:stable)
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_STABLE_VERSION})
 
 		verify_sha $sha1 $sha2
 	else
 		# Get the image SHA's
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:latest)
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:latest
+		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:latest)
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1 $sha2
 
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest
-		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest)
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-latest
+		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-latest)
+		docker pull ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${AWS_FOR_FLUENT_BIT_PUBLIC_ECR_REPOSITORY_URI}:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1_init $sha2_init
 	fi
@@ -727,492 +698,104 @@ match_two_sha() {
 	fi
 }
 
-
-if [ "${1}" = "publish" ]; then
-	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub amazon/aws-for-fluent-bit
-	fi
-
-	if [ "${2}" = "aws" ]; then
-		for region in ${classic_regions}; do
-			publish_ecr ${region} ${classic_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-cn" ]; then
-		for region in ${cn_regions}; do
-			publish_ecr ${region} ${cn_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-us-gov" ]; then
-		for region in ${gov_regions}; do
-			publish_ecr ${region} ${gov_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "${hongkong_region}" ]; then
-		publish_ecr ${hongkong_region} ${hongkong_account_id}
-	fi
-
-	if [ "${2}" = "${bahrain_region}" ]; then
-		publish_ecr ${bahrain_region} ${bahrain_account_id}
-	fi
-
-	if [ "${2}" = "${cape_town_region}" ]; then
-		publish_ecr ${cape_town_region} ${cape_town_account_id}
-	fi
-
-	if [ "${2}" = "${milan_region}" ]; then
-		publish_ecr ${milan_region} ${milan_account_id}
-	fi
-
-	if [ "${2}" = "${jakarta_region}" ]; then
-		publish_ecr ${jakarta_region} ${jakarta_account_id}
-	fi
-
-	if [ "${2}" = "${uae_region}" ]; then
-		publish_ecr ${uae_region} ${uae_account_id}
-	fi
-
-	if [ "${2}" = "${spain_region}" ]; then
-		publish_ecr ${spain_region} ${spain_account_id}
-	fi
-
-	if [ "${2}" = "${zurich_region}" ]; then
-		publish_ecr ${zurich_region} ${zurich_account_id}
-	fi
-
-	if [ "${2}" = "${hyderabad_region}" ]; then
-		publish_ecr ${hyderabad_region} ${hyderabad_account_id}
-	fi
-
-	if [ "${2}" = "${tel_aviv_region}" ]; then
-		publish_ecr ${tel_aviv_region} ${tel_aviv_account_id}
-	fi
-
-	if [ "${2}" = "${melbourne_region}" ]; then
-		publish_ecr ${melbourne_region} ${melbourne_account_id}
-	fi
-
-	if [ "${2}" = "${scanner_region}" ]; then
-		publish_ecr ${scanner_region} ${scanner_account_id}
-	fi
-
-	if [ "${2}" = "gamma" ]; then
-		publish_ecr ${gamma_region} ${gamma_account_id}
-	fi
-fi
-
-if [ "${1}" = "verify" ]; then
-	if [ "${2}" = "dockerhub" ]; then
-		docker pull amazon/aws-for-fluent-bit:latest
-		docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-	fi
-	if [ "${2}" = "aws" ]; then
-		for region in ${classic_regions}; do
-			verify_ecr ${region} ${classic_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-cn" ]; then
-		for region in ${cn_regions}; do
-			verify_ecr ${region} ${cn_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-us-gov" ]; then
-		for region in ${gov_regions}; do
-			verify_ecr ${region} ${gov_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "${hongkong_region}" ]; then
-		verify_ecr ${hongkong_region} ${hongkong_account_id}
-	fi
-
-	if [ "${2}" = "${bahrain_region}" ]; then
-		verify_ecr ${bahrain_region} ${bahrain_account_id}
-	fi
-
-	if [ "${2}" = "${cape_town_region}" ]; then
-		verify_ecr ${cape_town_region} ${cape_town_account_id}
-	fi
-
-	if [ "${2}" = "${milan_region}" ]; then
-		verify_ecr ${milan_region} ${milan_account_id}
-	fi
-
-	if [ "${2}" = "${jakarta_region}" ]; then
-		verify_ecr ${jakarta_region} ${jakarta_account_id}
-	fi
-
-	if [ "${2}" = "${uae_region}" ]; then
-		verify_ecr ${uae_region} ${uae_account_id}
-	fi
-
-	if [ "${2}" = "${spain_region}" ]; then
-		verify_ecr ${spain_region} ${spain_account_id}
-	fi
-
-	if [ "${2}" = "${zurich_region}" ]; then
-		verify_ecr ${zurich_region} ${zurich_account_id}
-	fi
-
-	if [ "${2}" = "${hyderabad_region}" ]; then
-		verify_ecr ${hyderabad_region} ${hyderabad_account_id}
-	fi
-
-	if [ "${2}" = "${tel_aviv_region}" ]; then
-		verify_ecr ${tel_aviv_region} ${tel_aviv_account_id}
-	fi
-
-	if [ "${2}" = "${melbourne_region}" ]; then
-		verify_ecr ${melbourne_region} ${melbourne_account_id}
-	fi
-
-	if [ "${2}" = "${scanner_region}" ]; then
-		verify_ecr ${scanner_region} ${scanner_account_id}
-	fi
-
-	if [ "${2}" = "gamma" ]; then
-		verify_ecr ${gamma_region} ${gamma_account_id}
-	fi
-fi
-
-if [ "${1}" = "publish-ssm" ]; then
-	if [ "${2}" = "aws" ]; then
-		for region in ${classic_regions}; do
-			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
-		done
-	fi
-
-	if [ "${2}" = "aws-cn" ]; then
-		for region in ${cn_regions}; do
-			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		done
-	fi
-
-	if [ "${2}" = "aws-us-gov" ]; then
-		for region in ${gov_regions}; do
-			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		done
-	fi
-
-	if [ "${2}" = "${hongkong_region}" ]; then
-		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${bahrain_region}" ]; then
-		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${cape_town_region}" ]; then
-		publish_ssm ${cape_town_region} ${cape_town_account_id}.dkr.ecr.${cape_town_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${milan_region}" ]; then
-		publish_ssm ${milan_region} ${milan_account_id}.dkr.ecr.${milan_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${jakarta_region}" ]; then
-		publish_ssm ${jakarta_region} ${jakarta_account_id}.dkr.ecr.${jakarta_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${uae_region}" ]; then
-		publish_ssm ${uae_region} ${uae_account_id}.dkr.ecr.${uae_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${spain_region}" ]; then
-		publish_ssm ${spain_region} ${spain_account_id}.dkr.ecr.${spain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${zurich_region}" ]; then
-		publish_ssm ${zurich_region} ${zurich_account_id}.dkr.ecr.${zurich_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${hyderabad_region}" ]; then
-		publish_ssm ${hyderabad_region} ${hyderabad_account_id}.dkr.ecr.${hyderabad_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${tel_aviv_region}" ]; then
-		publish_ssm ${tel_aviv_region} ${tel_aviv_account_id}.dkr.ecr.${tel_aviv_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-
-	if [ "${2}" = "${melbourne_region}" ]; then
-		publish_ssm ${melbourne_region} ${melbourne_account_id}.dkr.ecr.${melbourne_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	fi
-fi
-
-if [ "${1}" = "verify-ssm" ]; then
-	if [ "${2}" = "aws" ]; then
-		for region in ${classic_regions}; do
-			verify_ssm ${region} false ${classic_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-cn" ]; then
-		for region in ${cn_regions}; do
-			verify_ssm ${region} false ${cn_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "aws-us-gov" ]; then
-		for region in ${gov_regions}; do
-			verify_ssm ${region} false ${gov_regions_account_id}
-		done
-	fi
-
-	if [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region} false ${hongkong_account_id}
-	fi
-
-	if [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region} false ${bahrain_account_id}
-	fi
-
-	if [ "${2}" = "${cape_town_region}" ]; then
-		verify_ssm ${cape_town_region} false ${cape_town_account_id}
-	fi
-
-	if [ "${2}" = "${milan_region}" ]; then
-		verify_ssm ${milan_region} false ${milan_account_id}
-	fi
-
-	if [ "${2}" = "${jakarta_region}" ]; then
-		verify_ssm ${jakarta_region} false ${jakarta_account_id}
-	fi
-
-	if [ "${2}" = "${uae_region}" ]; then
-		verify_ssm ${uae_region} false ${uae_account_id}
-	fi
-
-	if [ "${2}" = "${spain_region}" ]; then
-		verify_ssm ${spain_region} false ${spain_account_id}
-	fi
-
-	if [ "${2}" = "${zurich_region}" ]; then
-		verify_ssm ${zurich_region} false ${zurich_account_id}
-	fi
-
-	if [ "${2}" = "${hyderabad_region}" ]; then
-		verify_ssm ${hyderabad_region} false ${hyderabad_account_id}
-	fi
-
-	if [ "${2}" = "${tel_aviv_region}" ]; then
-		verify_ssm ${tel_aviv_region} false ${tel_aviv_account_id}
-	fi
-
-	if [ "${2}" = "${melbourne_region}" ]; then
-		verify_ssm ${melbourne_region} false ${melbourne_account_id}
-	fi
-fi
-
-if [ "${1}" = "rollback-ssm" ]; then
-	if [ "${2}" = "aws" ]; then
-		for region in ${classic_regions}; do
-			rollback_ssm ${region}
-		done
-	fi
-
-	if [ "${2}" = "aws-cn" ]; then
-		for region in ${cn_regions}; do
-			rollback_ssm ${region}
-		done
-	fi
-
-	if [ "${2}" = "aws-us-gov" ]; then
-		for region in ${gov_regions}; do
-			rollback_ssm ${region}
-		done
-	fi
-
-	if [ "${2}" = "${hongkong_region}" ]; then
-		rollback_ssm ${hongkong_region}
-	fi
-
-	if [ "${2}" = "${bahrain_region}" ]; then
-		rollback_ssm ${bahrain_region}
-	fi
-
-	if [ "${2}" = "${cape_town_region}" ]; then
-		rollback_ssm ${cape_town_region}
-	fi
-
-	if [ "${2}" = "${milan_region}" ]; then
-		rollback_ssm ${milan_region}
-	fi
-
-	if [ "${2}" = "${jakarta_region}" ]; then
-		rollback_ssm ${jakarta_region}
-	fi
-
-	if [ "${2}" = "${uae_region}" ]; then
-		rollback_ssm ${uae_region}
-	fi
-
-	if [ "${2}" = "${spain_region}" ]; then
-		rollback_ssm ${spain_region}
-	fi
-
-	if [ "${2}" = "${zurich_region}" ]; then
-		rollback_ssm ${zurich_region}
-	fi
-
-	if [ "${2}" = "${hyderabad_region}" ]; then
-		rollback_ssm ${hyderabad_region}
-	fi
-
-	if [ "${2}" = "${tel_aviv_region}" ]; then
-		rollback_ssm ${tel_aviv_region}
-	fi
-
-	if [ "${2}" = "${melbourne_region}" ]; then
-		rollback_ssm ${melbourne_region}
-	fi
-fi
-
-# Publish using CI/CD pipeline
 # Following scripts will be called only from the CI/CD pipeline
+
+# Publish using the CI/CD pipeline
+#   Note:
+#   cicd-publish private-ecr publishes images in PRIVATE_ECR_REGION region only
+#   cicd-publish private-ecr-stable updates stable tags in ALL classic account regions
 if [ "${1}" = "cicd-publish" ]; then
-	if [ "${2}" = "dockerhub" ]; then
-		publish_to_docker_hub amazon/aws-for-fluent-bit
-	elif [ "${2}" = "public-ecr" ]; then
-		publish_to_public_ecr amazon/aws-for-fluent-bit
-	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
-		for region in ${gov_regions}; do
-			sync_image_version ${region} ${gov_regions_account_id}
-		done
-	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
-		for region in ${cn_regions}; do
-			sync_image_version ${region} ${cn_regions_account_id}
-		done
-	elif [ "${2}" = "${bahrain_region}" ]; then
-		sync_image_version ${bahrain_region} ${bahrain_account_id}
-	elif [ "${2}" = "${hongkong_region}" ]; then
-		sync_image_version ${hongkong_region} ${hongkong_account_id}
-	elif [ "${2}" = "${cape_town_region}" ]; then
-		sync_image_version ${cape_town_region} ${cape_town_account_id}
-	elif [ "${2}" = "${milan_region}" ]; then
-		sync_image_version ${milan_region} ${milan_account_id}
-	elif [ "${2}" = "${jakarta_region}" ]; then
-		sync_image_version ${jakarta_region} ${jakarta_account_id}
-	elif [ "${2}" = "${uae_region}" ]; then
-		sync_image_version ${uae_region} ${uae_account_id}
-	elif [ "${2}" = "${spain_region}" ]; then
-		sync_image_version ${spain_region} ${spain_account_id}
-	elif [ "${2}" = "${zurich_region}" ]; then
-		sync_image_version ${zurich_region} ${zurich_account_id}
-	elif [ "${2}" = "${hyderabad_region}" ]; then
-		sync_image_version ${hyderabad_region} ${hyderabad_account_id}
-	elif [ "${2}" = "${tel_aviv_region}" ]; then
-		sync_image_version ${tel_aviv_region} ${tel_aviv_account_id}
-	elif [ "${2}" = "${melbourne_region}" ]; then
-		sync_image_version ${melbourne_region} ${melbourne_account_id}
-	elif [ "${2}" = "${scanner_region}" ]; then
-		sync_image_version ${scanner_region} ${scanner_account_id}
-	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
-		for region in ${classic_regions}; do
-			sync_image_version ${region} ${classic_regions_account_id}
-		done
-	elif [ $# -eq 3 ] && [ "${2}" = "public-dockerhub-stable" ]; then
-		if [ "${3}" = "us-west-2" ]; then
+	# Sentinel check we are in the primary distribution account
+    if [ "${AWS_ACCOUNT}" = "${PRIMARY_ACCOUNT_ID}" ]; then
+		if [ "${2}" = "dockerhub" ]; then
+			publish_to_docker_hub amazon/aws-for-fluent-bit
+		elif [ "${2}" = "public-ecr" ]; then
+			publish_to_public_ecr amazon/aws-for-fluent-bit
+		elif [ "${2}" = "private-ecr" ]; then
+			publish_ecr ${PRIVATE_ECR_REGION} ${PRIMARY_ACCOUNT_ID}
+		
+		elif [ "${2}" = "dockerhub-stable" ]; then
 			publish_to_docker_hub amazon/aws-for-fluent-bit stable
-		fi
-	elif [ $# -eq 3 ] && [ "${2}" = "public-ecr-stable" ]; then
-		if [ "${3}" = "us-west-2" ]; then
+		elif [ "${2}" = "public-ecr-stable" ]; then
 			publish_to_public_ecr amazon/aws-for-fluent-bit stable
+		elif [ "${2}" = "private-ecr-stable" ]; then
+			# Implementation sync_image_version includes
+			#   1) Sync Public ECR to Private ECR (todo: break up function and remove - leave for now)
+			#   2) Update stable from GitHub repository stable file - only PRIVATE_ECR_REGION needed
+			#      Update ssm parameter stable from GitHub repository stable file - all regions needed
+			for region in ${classic_regions}; do
+				sync_image_version ${region} ${PRIMARY_ACCOUNT_ID}
+			done
 		fi
-	else
-		publish_ecr "${2}" ${classic_regions_account_id}
 	fi
 fi
 
-# Verify using CI/CD pipeline
-if [ "${1}" = "cicd-verify" ]; then
-	if [ "${2}" = "dockerhub" ]; then
-		verify_dockerhub
-	elif [ "${2}" = "public-ecr" ]; then
-		verify_public_ecr
-	elif [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
-		for region in ${gov_regions}; do
-			verify_ecr ${region} ${gov_regions_account_id} true
-		done
-	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
-		for region in ${cn_regions}; do
-			verify_ecr ${region} ${cn_regions_account_id} true
-		done
-	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ecr ${bahrain_region} ${bahrain_account_id} true
-	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ecr ${hongkong_region} ${hongkong_account_id} true
-	elif [ "${2}" = "${cape_town_region}" ]; then
-		verify_ecr ${cape_town_region} ${cape_town_account_id} true
-	elif [ "${2}" = "${milan_region}" ]; then
-		verify_ecr ${milan_region} ${milan_account_id} true
-	elif [ "${2}" = "${jakarta_region}" ]; then
-		verify_ecr ${jakarta_region} ${jakarta_account_id} true
-	elif [ "${2}" = "${uae_region}" ]; then
-		verify_ecr ${uae_region} ${uae_account_id} true
-	elif [ "${2}" = "${spain_region}" ]; then
-		verify_ecr ${spain_region} ${spain_account_id} true
-	elif [ "${2}" = "${zurich_region}" ]; then
-		verify_ecr ${zurich_region} ${zurich_account_id} true
-	elif [ "${2}" = "${hyderabad_region}" ]; then
-		verify_ecr ${hyderabad_region} ${hyderabad_account_id} true
-	elif [ "${2}" = "${tel_aviv_region}" ]; then
-		verify_ecr ${tel_aviv_region} ${tel_aviv_account_id} true
-	elif [ "${2}" = "${melbourne_region}" ]; then
-		verify_ecr ${melbourne_region} ${melbourne_account_id} true
-	elif [ "${2}" = "${scanner_region}" ]; then
-		verify_ecr ${scanner_region} ${scanner_account_id} true
-	elif [ $# -eq 3 ] && [ "${3}" = "stable" ]; then
-		for region in ${classic_regions}; do
-			verify_ecr ${region} ${classic_regions_account_id} true
-		done
-	elif [ "${2}" = "stable" ]; then
-		if [ "${3}" = "us-west-2" ]; then
-			verify_dockerhub stable
-			verify_public_ecr stable
+# Replicate to replica accounts using the CI/CD pipeline
+if [ "${1}" = "cicd-replicate" ]; then
+	# Sentinel check we are in a replica distribution account
+	if [ "${AWS_ACCOUNT}" != "${PRIMARY_ACCOUNT_ID}" ]; then
+		if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
+			for region in ${gov_regions}; do
+				sync_image_version ${region} ${gov_regions_account_id}
+			done
+		elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
+			for region in ${cn_regions}; do
+				sync_image_version ${region} ${cn_regions_account_id}
+			done
+		else
+			sync_image_version ${2} ${AWS_ACCOUNT}
 		fi
-	else
-		verify_ecr "${2}" ${classic_regions_account_id}
+	fi
+fi
+
+# Verify publish using CI/CD pipeline
+# To be used after initial release or stable update
+if [ "${1}" = "cicd-verify-publish" ]; then
+	# Sentinel check in primary account 
+	if [ "${AWS_ACCOUNT}" = "${PRIMARY_ACCOUNT_ID}" ]; then
+		# Primary account: verify after pipeline release
+		if [ "${2}" = "dockerhub" ]; then
+			verify_dockerhub
+		elif [ "${2}" = "public-ecr" ]; then
+			verify_public_ecr
+		elif [ "${2}" = "private-ecr" ]; then
+			verify_ecr ${PRIVATE_ECR_REGION} ${PRIMARY_ACCOUNT_ID}
+			
+		# Primary account: verify after sync task stable update release
+		elif [ "${2}" = "dockerhub-stable" ]; then
+			verify_dockerhub stable
+		elif [ "${2}" = "public-ecr-stable" ]; then
+			verify_public_ecr stable
+		elif [ "${2}" = "private-ecr-stable" ]; then
+			verify_ecr ${PRIVATE_ECR_REGION} ${PRIMARY_ACCOUNT_ID} true
+		fi
+	fi
+fi
+
+# Verify replicate using CI/CD pipeline
+# To be used after sync task
+if [ "${1}" = "cicd-verify-replicate" ]; then
+	# Sentinel check we are in a replica distribution account
+	if [ "${AWS_ACCOUNT}" != "${PRIMARY_ACCOUNT_ID}" ]; then
+		if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
+			for region in ${gov_regions}; do
+				verify_ecr ${region} ${gov_regions_account_id} true
+			done
+		elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
+			for region in ${cn_regions}; do
+				verify_ecr ${region} ${cn_regions_account_id} true
+			done
+		else
+			verify_ecr ${2} ${AWS_ACCOUNT} true
+		fi
 	fi
 fi
 
 # Publish SSM parameters
+# To be used only by the primary account on release
 if [ "${1}" = "cicd-publish-ssm" ]; then
-	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
-		for region in ${gov_regions}; do
-			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		done
-	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
-		for region in ${cn_regions}; do
-			publish_ssm ${region} ${cn_regions_account_id}.dkr.ecr.${region}.amazonaws.com.cn/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		done
-	elif [ "${2}" = "${bahrain_region}" ]; then
-		publish_ssm ${bahrain_region} ${bahrain_account_id}.dkr.ecr.${bahrain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${hongkong_region}" ]; then
-		publish_ssm ${hongkong_region} ${hongkong_account_id}.dkr.ecr.${hongkong_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${cape_town_region}" ]; then
-		publish_ssm ${cape_town_region} ${cape_town_account_id}.dkr.ecr.${cape_town_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${milan_region}" ]; then
-		publish_ssm ${milan_region} ${milan_account_id}.dkr.ecr.${milan_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${jakarta_region}" ]; then
-		publish_ssm ${jakarta_region} ${jakarta_account_id}.dkr.ecr.${jakarta_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${uae_region}" ]; then
-		publish_ssm ${uae_region} ${uae_account_id}.dkr.ecr.${uae_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${spain_region}" ]; then
-		publish_ssm ${spain_region} ${spain_account_id}.dkr.ecr.${spain_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${zurich_region}" ]; then
-		publish_ssm ${zurich_region} ${zurich_account_id}.dkr.ecr.${zurich_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${hyderabad_region}" ]; then
-		publish_ssm ${hyderabad_region} ${hyderabad_account_id}.dkr.ecr.${hyderabad_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${tel_aviv_region}" ]; then
-		publish_ssm ${tel_aviv_region} ${tel_aviv_account_id}.dkr.ecr.${tel_aviv_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	elif [ "${2}" = "${melbourne_region}" ]; then
-		publish_ssm ${melbourne_region} ${melbourne_account_id}.dkr.ecr.${melbourne_region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-	else
+	# Sentinel check in primary account 
+	if [ "${AWS_ACCOUNT}" = "${PRIMARY_ACCOUNT_ID}" ]; then
 		for region in ${classic_regions}; do
 			publish_ssm ${region} ${classic_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION}
 		done
@@ -1221,44 +804,28 @@ fi
 
 # Verify SSM parameters
 if [ "${1}" = "cicd-verify-ssm" ]; then
-	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
-		for region in ${gov_regions}; do
-			verify_ssm ${region} true ${gov_regions_account_id}
-		done
-	elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
-		for region in ${cn_regions}; do
-			verify_ssm ${region} true ${cn_regions_account_id}
-		done
-	elif [ "${2}" = "${bahrain_region}" ]; then
-		verify_ssm ${bahrain_region} true ${bahrain_account_id}
-	elif [ "${2}" = "${hongkong_region}" ]; then
-		verify_ssm ${hongkong_region} true ${hongkong_account_id}
-	elif [ "${2}" = "${cape_town_region}" ]; then
-		verify_ssm ${cape_town_region} true ${cape_town_account_id}
-	elif [ "${2}" = "${milan_region}" ]; then
-		verify_ssm ${milan_region} true ${milan_account_id}
-	elif [ "${2}" = "${jakarta_region}" ]; then
-		verify_ssm ${jakarta_region} true ${jakarta_account_id}
-	elif [ "${2}" = "${uae_region}" ]; then
-		verify_ssm ${uae_region} true ${uae_account_id}
-	elif [ "${2}" = "${spain_region}" ]; then
-		verify_ssm ${spain_region} true ${spain_account_id}
-	elif [ "${2}" = "${zurich_region}" ]; then
-		verify_ssm ${zurich_region} true ${zurich_account_id}
-	elif [ "${2}" = "${hyderabad_region}" ]; then
-		verify_ssm ${hyderabad_region} true ${hyderabad_account_id}
-	elif [ "${2}" = "${tel_aviv_region}" ]; then
-		verify_ssm ${tel_aviv_region} true ${tel_aviv_account_id}
-	elif [ "${2}" = "${melbourne_region}" ]; then
-		verify_ssm ${melbourne_region} true ${melbourne_account_id}
-	elif [ $# -eq 3 ]; then
+
+	is_sync_task=${3:-false}
+
+	# Primary account: supports verification for sync task ssm update and after publish
+	if [ "${AWS_ACCOUNT}" = "${PRIMARY_ACCOUNT_ID}" ]; then
 		for region in ${classic_regions}; do
-			verify_ssm ${region} true ${classic_regions_account_id}
+			verify_ssm ${region} ${is_sync_task} ${classic_regions_account_id}
 		done
+
+	# Replica account: supports verification only after sync task ssm update
 	else
-		for region in ${classic_regions}; do
-			verify_ssm ${region} false ${classic_regions_account_id}
-		done
+		if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
+			for region in ${gov_regions}; do
+				verify_ssm ${region} true ${gov_regions_account_id}
+			done
+		elif [ "${2}" = "cn-north-1" ] || [ "${2}" = "cn-northwest-1" ]; then
+			for region in ${cn_regions}; do
+				verify_ssm ${region} true ${cn_regions_account_id}
+			done
+		else
+			verify_ssm ${2} true ${AWS_ACCOUNT}
+		fi
 	fi
 fi
 

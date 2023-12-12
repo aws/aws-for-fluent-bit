@@ -8,8 +8,6 @@ env:
     LOG_STORAGE_STACK_NAME: 'load-test-fluent-bit-log-storage'
     EKS_CLUSTER_NAME: 'load-test-fluent-bit-eks-cluster'
     PREFIX: 'load-test-fluent-bit-'
-    # Use the following field to shorten the load tests
-    # LOAD_TEST_RUN_TIME_IN_SECONDS: 10 # Default 600
 
 phases:
   install:
@@ -63,21 +61,8 @@ phases:
       - export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
       - export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
       - export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r '.Credentials.SessionToken')
-      - source ./load_tests/setup_test_environment.sh
-      - export AWS_ACCESS_KEY_ID=""
-      - export AWS_SECRET_ACCESS_KEY=""
-      - export AWS_SESSION_TOKEN=""
-      # Run load tests on corresponding platform
-      - |
-        for i in {1..2}; do
-          python ./load_tests/load_test.py ${PLATFORM} && break \
-          || (
-            if [ $i == 2 ]; then
-              echo "Load test retries failed. Exiting."
-              exit 1
-            fi
-            echo "Retrying load tests. Attempt" $(($i+1)))
-        done
+      # Clean up testing resources
+      - python ./load_tests/load_test.py delete_testing_resources
 artifacts:
   files:
     - '**/*'

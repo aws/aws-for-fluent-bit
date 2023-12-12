@@ -18,8 +18,8 @@ OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
 TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
 PREFIX = os.environ['PREFIX']
 EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
-LOGGER_RUN_TIME_IN_SECOND = 600
-BUFFER_TIME_IN_SECOND = 1000
+LOGGER_RUN_TIME_IN_SECOND = int(os.getenv("LOAD_TEST_RUN_TIME_IN_SECONDS", "600"))
+BUFFER_TIME_IN_SECOND = int(LOGGER_RUN_TIME_IN_SECOND * 1000 / 600)
 NUM_OF_EKS_NODES = 4
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
@@ -230,6 +230,11 @@ def run_ecs_tests():
     ecs_cluster_name = os.environ['ECS_CLUSTER_NAME']
     names = {}
 
+    # Delete previous logs data
+    # Create sts session
+    session = get_sts_boto_session()
+    delete_testing_data(session, output=OUTPUT_PLUGIN)
+
     # Run ecs tests once per input logger type
     test_results = []
     for input_logger in INPUT_LOGGERS:
@@ -436,22 +441,36 @@ def publish_fluent_config_s3(input_logger):
     )
     return f'arn:aws:s3:::{bucket_name}/{OUTPUT_PLUGIN}-test/{PLATFORM}/fluent-{input_logger["name"]}.conf'
 
+
 # The following method is used to clear data after all tests run
-def delete_testing_data(session):
-    # Delete associated cloudwatch log streams
-    client = session.client('logs')
-    response = client.describe_log_streams(
-        logGroupName=os.environ['CW_LOG_GROUP_NAME']
-    )
-    for stream in response["logStreams"]:
-        client.delete_log_stream(
-            logGroupName=os.environ['CW_LOG_GROUP_NAME'],
-            logStreamName=stream["logStreamName"]
-        )
-    # Empty s3 bucket
-    s3 = session.resource('s3')
-    bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
-    bucket.objects.all().delete()
+# Output should be "all", "cloudwatch", "firehose", "kinesis", or "s3"
+def delete_testing_data(session, output="all"):
+
+    if (output == "cloudwatch" or output == "all"):
+        # Delete associated cloudwatch log streams
+        if os.getenv('CW_LOG_GROUP_NAME') != None:
+            client = session.client('logs')
+            response = client.describe_log_streams(
+                logGroupName=os.getenv('CW_LOG_GROUP_NAME')
+            )
+            for stream in response["logStreams"]:
+                client.delete_log_stream(
+                    logGroupName=os.environ['CW_LOG_GROUP_NAME'],
+                    logStreamName=stream["logStreamName"]
+                )
+
+    if output == "all":
+        if os.getenv('S3_BUCKET_NAME') != None:
+            s3 = session.resource('s3')
+            bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
+            bucket.objects.all().delete()
+
+    else:
+        if os.getenv('S3_BUCKET_NAME') != None:
+            s3 = session.resource('s3')
+            bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
+            bucket.objects.filter(Prefix=(output.lower() + "-test/")).delete()
+
 
 def generate_daemonset_config(throughput):
     daemonset_config_dict = {
@@ -506,13 +525,88 @@ def delete_testing_resources():
 
     # delete all logs uploaded by Fluent Bit
     # delete all S3 config files
-    delete_testing_data(session)
+    delete_testing_data(session, output="all")
 
     # All related testing resources will be destroyed once the stack is deleted 
     client = session.client('cloudformation')
-    client.delete_stack(
-        StackName=TESTING_RESOURCES_STACK_NAME
-    )
+    
+    existingStacks = {
+        "Stacks": []
+    }
+    try:
+        existingStacks = client.describe_stacks(
+            StackName=TESTING_RESOURCES_STACK_NAME
+        )
+    except:
+        existingStacks = {
+            "Stacks": []
+        }
+
+    if len(existingStacks["Stacks"]) > 0:
+        client.delete_stack(
+            StackName=TESTING_RESOURCES_STACK_NAME
+        )
+
+        max_attempts = 10
+        waiter = client.get_waiter("stack_delete_complete")
+        try:
+            waiter.wait(
+                WaiterConfig={
+                    "MaxAttempts": max_attempts #  10 # 10 * .5 minutes = 5 minutes
+                },
+                StackName=TESTING_RESOURCES_STACK_NAME
+            )
+        except:
+            print("Stack delete timed out after " +  str(max_attempts * 30) + "s.")
+
+        # Fallback stack cleanup
+        use_fallback_cleanup = False
+        try:
+            existingStacks = client.describe_stacks(
+                StackName=TESTING_RESOURCES_STACK_NAME
+            )
+        except:
+            existingStacks = {
+                "Stacks": []
+            }
+        if len(existingStacks["Stacks"]) > 0:
+            print ("Initial clean up failed. Trying backup cleanup optons")
+            use_fallback_cleanup = True
+
+        if use_fallback_cleanup:
+            stack_resources_response = client.describe_stack_resources(
+                StackName=TESTING_RESOURCES_STACK_NAME
+            )
+            filtered_stack_asg = list(
+                filter(lambda s: (s["ResourceType"]=="AWS::AutoScaling::AutoScalingGroup"), stack_resources_response["StackResources"]))
+
+            # Force delete each asg
+            for asg in filtered_stack_asg:
+                asg_client = session.client("autoscaling")
+                asg_client.delete_auto_scaling_group(
+                    AutoScalingGroupName=asg["PhysicalResourceId"],
+                    ForceDelete=True
+                )
+                print("Force delete asg: " + asg["PhysicalResourceId"])
+
+            # Retry delete the stack
+            print("Done with CFN force deletions. Retrying CFN stack delete.")
+            client.delete_stack(
+                StackName=TESTING_RESOURCES_STACK_NAME
+            )
+            max_attempts = 10
+            waiter = client.get_waiter("stack_delete_complete")
+            try:
+                waiter.wait(
+                    WaiterConfig={
+                        "MaxAttempts": max_attempts #  10 # 10 * .5 minutes = 5 minutes
+                    },
+                    StackName=TESTING_RESOURCES_STACK_NAME
+                )
+            except:
+                print("Second attempt stack delete timed out after " +  str(max_attempts * 30) + "s.")
+                exit(1)
+
     # scale down eks cluster
     if PLATFORM == 'eks':
         os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
