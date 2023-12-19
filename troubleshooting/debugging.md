@@ -1,4 +1,4 @@
-# Guide to Debugging Fluent Bit issues
+# Guide to Troubleshoot Fluent Bit issues
 
 ## Table of Contents
 
