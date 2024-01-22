@@ -1,5 +1,10 @@
 # Changelog
 
+### 2.32.0.20240122 Linux re-build
+
+*This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
+* Amazon Linux Base: [2.0.20240109.0](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20240110.html)
+
 ### 2.32.0.20231205 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
