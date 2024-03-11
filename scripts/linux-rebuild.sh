@@ -18,14 +18,16 @@ scripts=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${scripts}"
 
 # If latest is a rebuild ("2.31.12.20230911") returns the base ("2.31.12")
-AWS_FOR_FLUENT_BIT_BASE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION | cut -d '.' -f 1-3)
+export AWS_FOR_FLUENT_BIT_BASE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION | cut -d '.' -f 1-3)
 
-TODAY_DATE_STAMP=$(date +"%Y%m%d")
+export TODAY_DATE_STAMP=$(date +"%Y%m%d")
 
-AWS_FOR_FLUENT_BIT_REBUILD_VERSION="${AWS_FOR_FLUENT_BIT_BASE_VERSION}.${TODAY_DATE_STAMP}"
+export AWS_FOR_FLUENT_BIT_REBUILD_VERSION="${AWS_FOR_FLUENT_BIT_BASE_VERSION}.${TODAY_DATE_STAMP}"
 
 echo "Creating linux only image rebuild ${AWS_FOR_FLUENT_BIT_REBUILD_VERSION} for ${AWS_FOR_FLUENT_BIT_BASE_VERSION}"
 echo "This will edit the version file in your project directory, next run 'make release' next to build"
 
 echo -n ${AWS_FOR_FLUENT_BIT_REBUILD_VERSION} > ../AWS_FOR_FLUENT_BIT_VERSION
+
+python3 linux-rebuild.py
 
