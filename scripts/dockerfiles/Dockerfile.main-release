@@ -54,5 +54,8 @@ RUN chmod +x /entrypoint.sh
 # Optional Metrics endpoint
 EXPOSE 2020
 
+# Change to non-root user
+RUN groupadd -r user && useradd -r -g user user
+
 # Entry point
 CMD /entrypoint.sh
