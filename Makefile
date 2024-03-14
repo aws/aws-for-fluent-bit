@@ -16,6 +16,10 @@ all: release
 # Improve build speeds during development by removing the --no-cache flag
 export DOCKER_BUILD_FLAGS=--no-cache
 
+.PHONY: linux-rebuild
+linux-rebuild:
+	./scripts/linux-rebuild.sh
+
 .PHONY: release
 release: build build-init linux-plugins
 	docker system prune -f
