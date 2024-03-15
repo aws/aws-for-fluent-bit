@@ -28,10 +28,10 @@ const (
 
 // static paths
 const (
-	s3FileDirectoryPath    = "/init/fluent-bit-init-s3-files/"
-	mainConfigFile         = "/init/fluent-bit-init.conf"
-	originalMainConfigFile = "/fluent-bit/etc/fluent-bit.conf"
-	invokeFile             = "/init/invoke_fluent_bit.sh"
+	s3FileDirectoryPath             = "/init/fluent-bit-init-s3-files/"
+	initConfigFilePath              = "/init/fluent-bit-init.conf"
+	firelensGeneratedConfigFilePath = "/fluent-bit/etc/fluent-bit.conf"
+	invokeFilePath                  = "/init/invoke_fluent_bit.sh"
 )
 
 var (
@@ -205,20 +205,23 @@ func processFireLensConfigFile() {
 	// this supports
 	for _, env := range envs {
 		var envKey string
-		var envValue string
 		env_kv := strings.SplitN(env, "=", 2)
 		if len(env_kv) != 2 {
 			logrus.Fatalf("[FluentBit Init Process] Unrecognizable environment variables: %s\n", env)
 		}
 
 		envKey = string(env_kv[0])
-		envValue = string(env_kv[1])
 
 		matchedIgnore := ignoreRegex.MatchString(envKey)
 
 		if matchedIgnore {
 			includeFireLensConfig = false
 		}
+	}
+
+	if includeFireLensConfig {
+		// add @INCLUDE in main config file to include original main config file
+		writeInclude(firelensGeneratedConfigFilePath, initConfigFilePath)
 	}
 }
 
@@ -236,7 +239,7 @@ func processConfigFile(path string) {
 		updateCommand(path)
 	} else {
 		// this is not a parser config file. @INCLUDE
-		writeInclude(path, mainConfigFile)
+		writeInclude(path, initConfigFilePath)
 	}
 }
 
@@ -341,15 +344,15 @@ func downloadS3ConfigFile(s3Downloader S3Downloader, s3FilePath, bucketName, s3F
 }
 
 // use @INCLUDE to add config files to the main config file
-func writeInclude(configFilePath, mainConfigFilePath string) {
-	mainConfigFile := openFile(mainConfigFilePath)
-	defer mainConfigFile.Close()
+func writeInclude(configFilePath string, initConfigFilePath string) {
+	initConfigFile := openFile(initConfigFilePath)
+	defer initConfigFile.Close()
 
 	writeContent := "@INCLUDE " + configFilePath + "\n"
-	_, err := mainConfigFile.WriteString(writeContent)
+	_, err := initConfigFile.WriteString(writeContent)
 	if err != nil {
 		logrus.Errorln(err)
-		logrus.Fatalf("[FluentBit Init Process] Cannot write %s in main config file: %s\n", writeContent[:len(writeContent)-2], mainConfigFilePath)
+		logrus.Fatalf("[FluentBit Init Process] Cannot write %s in main config file: %s\n", writeContent[:len(writeContent)-2], initConfigFilePath)
 	}
 }
 
@@ -406,23 +409,24 @@ func main() {
 	// create the invoke_fluent_bit.sh
 	// which will declare ECS Task Metadata as environment variables
 	// and finally invoke Fluent Bit
-	createFile(invokeFile, true)
+	createFile(invokeFilePath, true)
 
 	// get ECS Task Metadata and set the region for S3 client
 	httpClient := &http.Client{}
 	metadata := getECSTaskMetadata(httpClient)
 
 	// set ECS Task Metada as env vars in the invoke_fluent_bit.sh
-	setECSTaskMetadata(metadata, invokeFile)
+	setECSTaskMetadata(metadata, invokeFilePath)
 
 	// create main config file which will be used invoke Fluent Bit
-	createFile(mainConfigFile, true)
-
-	// add @INCLUDE in main config file to include original main config file
-	writeInclude(originalMainConfigFile, mainConfigFile)
+	createFile(initConfigFilePath, true)
 
 	// create Fluent Bit command to use "-c" to specify new main config file
-	createCommand(&baseCommand, mainConfigFile)
+	createCommand(&baseCommand, initConfigFilePath)
+
+	// include the FireLens generated config
+	// unless the user has set aws_fluent_bit_init_ignore_firelens
+	processFireLensConfigFile()
 
 	// get our built in config files or files from s3
 	// process built-in config files directly
@@ -433,5 +437,5 @@ func main() {
 	// this function will be called at the end
 	// any error appear above will cause exit this process,
 	// will not write Fluent Bit command in the finvoke_fluent_bit.sh so Fluent Bit will not be invoked
-	modifyInvokeFile(invokeFile)
+	modifyInvokeFile(invokeFilePath)
 }
