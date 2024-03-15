@@ -202,20 +202,25 @@ func processFireLensConfigFile() {
 	ignoreRegex := regexp.MustCompile(initIgnoreFireLensConfig)
 
 	// docs say to use aws_fluent_bit_init_ignore_firelens
-	// this supports
+	// this supports case insensitive prefix matching, in case someone
+	// tries to capitalize FireLens, or uses aws_fluent_bit_init_ignore_firelens_config
 	for _, env := range envs {
 		var envKey string
+		var envValue string
 		env_kv := strings.SplitN(env, "=", 2)
 		if len(env_kv) != 2 {
 			logrus.Fatalf("[FluentBit Init Process] Unrecognizable environment variables: %s\n", env)
 		}
 
 		envKey = string(env_kv[0])
+		envValue = string(env_kv[1])
 
 		matchedIgnore := ignoreRegex.MatchString(envKey)
 
 		if matchedIgnore {
-			includeFireLensConfig = false
+			if strings.EqualFold(envValue, "true") || strings.EqualFold(envValue, "on") {
+				includeFireLensConfig = false
+			}
 		}
 	}
 
