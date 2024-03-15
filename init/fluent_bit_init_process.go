@@ -19,6 +19,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// env vars for user configuration
+const (
+	initConfigS3Prefix   = "aws_fluent_bit_init_[sS]3"
+	initConfigFilePrefix = "aws_fluent_bit_init_[fF]ile"
+)
+
 // static paths
 const (
 	s3FileDirectoryPath    = "/init/fluent-bit-init-s3-files/"
@@ -100,7 +106,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 	metadata.ECS_TASK_DEFINITION = metadata.ECS_FAMILY + ":" + metadata.ECS_REVISION
 
 	// per ECS task metadata docs, Cluster can be an ARN or the name
-	if (strings.Contains(metadata.ECS_CLUSTER, "/")) {
+	if strings.Contains(metadata.ECS_CLUSTER, "/") {
 		clusterARN, err := arn.Parse(metadata.ECS_CLUSTER)
 		if err != nil {
 			logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS Cluster ARN: %s %s\n", metadata.ECS_CLUSTER, err)
@@ -169,8 +175,8 @@ func getAllConfigFiles() {
 		envKey = string(env_kv[0])
 		envValue = string(env_kv[1])
 
-		s3_regex, _ := regexp.Compile("aws_fluent_bit_init_[sS]3")
-		file_regex, _ := regexp.Compile("aws_fluent_bit_init_[fF]ile")
+		s3_regex, _ := regexp.Compile(initConfigS3Prefix)
+		file_regex, _ := regexp.Compile(initConfigFilePrefix)
 
 		matched_s3 := s3_regex.MatchString(envKey)
 		matched_file := file_regex.MatchString(envKey)
