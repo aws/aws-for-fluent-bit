@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,9 +19,11 @@ import (
 )
 
 // env vars for user configuration
+// (?i) makes the match case insensitive
 const (
-	initConfigS3Prefix   = "aws_fluent_bit_init_[sS]3"
-	initConfigFilePrefix = "aws_fluent_bit_init_[fF]ile"
+	initS3ConfigFilePattern    = "(?i)aws_fluent_bit_init_s3"
+	initLocalConfigFilePattern = "(?i)aws_fluent_bit_init_file"
+	initIgnoreFireLensConfig   = "(?i)aws_fluent_bit_init_ignore_firelens"
 )
 
 // static paths
@@ -83,7 +84,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 		logrus.Fatalf("[FluentBit Init Process] Failed to get ECS Metadata via HTTP Get: %s\n", err)
 	}
 
-	response, err := ioutil.ReadAll(res.Body)
+	response, err := io.ReadAll(res.Body)
 	if err != nil {
 		logrus.Fatalf("[FluentBit Init Process] Failed to read ECS Metadata from HTTP response: %s\n", err)
 	}
@@ -163,6 +164,9 @@ func getAllConfigFiles() {
 	// get all env vars in the container
 	envs := os.Environ()
 
+	s3Regex := regexp.MustCompile(initS3ConfigFilePattern)
+	fileRegex := regexp.MustCompile(initLocalConfigFilePattern)
+
 	// find all env vars match specified prefix
 	for _, env := range envs {
 		var envKey string
@@ -175,27 +179,51 @@ func getAllConfigFiles() {
 		envKey = string(env_kv[0])
 		envValue = string(env_kv[1])
 
-		s3_regex, _ := regexp.Compile(initConfigS3Prefix)
-		file_regex, _ := regexp.Compile(initConfigFilePrefix)
-
-		matched_s3 := s3_regex.MatchString(envKey)
-		matched_file := file_regex.MatchString(envKey)
+		matchedS3 := s3Regex.MatchString(envKey)
+		matchedFile := fileRegex.MatchString(envKey)
 
 		// if this env var's value is an arn, download the config file first, then process it
-		if matched_s3 {
+		if matchedS3 {
 			s3FilePath := getS3ConfigFile(envValue)
 			s3FileName := strings.SplitN(s3FilePath, "/", -1)
 			processConfigFile(s3FileDirectoryPath + s3FileName[len(s3FileName)-1])
 		}
-		// if this env var's value is a path of our built-in config file, process is derectly
-		if matched_file {
+		// if this env var's value is a local config fil, process is directly
+		if matchedFile {
 			processConfigFile(envValue)
 		}
 	}
 }
 
+func processFireLensConfigFile() {
+	includeFireLensConfig := true
+	envs := os.Environ()
+
+	ignoreRegex := regexp.MustCompile(initIgnoreFireLensConfig)
+
+	// docs say to use aws_fluent_bit_init_ignore_firelens
+	// this supports
+	for _, env := range envs {
+		var envKey string
+		var envValue string
+		env_kv := strings.SplitN(env, "=", 2)
+		if len(env_kv) != 2 {
+			logrus.Fatalf("[FluentBit Init Process] Unrecognizable environment variables: %s\n", env)
+		}
+
+		envKey = string(env_kv[0])
+		envValue = string(env_kv[1])
+
+		matchedIgnore := ignoreRegex.MatchString(envKey)
+
+		if matchedIgnore {
+			includeFireLensConfig = false
+		}
+	}
+}
+
 func processConfigFile(path string) {
-	contentBytes, err := ioutil.ReadFile(path)
+	contentBytes, err := os.ReadFile(path)
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalf("[FluentBit Init Process] Cannot open file: %s\n", path)
