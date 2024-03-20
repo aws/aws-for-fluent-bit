@@ -129,6 +129,7 @@ https://github.com/PettitWesley/fluent-bit.git aws-distro-crypto-self-review 338
 
 # Cloudwatch_logs sequence token deprecation
 https://github.com/matthewfala/fluent-bit.git immutable-sequence-token-deprecation 8ee560e388bbbf850069c81bbca06275f330baeb
+https://github.com/matthewfala/fluent-bit.git immutable-sequence-token-deprecation-error-readability 95cb388f914062d1251795522dbb466bbfbba0f6
 
 # prometheus: sigv4 aws-for-fluent-bit
 https://github.com/matthewfala/fluent-bit.git immutable-2.32.0-prometheus-sigv4 ca93bd1d43ebedeb8e81b46b800ea229fde66fa5
