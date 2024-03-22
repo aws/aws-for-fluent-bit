@@ -143,3 +143,6 @@ https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destru
 
 # throttle: print_status configuration issue resolution
 https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7b05b7ebfe55261ed12d5006c8b682572b6abf4c
+
+# output: add record accessor to opensearch output index
+https://github.com/nwouda/fluent-bit.git  opensearch-output-record-accessor d30d5ea4cbe827c89ff4f3688bb72648da26db1e
