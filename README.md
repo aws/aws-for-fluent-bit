@@ -10,7 +10,7 @@
     - [Latest stable version](#latest-stable-version)
     - [CVE scans and latest stable](#cve-scans-and-latest-stable)
     - [Guidance on consuming versions](#guidance-on-consuming-versions)
-- [Debugging Guide](troubleshooting/debugging.md)
+- [Troubleshooting Guide](troubleshooting/debugging.md)
 - [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
     - [arm64 and x86 images](#arm64-and-amd64-images)
