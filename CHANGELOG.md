@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.32.1
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.32.0` this release adds:
+* Enhancement - Add `aws_fluent_bit_init_ignore_firelens_config` option to ECS init tag. As shown in the [example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/init-ignore-firelens) and [documentation](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases/init-process-for-fluent-bit#how-to-ignore-the-generated-firelens-configuration), this option tells init to ignore the built-in generated FireLens configuration which allows users to fully override it with their own configuration.
+* Enhancement - Upgrade to latest stable Go 1.20.1. Each future AWS for Fluent Bit release will be built with the latest stable Go release. Go is used to build the init process for ECS use cases and the [Go plugins](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins).
+
 ### 2.32.0.20231031 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
