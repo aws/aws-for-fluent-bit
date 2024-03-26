@@ -143,3 +143,6 @@ https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destru
 
 # throttle: print_status configuration issue resolution
 https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7b05b7ebfe55261ed12d5006c8b682572b6abf4c
+
+# loki: fix loki output to process multiple tasks
+https://github.com/fluent/fluent-bit.git master a93117c0556ae78706499ee218e7eab1efdc40df
