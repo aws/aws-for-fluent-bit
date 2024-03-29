@@ -1,11 +1,10 @@
-# Guide to Troubleshoot Fluent Bit issues
+# Guide to Debugging Fluent Bit issues
 
 ## Table of Contents
 
 - [Understanding Error Messages](#understanding-error-messages)
     - [How do I tell if Fluent Bit is losing logs?](#how-do-i-tell-if-fluent-bit-is-losing-logs)
     - [Common Network Errors](#common-network-errors)
-    - [CloudWatch Broken Connection Error](#cloudwatch-broken-connection-error)
     - [Tail Input Skipping File](#tail-input-skipping-file)
     - [Tail Permission Errors](#tail-permission-errors)
     - [Overlimit warnings](#overlimit-warnings)
@@ -170,24 +169,6 @@ The following are common network connection errors that we have seen frequently:
 [error] [tls] SSL error: NET - Connection was reset by peer
 ```
 
-#### CloudWatch Broken Connection Error
-
-As mentioned in the section, [Common Network Errors](#common-network-errors), seeing transinent network errors such as `broken connection` are common and normal and do not indicate log loss. See [Case Studies: Rate of Network Errors](#rate-of-network-errors) for guidance on typical network error rate frequencies.
-
-```
-[error] [http_client] broken connection to <your output destination>
-```
-
-However, if you are seeing a large number of `broken_connection` errors to an AWS `cloudwatch_logs` output plugin, several per second, or around one per chunk flush, the following configuration option may resolve this issue:
-```
-[OUTPUT]
-    name cloudwatch_logs
-    ...
-    # Add the following line
-    net.keepalive_idle_timeout   4
-```
-
-Sometimes Fluent Bit fails to detect keepalive connection closures from CloudWatch Logs API resulting in the reuse of closed connections, which display `broken connection` logs. Adding the `net.keepalive_idle_timeout` config option may resolve this problem. The idle timeout value is set to `4` since CloudWatch Logs API has a `6` second keepalive idle timeout set. Fluent Bit manages open network connections every `1.5` seconds, and thus, to be safe this value is set to `4` so that Fluent Bit's network management will close keepalive connections before CloudWatch API. Note that this solution only applies to the `cloudwatch_logs` c output plugin and not the legacy `cloudwatch` go output plugin.
 
 #### Tail Input Skipping File
 

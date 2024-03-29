@@ -54,8 +54,6 @@ The process for pushing out new builds with CVE patches in the base image or ins
 
 For Windows, every month after the [B release date/"patch tuesday"](https://learn.microsoft.com/en-us/windows/deployment/update/release-cycle#monthly-security-update-release), we re-build and update all Windows images currently found in the [windows.versions](windows.versions) file in this repo with the newest base images from Microsoft. The Fluent Bit and go plugin binaries are copied into the newly released base windows image. Thus, the windows image tags are not immutable images; only the Fluent Bit and Go plugin binaries are immutable over time.
 
-At any point in time, [windows.versions](windows.versions) file will contain at least 5 versions, including latest and latest stable. AWS for Fluent Bit Windows are guaranteed to be patched for 4 months after their release date. Therefore, the [windows.versions](windows.versions) file always contains all versions released in the last 4 months, and may contain more if the latest stable release is older than 4 months. 
-
 For Linux, each image tag is immutable. When there is a report of high or critical CVEs reported in the base amazon linux image or installed linux packages, we will work to push out a new image [per our patching policy](#compliance-and-patching). However, we will not increment the semantic version number to simply re-build to pull in new linux dependencies. Instead, we will add a 4th version number signifying the date the image was built.
 
 For example, a series of releases in time might look like:
@@ -161,7 +159,7 @@ Prior to being designated as the latest stable, a version must pass the followin
 
 * It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image. A version released for CVE patches can be made stable if the underlying if the underlying Fluent Bit code is already designated as stable.
 * No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
-* The version has passed our long running stability tests for at least 2 weeks or is a CVE patch with no Fluent Bit changes that has passed our long running stability tests for at least 1 day. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
+* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
 
 #### CVE scans and latest stable
 

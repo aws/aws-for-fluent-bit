@@ -1,16 +1,5 @@
 # Changelog
 
-### 2.32.1
-This release includes:
-* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
-* Amazon CloudWatch Logs for Fluent Bit 1.9.4
-* Amazon Kinesis Streams for Fluent Bit 1.10.2
-* Amazon Kinesis Firehose for Fluent Bit 1.7.2
-
-Compared to `2.32.0` this release adds:
-* Enhancement - Add `aws_fluent_bit_init_ignore_firelens_config` option to ECS init tag. As shown in the [example](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/init-ignore-firelens) and [documentation](https://github.com/aws/aws-for-fluent-bit/tree/mainline/use_cases/init-process-for-fluent-bit#how-to-ignore-the-generated-firelens-configuration), this option tells init to ignore the built-in generated FireLens configuration which allows users to fully override it with their own configuration.
-* Enhancement - Upgrade to latest stable Go 1.20.1. Each future AWS for Fluent Bit release will be built with the latest stable Go release. Go is used to build the init process for ECS use cases and the [Go plugins](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins).
-
 ### 2.32.0.20240304 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
@@ -39,8 +28,8 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
 
 Compared to `2.31.12` this release adds:
-* Enhancement - Customers can send metrics to Amazon Managed Prometheus via added sigv4 authentication on `prometheus_remote_write`. Refer to [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/amazon-managed-service-for-prometheus/README.md) for information on how to export metrics to AMP on ECS [aws-for-fluent-bit:256](https://github.com/aws/aws-for-fluent-bit/issues/256)
-* Enhancement - Support multiline parsers with the init tag. Multiline parsers can be specified same as a standard parser file [aws-for-fluent-bit:537](https://github.com/aws/aws-for-fluent-bit/issues/537)
+* Feature - Customers can send metrics to Amazon Managed Prometheus via added sigv4 authentication on `prometheus_remote_write`. Refer to [amazon-ecs-firelens-examples](https://github.com/aws-samples/amazon-ecs-firelens-examples/blob/mainline/examples/fluent-bit/amazon-managed-service-for-prometheus/README.md) for information on how to export metrics to AMP on ECS [aws-for-fluent-bit:256](https://github.com/aws/aws-for-fluent-bit/issues/256)
+* Feature - Support multiline parsers with the init tag. Multiline parsers can be specified same as a standard parser file [aws-for-fluent-bit:537](https://github.com/aws/aws-for-fluent-bit/issues/537)
 * Enhancement - Customers can route logs to CloudWatch Logs at higher throughputs by increasing number of output workers as `cloudwatch_logs` output plugin removed sequence tokens from API requests [aws-for-fluent-bit:526](https://github.com/aws/aws-for-fluent-bit/issues/526)
 * Fix - Fix multiline input behavior when multiple streams are parsed (stderr, stdout) together. Multiline logs are no longer terminated when streams are switched between [fluent-bit:7469](https://github.com/fluent/fluent-bit/pull/7469)
 * Fix - Fix networking edgecase causing data loss and OOM related issues via net timeout event injection resolution [fluent-bit:7728](https://github.com/fluent/fluent-bit/pull/7728/files)

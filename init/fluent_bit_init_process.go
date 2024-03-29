@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,20 +19,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// env vars for user configuration
-// (?i) makes the match case insensitive
-const (
-	initS3ConfigFilePattern    = "(?i)aws_fluent_bit_init_s3"
-	initLocalConfigFilePattern = "(?i)aws_fluent_bit_init_file"
-	initIgnoreFireLensConfig   = "(?i)aws_fluent_bit_init_ignore_firelens"
-)
-
 // static paths
 const (
-	s3FileDirectoryPath             = "/init/fluent-bit-init-s3-files/"
-	initConfigFilePath              = "/init/fluent-bit-init.conf"
-	firelensGeneratedConfigFilePath = "/fluent-bit/etc/fluent-bit.conf"
-	invokeFilePath                  = "/init/invoke_fluent_bit.sh"
+	s3FileDirectoryPath    = "/init/fluent-bit-init-s3-files/"
+	mainConfigFile         = "/init/fluent-bit-init.conf"
+	originalMainConfigFile = "/fluent-bit/etc/fluent-bit.conf"
+	invokeFile             = "/init/invoke_fluent_bit.sh"
 )
 
 var (
@@ -84,7 +77,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 		logrus.Fatalf("[FluentBit Init Process] Failed to get ECS Metadata via HTTP Get: %s\n", err)
 	}
 
-	response, err := io.ReadAll(res.Body)
+	response, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logrus.Fatalf("[FluentBit Init Process] Failed to read ECS Metadata from HTTP response: %s\n", err)
 	}
@@ -107,7 +100,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 	metadata.ECS_TASK_DEFINITION = metadata.ECS_FAMILY + ":" + metadata.ECS_REVISION
 
 	// per ECS task metadata docs, Cluster can be an ARN or the name
-	if strings.Contains(metadata.ECS_CLUSTER, "/") {
+	if (strings.Contains(metadata.ECS_CLUSTER, "/")) {
 		clusterARN, err := arn.Parse(metadata.ECS_CLUSTER)
 		if err != nil {
 			logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS Cluster ARN: %s %s\n", metadata.ECS_CLUSTER, err)
@@ -164,9 +157,6 @@ func getAllConfigFiles() {
 	// get all env vars in the container
 	envs := os.Environ()
 
-	s3Regex := regexp.MustCompile(initS3ConfigFilePattern)
-	fileRegex := regexp.MustCompile(initLocalConfigFilePattern)
-
 	// find all env vars match specified prefix
 	for _, env := range envs {
 		var envKey string
@@ -179,59 +169,27 @@ func getAllConfigFiles() {
 		envKey = string(env_kv[0])
 		envValue = string(env_kv[1])
 
-		matchedS3 := s3Regex.MatchString(envKey)
-		matchedFile := fileRegex.MatchString(envKey)
+		s3_regex, _ := regexp.Compile("aws_fluent_bit_init_[sS]3")
+		file_regex, _ := regexp.Compile("aws_fluent_bit_init_[fF]ile")
+
+		matched_s3 := s3_regex.MatchString(envKey)
+		matched_file := file_regex.MatchString(envKey)
 
 		// if this env var's value is an arn, download the config file first, then process it
-		if matchedS3 {
+		if matched_s3 {
 			s3FilePath := getS3ConfigFile(envValue)
 			s3FileName := strings.SplitN(s3FilePath, "/", -1)
 			processConfigFile(s3FileDirectoryPath + s3FileName[len(s3FileName)-1])
 		}
-		// if this env var's value is a local config fil, process is directly
-		if matchedFile {
+		// if this env var's value is a path of our built-in config file, process is derectly
+		if matched_file {
 			processConfigFile(envValue)
 		}
 	}
 }
 
-func processFireLensConfigFile() {
-	includeFireLensConfig := true
-	envs := os.Environ()
-
-	ignoreRegex := regexp.MustCompile(initIgnoreFireLensConfig)
-
-	// docs say to use aws_fluent_bit_init_ignore_firelens
-	// this supports case insensitive prefix matching, in case someone
-	// tries to capitalize FireLens, or uses aws_fluent_bit_init_ignore_firelens_config
-	for _, env := range envs {
-		var envKey string
-		var envValue string
-		env_kv := strings.SplitN(env, "=", 2)
-		if len(env_kv) != 2 {
-			logrus.Fatalf("[FluentBit Init Process] Unrecognizable environment variables: %s\n", env)
-		}
-
-		envKey = string(env_kv[0])
-		envValue = string(env_kv[1])
-
-		matchedIgnore := ignoreRegex.MatchString(envKey)
-
-		if matchedIgnore {
-			if strings.EqualFold(envValue, "true") || strings.EqualFold(envValue, "on") {
-				includeFireLensConfig = false
-			}
-		}
-	}
-
-	if includeFireLensConfig {
-		// add @INCLUDE in main config file to include original main config file
-		writeInclude(firelensGeneratedConfigFilePath, initConfigFilePath)
-	}
-}
-
 func processConfigFile(path string) {
-	contentBytes, err := os.ReadFile(path)
+	contentBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalf("[FluentBit Init Process] Cannot open file: %s\n", path)
@@ -244,7 +202,7 @@ func processConfigFile(path string) {
 		updateCommand(path)
 	} else {
 		// this is not a parser config file. @INCLUDE
-		writeInclude(path, initConfigFilePath)
+		writeInclude(path, mainConfigFile)
 	}
 }
 
@@ -349,15 +307,15 @@ func downloadS3ConfigFile(s3Downloader S3Downloader, s3FilePath, bucketName, s3F
 }
 
 // use @INCLUDE to add config files to the main config file
-func writeInclude(configFilePath string, initConfigFilePath string) {
-	initConfigFile := openFile(initConfigFilePath)
-	defer initConfigFile.Close()
+func writeInclude(configFilePath, mainConfigFilePath string) {
+	mainConfigFile := openFile(mainConfigFilePath)
+	defer mainConfigFile.Close()
 
 	writeContent := "@INCLUDE " + configFilePath + "\n"
-	_, err := initConfigFile.WriteString(writeContent)
+	_, err := mainConfigFile.WriteString(writeContent)
 	if err != nil {
 		logrus.Errorln(err)
-		logrus.Fatalf("[FluentBit Init Process] Cannot write %s in main config file: %s\n", writeContent[:len(writeContent)-2], initConfigFilePath)
+		logrus.Fatalf("[FluentBit Init Process] Cannot write %s in main config file: %s\n", writeContent[:len(writeContent)-2], mainConfigFilePath)
 	}
 }
 
@@ -414,24 +372,23 @@ func main() {
 	// create the invoke_fluent_bit.sh
 	// which will declare ECS Task Metadata as environment variables
 	// and finally invoke Fluent Bit
-	createFile(invokeFilePath, true)
+	createFile(invokeFile, true)
 
 	// get ECS Task Metadata and set the region for S3 client
 	httpClient := &http.Client{}
 	metadata := getECSTaskMetadata(httpClient)
 
 	// set ECS Task Metada as env vars in the invoke_fluent_bit.sh
-	setECSTaskMetadata(metadata, invokeFilePath)
+	setECSTaskMetadata(metadata, invokeFile)
 
 	// create main config file which will be used invoke Fluent Bit
-	createFile(initConfigFilePath, true)
+	createFile(mainConfigFile, true)
+
+	// add @INCLUDE in main config file to include original main config file
+	writeInclude(originalMainConfigFile, mainConfigFile)
 
 	// create Fluent Bit command to use "-c" to specify new main config file
-	createCommand(&baseCommand, initConfigFilePath)
-
-	// include the FireLens generated config
-	// unless the user has set aws_fluent_bit_init_ignore_firelens
-	processFireLensConfigFile()
+	createCommand(&baseCommand, mainConfigFile)
 
 	// get our built in config files or files from s3
 	// process built-in config files directly
@@ -442,5 +399,5 @@ func main() {
 	// this function will be called at the end
 	// any error appear above will cause exit this process,
 	// will not write Fluent Bit command in the finvoke_fluent_bit.sh so Fluent Bit will not be invoked
-	modifyInvokeFile(invokeFilePath)
+	modifyInvokeFile(invokeFile)
 }

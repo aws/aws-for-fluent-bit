@@ -1,8 +1,0 @@
-# we just want to output all of the results each on one line_count
-# then find and remove all quote " characters
-# then we are left with a valid CSV
-# the max events that a log insights query can output is 10,000 but only if you use the limit keyword
-```
-fields @message
-| limit 10000
-```
