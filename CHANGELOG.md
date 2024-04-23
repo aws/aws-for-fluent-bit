@@ -1,9 +1,13 @@
 # Changelog
 
+### 2.32.2.20230422
+*This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
+* Amazon Linux Base: [2.0.20240412.0](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20240419.html)
+
+
 ### 2.32.2
 *This release is a rollback to version 2.32.0.20231031 after issues are detected in 2.32.1*
-*This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. Th
-ere are no windows images for this release.*
+*This release has the same Fluent Bit contents as 2.32.0, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.*
 * Amazon Linux Base: [2.0.20231024.1](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20231024.html)
 
 ### 2.32.1
