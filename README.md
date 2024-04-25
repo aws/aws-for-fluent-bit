@@ -1,15 +1,17 @@
 ## AWS for Fluent Bit Docker Image
 
+Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)** 🫡
+
 ### Contents
 
-- [AWS Distro versioning scheme FAQ](#aws-distro-versioning-scheme-faq)
-- [Compliance and Patching](#compliance-and-patching)
 - [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)
     - [AWS Distro for Fluent Bit Release Tags](#aws-distro-for-fluent-bit-release-tags)
     - [AWS Distro for Fluent Bit release testing](#aws-distro-for-fluent-bit-release-testing)
     - [Latest stable version](#latest-stable-version)
     - [CVE scans and latest stable](#cve-scans-and-latest-stable)
     - [Guidance on consuming versions](#guidance-on-consuming-versions)
+- [AWS Distro versioning scheme FAQ](#aws-distro-versioning-scheme-faq)
+- [Compliance and Patching](#compliance-and-patching)
 - [Debugging Guide](troubleshooting/debugging.md)
 - [Use Case Guide](use_cases/)
 - [Public Images](#public-images)
@@ -30,6 +32,89 @@
     - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
 - [Fluent Bit Examples](#fluent-bit-examples)
 - [License](#license)
+
+
+### Consuming AWS for Fluent Bit versions
+
+> 🔥⚠️**WARNING**⚠️🔥: Please read and understand the following information on how to consume AWS for Fluent Bit. Failure to do so may cause outages to your production environment. 😭💔
+
+#### AWS Distro for Fluent Bit Release Tags
+
+Our image repos contain the following types of tags, which are explained in the sections below:
+
+* `latest`: The most recently released image version. 🔥 **😵We do not recommend deploying this to production environments ever,** see [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `Version number tag`: Each release has a version number, for example `2.28.4`. **These are the only tags we recommend ✅😍 consuming in production environments**: [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `stable`: Some time after a version is released, it may be designated as the latest stable. See [Latest stable version](#latest-stable-version) and  [Guidance on consuming versions](#guidance-on-consuming-versions).
+
+#### AWS Distro for Fluent Bit release testing
+
+**Types of tests we run**
+
+* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Short running tests of the AWS output plugins that send log records and verify that all of them were received correctly formatted at the destination.
+* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Test Fluent Bit AWS output plugins at various throughputs and check for log loss, the results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
+* Long running stability tests: Highly parallel tests run in Amazon ECS for the AWS output plugins using the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project. These tests simulate real Fluent Bit deployments and use cases to test for bugs that crashes. 
+
+
+**Latest release testing bar**
+
+* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
+* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
+* Long running stability tests: No crashes observed for at least 1 day. 
+
+
+**CVE Patch release testing bar**
+
+* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
+* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
+
+We do not run our long running stability tests for CVE patches. This is because the goal is to get the CVE patch out as quickly as possible, and because CVE patch releases never include Fluent Bit code changes. CVE patch releases only include base image dependency upgrades. *If there is ever a CVE in the Fluent Bit code base itself, the patch for it would be considered a bug fix that might introduce instability and it would undergo the normal latest release testing.* 
+
+**Latest stable release testing bar**
+
+For a version to be made the latest `stable`, it must already have been previously released as the latest release. Thus it will have already passed the testing bar noted above for `latest`. 
+
+In addition, our stable release undergoes additional testing:
+
+* Long running stability tests: The version undergoes and passes these tests for at least 2 weeks. After the version is promoted to stable we continue to run the long running stability tests, and may roll back the stable designation if issues later surface.  
+
+#### Latest stable version
+
+Our latest stable version is the most recent version that we have high confidence is stable for AWS use cases. *We recommend using the stable version number in your prod deployments but **not the stable tag itself**; see* [Guidance on consuming versions](#guidance-on-consuming-versions)
+
+The latest stable version is marked with the tag `stable`/`windowsservercore-stable`. The version number that is currently designated as the latest stable can always be found in the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file in the root of this repo. 
+
+> ❗ *There is no guarantee that `stable` has no issues- stable simply has a higher testing bar than our latest releases. The `stable` tag can be downgraded and rolled back to the previous stable if new test results or customer bug reports surface issues. This has occurred* [*in the past*](https://github.com/aws/aws-for-fluent-bit/issues/542)*.  *Consequently, we recommend locking to a **specific version tag** and informing your choice of version using our current stable designation.*
+
+
+Prior to being designated as the latest stable, a version must pass the following criteria:
+
+* It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image. A version released for CVE patches can be made stable if the underlying if the underlying Fluent Bit code is already designated as stable.
+* No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
+* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
+
+#### CVE scans and latest stable
+
+[Please read our CVE patching policy.](https://github.com/aws/aws-for-fluent-bit#compliance-and-patching) 
+
+The stable designation is for the Fluent Bit code contents of the image, not CVE scan results for dependencies installed in the image. We will upgrade a CVE patch to be the latest stable if it contains no Fluent Bit code changes compared to the previous latest stable. 
+
+
+#### Guidance on consuming versions
+
+Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) call out the key AWS changes in each new version. 
+
+*We recommend that you only consume non-stable releases in your test/pre-prod stages. Consuming the `latest` tag directly is widely considered to be an anti-pattern in the software industry.* 
+
+⚡ *We strongly recommend that you always lock deployments to a specific immutable version tag, rather than using our `stable` or `latest` tags.* We recommend you to conduct a gradual rollout of each new version consistent with your deployment rollout strategy as you would for any other code or dependency being deployed: i.e. first to non-production environments first then gradually to your production environments.
+
+Using the `stable` or `latest` tag directly in prod has the following downsides: 🤕
+
+1. 😕*Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. This is because the `stable` and `latest` tags are mutable and change over time. 
+2. 😐*Mixed deployments*: If you are in the middle of a deployment when we release an update to the `stable` or `latest` immutable tags, some of your deployment may have deployed the previous version, and the rest will deploy the new version. 
+3. 🤢*Difficulty in rolling back*: While we take every effort to avoid releasing regressions, there is always a chance a bug might slip out. Explicitly consuming a version helps make it easier to rollback since there would be an existing deployment configuration to rollback to.
+
+
+*The best practice for consuming AWS for Fluent Bit is to check the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file and lock your prod deployments to that specific version tag.* For example, if the current stable is `2.28.4`, your deployment should use `public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4` not `public.ecr.aws/aws-observability/aws-for-fluent-bit:stable`.
 
 
 ### AWS Distro versioning scheme FAQ
@@ -104,84 +189,6 @@ If your concern is about a vulnerability in the Fluent Bit upstream ([github.com
 **Q: How do I report security disclosures?**
 
 If you think you’ve found a potentially sensitive security issue, please do not post it in the Issues on GitHub.  Instead, please follow the instructions [here](https://aws.amazon.com/security/vulnerability-reporting/) or email AWS security directly at [aws-security@amazon.com](mailto:aws-security@amazon.com).
-
-### Consuming AWS for Fluent Bit versions
-
-#### AWS Distro for Fluent Bit Release Tags
-
-Our image repos contain the following types of tags, which are explained in the sections below:
-
-* `latest`: The most recently released image version. We do not recommend deploying this to production environments ever, see [Guidance on consuming versions](#guidance-on-consuming-versions).
-* `Version number tag`: Each release has a version number, for example `2.28.4`. These are the only tags we recommend consuming in production environments: [Guidance on consuming versions](#guidance-on-consuming-versions).
-* `stable`: Some time after a version is released, it may be designated as the latest stable. See [Latest stable version](#latest-stable-version) and  [Guidance on consuming versions](#guidance-on-consuming-versions).
-
-#### AWS Distro for Fluent Bit release testing
-
-**Types of tests we run**
-
-* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Short running tests of the AWS output plugins that send log records and verify that all of them were received correctly formatted at the destination.
-* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Test Fluent Bit AWS output plugins at various throughputs and check for log loss, the results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
-* Long running stability tests: Highly parallel tests run in Amazon ECS for the AWS output plugins using the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project. These tests simulate real Fluent Bit deployments and use cases to test for bugs that crashes. 
-
-
-**Latest release testing bar**
-
-* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
-* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
-* Long running stability tests: No crashes observed for at least 1 day. 
-
-
-**CVE Patch release testing bar**
-
-* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
-* [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
-
-We do not run our long running stability tests for CVE patches. This is because the goal is to get the CVE patch out as quickly as possible, and because CVE patch releases never include Fluent Bit code changes. CVE patch releases only include base image dependency upgrades. *If there is ever a CVE in the Fluent Bit code base itself, the patch for it would be considered a bug fix that might introduce instability and it would undergo the normal latest release testing.* 
-
-**Latest stable release testing bar**
-
-For a version to be made the latest `stable`, it must already have been previously released as the latest release. Thus it will have already passed the testing bar noted above for `latest`. 
-
-In addition, our stable release undergoes additional testing:
-
-* Long running stability tests: The version undergoes and passes these tests for at least 2 weeks. After the version is promoted to stable we continue to run the long running stability tests, and may roll back the stable designation if issues later surface.  
-
-#### Latest stable version
-
-Our latest stable version is the most recent version that we have high confidence is stable for AWS use cases. *We recommend using the stable version number in your prod deployments; see* [Guidance on consuming versions](#guidance-on-consuming-versions)
-
-The latest stable version is marked with the tag `stable`/`windowsservercore-stable`. The version number that is currently designated as the latest stable can always be found in the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file in the root of this repo. 
-
-*There is no guarantee that `stable` has no issues- stable simply has a higher testing bar than our latest releases. The `stable` tag can be downgraded and rolled back to the previous stable if new test results or customer bug reports surface issues. This has occurred* [*in the past*](https://github.com/aws/aws-for-fluent-bit/issues/542)*.  *Consequently, we recommend locking to a specific version tag and informing your choice of version using our current stable designation.*
-
-
-Prior to being designated as the latest stable, a version must pass the following criteria:
-
-* It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image. A version released for CVE patches can be made stable if the underlying if the underlying Fluent Bit code is already designated as stable.
-* No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
-* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
-
-#### CVE scans and latest stable
-
-[Please read our CVE patching policy.](https://github.com/aws/aws-for-fluent-bit#compliance-and-patching) 
-
-The stable designation is for the Fluent Bit code contents of the image, not CVE scan results for dependencies installed in the image. We will upgrade a CVE patch to be the latest stable if it contains no Fluent Bit code changes compared to the previous latest stable. 
-
-
-#### Guidance on consuming versions
-
-Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) call out the key AWS changes in each new version. 
-
-*We recommend that you only consume non-stable releases in your test/pre-prod stages. Consuming the `latest` tag directly is widely considered to be an anti-pattern in the software industry.* 
-
-*We strongly recommend that you always lock deployments to a specific immutable version tag, rather than using our `stable` or `latest` tags.* Using the `stable` or `latest` tag directly in prod has the following downsides:
-
-1. *Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. This is because the `stable` and `latest` tags are mutable and change over time. 
-2. *Mixed deployments*: If you are in the middle of a deployment when we release an update to the `stable` or `latest` immutable tags, some of your deployment may have deployed the previous version, and the rest will deploy the new version. 
-
-
-*The best practice for consuming AWS for Fluent Bit is to check the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file and lock your prod deployments to that specific version tag.* For example, if the current stable is `2.28.4`, your deployment should use `public.ecr.aws/aws-observability/aws-for-fluent-bit:2.28.4` not `public.ecr.aws/aws-observability/aws-for-fluent-bit:stable`.
-
 
 ### Debugging Guide
 
