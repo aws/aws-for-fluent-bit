@@ -55,8 +55,11 @@
     - [Always use multiline in the tail input](#always-use-multiline-in-the-tail-input)
     - [Tail Input duplicates logs during rotation](#tail-input-duplicates-logs-because-of-rotation)
     - [Both CloudWatch Plugins: Create failures consume retries](#both-cloudwatch-plugins-create-failures-consume-retries)
+    - [Limitation: No more than 2 multiline parsers per log tag](#limitation-no-more-than-2-multiline-parsers-per-log-tag)
 - [EKS](#eks)
     - [Filesystem buffering and log files saturate node disk IOPs](#filesystem-buffering-and-log-files-saturate-node-disk-iops)
+    - [EKS Tail Multiline Configuration](#eks-tail-multiline-configuration)
+    - [Adding custom multiline parsing rules on top of CRI multiline parsing: only one parser is applied](#adding-custom-multiline-parsing-rules-to-cri-multiline-parsing-only-one-parser-is-applied)
 - [Best Practices](#best-practices)
     - [Set Aliases on all Inputs and Outputs](#set-aliases-on-all-inputs-and-outputs)
     - [Tail Config with Best Practices](#tail-config-with-best-practices)
@@ -998,6 +1001,16 @@ If you are concerned about this, the solution is to set a higher value for `Retr
 
 If you use the `log_group_name` or `log_stream_name` options, creation only happens on startup. If you use the `log_stream_prefix` option, creation happens the first time logs are sent with a new tag. Thus, in most cases resource creation is rare/only on startup. If you use the log group and stream templating options (these are different for each CloudWatch plugin, see [Migrating to or from cloudwatch_logs C plugin to or from cloudwatch Go Plugin](#migrating-to-or-from-cloudwatch_logs-c-plugin-to-or-from-cloudwatch-go-plugin)), then log groups and log streams are created on demand based on your templates.
 
+#### Limitation: No more than 2 multiline parsers per log tag
+
+The Fluent Bit multiline filtr can only apply a single multiline parser to each log record; it will try each parser in the comma delimited list in order, and apply the first one that matches the log (i.e. use the first parser which has a start_state that matches the log).
+
+This limitation means that each log record can only have 2 multiline parsers successfully applied to it. The first applied parser can be defined with the tail multiline settings, and the second applied parser can be specified in a multiline filter definition.
+
+Please check GitHub issue [#5235](https://github.com/fluent/fluent-bit/issues/5235).
+
+Please check out the tutorial [Adding custom multiline parsing rules on top of CRI multiline parsing: only one parser is applied](#adding-custom-multiline-parsing-rules-on-top-of-cri-multiline-parsing-only-one-parser-is-applied).
+
 ### EKS
 
 #### Filesystem buffering and log files saturate node disk IOPs
@@ -1009,6 +1022,152 @@ Thus, on Kubernetes most users run Fluent Bit as a daemonset pod with filesystem
 In cases of high log output rate from pods, or a large number of pods per node, this can lead to saturation of [IOPs](https://www.techtarget.com/searchstorage/definition/IOPS-input-output-operations-per-second) on your nodes. This can freeze your nodes and make them non-responsive. 
 
 Consequently, we recommend carefully monitoring your [EBS metrics in CloudWatch](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-io-characteristics.html) and considering switching to [storage.type memory](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/oomkill-prevention#case-1-memory-buffering-only-default-or-storagetype-memory).
+
+#### EKS Tail Multiline Configuration
+
+Fluent Bit supports multiline log concatenation for split container logs. Most container runtimes split logs after some limit, usually 16KB. This means a single newline delimitted statement emitted by your application may be split into multiple log lines in the log file. Fluent Bit can recombine the messages. Fluent Bit supports K8s on Docker and K8s on CRI. 
+
+For example, imagine the max log size in the container runtime was 10 bytes, then if the pod emits the log line "hello world!", in the log file there would be two lines:
+```
+2023-05-19T20:13:35.24481424Z stdout P Hello worl
+2023-05-19T20:13:35.24481424Z stdout F d!
+```
+
+The recommended Fluent Bit tail configuration below will read this as a single log event:
+
+```
+{
+    time": "2023-05-19T20:13:35.24481424Z",
+    "stream": "stderr",
+    "_p": "P",
+    "log": "Hello world!",
+}
+```
+
+See the [Fluent Bit documentation](https://docs.fluentbit.io/manual/pipeline/inputs/tail#multiline-and-containers-v1.8). See the Kubernetes repo for the [spec of the log file format](https://github.com/kubernetes/design-proposals-archive/blob/main/node/kubelet-cri-logging.md).
+
+```
+[INPUT]
+    name              tail
+    path              /var/log/containers/*.log
+    multiline.parser  docker, cri
+```
+
+#### Adding custom multiline parsing rules on top of CRI multiline parsing: only one parser is applied
+
+Please also read [Limitation: no more than 2 multiline parsers per log tag](#limitation-no-more-than-2-multiline-parsers-per-log-tag).
+
+See the above example that uses mutliline in the tail input to recombine logs split by the container runtime. 
+
+For the sake of this example, imagine again that the max log size set by the container runtime is 10 bytes. The pod emits the following data in a series of statements, which are then split into partials. Imagine the code in the app is:
+
+```
+print('UserID 6: Access Denied')
+print('RequestID: x4a-3m7')
+```
+
+In the log file, these two lines are split into 5 messages due to the 10 byte max log line size arbitrarily set to make this example simple:
+
+```
+2023-05-19T20:13:35.24481424Z stdout P UserID 6: 
+2023-05-19T20:13:35.24481424Z stdout P Access Den
+2023-05-19T20:13:35.24481424Z stdout F ied
+2023-05-19T20:13:36.45481729Z stdout P RequestID:
+2023-05-19T20:13:36.45481729Z stdout F  x4a-3m7
+```
+
+With the [recommended tail multiline configuration for kubernetes](#eks-tail-multiline-configuration) above, Fluent Bit produces two messages:
+
+```
+{
+    "time"=>"2023-05-19T20:13:35.24481424Z", 
+    "stream"=>"stdout", 
+    "_p"=>"P", 
+    "log"=>"UserID 6: Access Denied"
+}
+{
+    "time"=>"2023-05-19T20:13:36.45481729Z", 
+    "stream"=>"stdout", 
+    "_p"=>"P", 
+    "log"=>"RequestID: x4a-3m7"
+}
+```
+
+However, for the business use case of observabily into the application, this is not desirable, the request ID and user statement should be in one message.
+
+This can be achieved by adding a custom multiline parser and a custom multiline filter definition to the configuration. Please read [common issues: multiline.parser name not registered](#multiline-parser-parser_name-not-registered) as background for this tutorial. 
+
+##### Custom Multiline Parser
+
+Create a `parsers-multiline.conf` and add it to your Fluent Bit config map:
+
+```
+[MULTILINE_PARSER]
+    name          multiline-regex-example
+    type          regex
+    flush_timeout 1000
+    #
+    # Regex rules for multiline parsing
+    # ---------------------------------
+    #
+    # configuration hints:
+    #
+    #  - first state always has the name: start_state
+    #  - every field in the rule must be inside double quotes
+    #
+    # rules |   state name  | regex pattern                  | next state
+    # ------|---------------|--------------------------------------------
+    rule      "start_state"   "/^UserID.*/"                        "cont"
+    rule      "cont"          "/^RequestID.*/"
+```
+
+The parser will match the UserID log as the start of a multiline message and then match the RequestID log line as the end.
+
+Next, import the parser in the main configuration and create a [multiline filter](https://docs.fluentbit.io/manual/pipeline/filters/multiline-stacktrace
+) definition that uses the parser. The Fluent Bit configuration now should look like:
+
+```
+[SERVICE]
+    flush        1
+    log_level    info
+    parsers_file parsers_multiline.conf # configure your path
+
+[INPUT]
+    name              tail
+    path              /home/ec2-user/configs/*.log # TODO: configure your path
+    multiline.parser  docker, cri
+    READ_FROM_HEAD    On
+    Tag               app-logs # TODO: choose your tag or use *
+
+[FILTER]
+    name                  multiline
+    match                 app-logs # TODO: choose your tag or use *
+    multiline.key_content log
+    multiline.parser      multiline-regex-example
+
+[OUTPUT]
+    Name stdout
+    Match *
+```
+
+
+Recall the partial messages in the example log file:
+
+
+```
+2023-05-19T20:13:35.24481424Z stdout P UserID 6:
+2023-05-19T20:13:35.24481424Z stdout P Access Den
+2023-05-19T20:13:35.24481424Z stdout F ied
+2023-05-19T20:13:36.45481729Z stdout P RequestID:
+2023-05-19T20:13:36.45481729Z stdout F  x4a-3m7
+```
+
+Fluent Bit will parse these into a single log line:
+```
+[0] tail.0: [[1684527215.244814240, {}], {"time"=>"2023-05-19T20:13:35.24481424Z", "stream"=>"stdout", "_p"=>"P", "log"=>"UserID 6: Access Denied
+RequestID: x4a-3m7"}]
+```
+
 
 ### Best Practices
 
