@@ -838,13 +838,15 @@ Log delay can happen for the following reasons:
 While the Fluent Bit maintainers are constantly working to improve its max performance, there are limitations. Carefully architecting your Fluent Bit deployment can ensure it can scale to meet your required throughput. 
 
 If you are handling very high throughput of logs, consider the following:
-1. Switch to a sidecar deployment model if you are using a Daemon/Daemonset. In the sidecar model, there is a dedicated Fluent Bit container for each application container/pod/task. This means that as you scale out to more app containers, you automatically scale out to more Fluent Bit containers as well. 
+1. Switch to a sidecar deployment model if you are using a Daemon/Daemonset. In the sidecar model, there is a dedicated Fluent Bit container for each application container/pod/task. This means that as you scale out to more app containers, you automatically scale out to more Fluent Bit containers as well. Each app container presumably would process less work and thus produce fewer logs, decreasing the throughput that each Fluent Bit instance must handle. 
 2. Enable Workers. Workers is a new feature for multi-threading in core outputs. Even enabling a single worker can help, as it is a dedicated thread for that output instance. All of the AWS core outputs support workers:
     - https://docs.fluentbit.io/manual/pipeline/outputs/cloudwatch#worker-support
     - https://docs.fluentbit.io/manual/pipeline/outputs/kinesis#worker-support
     - https://docs.fluentbit.io/manual/pipeline/outputs/firehose#worker-support
     - https://docs.fluentbit.io/manual/pipeline/outputs/s3#worker-support 
-3. Use a log streaming model instead of tailing log files. The AWS team has repeatedly found that complaints of scaling problems usually are cases where the tail input is used. Tailing log files and watching for rotations is inherently costly and slower than a direct streaming model. [Amazon ECS FireLens](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) is one good example of direct streaming model (that also uses sidecar for more scalability)- logs are sent from the container stdout/stderr stream via the container runtime over a unix socket to a Fluent Bit [forward](https://docs.fluentbit.io/manual/pipeline/inputs/forward) input. Another option is to use the [TCP input which can work with some loggers, including log4j](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection#tutorial-3-using-log4j-with-tcp). 
+3. Use a log streaming model instead of tailing log files. The AWS team has repeatedly found that complaints of scaling problems usually are cases where the tail input is used. Tailing log files and watching for rotations is inherently costly and slower than a direct streaming model. [Amazon ECS FireLens](https://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/) is one good example of direct streaming model (that also uses sidecar for more scalability)- logs are sent from the container stdout/stderr stream via the container runtime over a unix socket to a Fluent Bit [forward](https://docs.fluentbit.io/manual/pipeline/inputs/forward) input. Another option is to use the [TCP input which can work with some loggers, including log4j](https://github.com/aws-samples/amazon-ecs-firelens-examples/tree/mainline/examples/fluent-bit/ecs-log-collection#tutorial-3-using-log4j-with-tcp).
+4. Increase the Grace period and Container Stop Timeout. By default, Fluent Bit has a 5 second shutdown grace period. Both EKS and ECS give 30 seconds by default for containers to gracefully shutdown. See Guidance section [Set Grace to 30](#set-grace-to-30).
+5. Make sure you are sending logs in-region (i.e. from a task/pod/cluster in us-east-1 to a log group in us-east-1). Sending logs out of region significantly reduces throughput. 
 
 ## Throttling, Log Duplication & Ordering
 
@@ -1070,6 +1072,15 @@ In Amazon EKS and Amazon ECS, the shutdown grace period for containers, the time
 [SERVICE]
     Grace 30
 ```
+
+##### Increase the default container shutdown grace period
+
+For both EKS and ECS, it is 30 seconds by default. Increasing the timeout gives Fluent Bit more time to send logs on shutdown if the Grace setting is also increased. 
+
+- https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_StopTask.html
+- https://aws.amazon.com/blogs/containers/graceful-shutdowns-with-ecs/
+- https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks
+- https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
 
 #### Use Lua script instead of filters
 
