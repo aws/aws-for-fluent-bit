@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.32.3
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+
+Compared to `2.31.12` this release adds:
+* Fix - During shutdown, the `Grace` setting controls how long Fluent Bit waits after receiving a SIGTERM before exiting. Previously, input ingestion was paused one second after shutdown; with this change Fluent Bit stops acceptings new logs when one half of the `Grace` period time has elapsed. 
+
+
 ### 2.32.2.20240516 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.2, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 

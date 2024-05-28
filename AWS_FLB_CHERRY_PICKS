@@ -143,3 +143,8 @@ https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destru
 
 # throttle: print_status configuration issue resolution
 https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7b05b7ebfe55261ed12d5006c8b682572b6abf4c
+
+# Shutdown improvements: https://github.com/PettitWesley/fluent-bit/pull/33/files
+# Pause input ingestion halfway through Grace period
+# and dump buffer status on shutdown when Log_Level is DEBUG
+https://github.com/PettitWesley/fluent-bit.git  grace-input-aws 362aa7734ea6b3de6487b8b650933f1aa335e66b

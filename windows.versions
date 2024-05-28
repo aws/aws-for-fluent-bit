@@ -1,7 +1,7 @@
 {
   "windows": [
     {
-      "version": "2.32.2",
+      "version": "2.32.3",
       "build": "1",
       "fluent-bit": "1.9.10",
       "kinesis-plugin": "v1.10.2",
