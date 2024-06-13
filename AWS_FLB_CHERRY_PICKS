@@ -145,6 +145,10 @@ https://github.com/matthewfala/fluent-bit.git 2.32.0-premature-connection-destru
 https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7b05b7ebfe55261ed12d5006c8b682572b6abf4c
 
 # Shutdown improvements: https://github.com/PettitWesley/fluent-bit/pull/33/files
-# Pause input ingestion halfway through Grace period
-# and dump buffer status on shutdown when Log_Level is DEBUG
+# 1. Input grace period
+# Currently, Fluent Bit pauses all inputs 1 second after SIGTERM. The change creates an input grace period, which by default is one half the total Grace setting. This means that half way through the grace period Fluent Bit stops accepting any new logs and only sends logs pending in the buffers.
+# 2. Check pending chunks on shutdown
+# Previously the engine shutdown immediately if there were no pending tasks. A task is created from a chunk in the buffer. If there is a new chunk, but no task yet, the engine should keep running until the task is created and completed.
+# This change makes the engine wait on shutdown for all pending chunks until the max grace period has expired.
 https://github.com/PettitWesley/fluent-bit.git  grace-input-aws 362aa7734ea6b3de6487b8b650933f1aa335e66b
+https://github.com/PettitWesley/fluent-bit.git  grace-input-aws 79445f79438fd8810a00c2718d73544a04c4d3fa
