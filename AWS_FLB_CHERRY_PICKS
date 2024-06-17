@@ -152,3 +152,4 @@ https://github.com/matthewfala/fluent-bit.git throttle-filter-print-status-fix 7
 # This change makes the engine wait on shutdown for all pending chunks until the max grace period has expired.
 https://github.com/PettitWesley/fluent-bit.git  grace-input-aws 362aa7734ea6b3de6487b8b650933f1aa335e66b
 https://github.com/PettitWesley/fluent-bit.git  grace-input-aws 79445f79438fd8810a00c2718d73544a04c4d3fa
+https://github.com/PettitWesley/fluent-bit.git  grace-input-aws db7cf76e265daae24b44f98d1f4ff6b0549a5b6f
