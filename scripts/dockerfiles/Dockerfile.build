@@ -5,6 +5,9 @@ ENV FLB_VERSION 1.9.10
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.8
 
+ENV GOEXPERIMENT=boringcrypto
+ENV CGO_ENABLED=1
+
 ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
 RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
 
@@ -15,6 +18,9 @@ RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
 RUN yum install -y  \
       glibc-devel \
       libyaml-devel \
+      dracut \
+      openssl \
+      openssl-devel \
       cmake3 \
       gcc \
       gcc-c++ \
@@ -23,7 +29,6 @@ RUN yum install -y  \
       unzip \
       tar \
       git \
-      openssl11-devel \
       cyrus-sasl-devel \
       pkgconfig \
       systemd-devel \

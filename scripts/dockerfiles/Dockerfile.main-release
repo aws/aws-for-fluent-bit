@@ -19,7 +19,8 @@ RUN install bin/fluent-bit /fluent-bit/bin/
 # Build lightweight release image
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
-    && yum install -y openssl11-devel \
+    && yum install -y dracut \
+          openssl-devel \
           cyrus-sasl-devel \
           pkgconfig \
           systemd-devel \

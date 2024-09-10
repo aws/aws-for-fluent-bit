@@ -2,9 +2,11 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2 as init-builder
 
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
-RUN yum upgrade -y && yum install -y tar gzip git
+RUN yum upgrade -y && yum install -y tar gzip git gcc gcc-c++ dracut openssl-devel make
 ENV HOME /home
 ENV GO_STABLE_VERSION 1.20.7
+ENV GOEXPERIMENT=boringcrypto
+ENV CGO_ENABLED=1
 
 # Lock Go Lang version to stable
 # RUN export GO_STABLE_OUTPUT=`curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2`; \
