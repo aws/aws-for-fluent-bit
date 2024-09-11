@@ -19,6 +19,7 @@ RUN yum install -y  \
       glibc-devel \
       libyaml-devel \
       dracut-fips \
+      grubby \
       openssl \
       openssl-devel \
       cmake3 \
