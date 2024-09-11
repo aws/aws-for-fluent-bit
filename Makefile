@@ -224,6 +224,7 @@ delete-resources:
 clean:
 	rm -rf ./build
 	docker image remove -f aws-fluent-bit-plugins:latest
+	docker image remove -f amazon/aws-fluent-bit-plugins:fips-latest
 
 	docker image remove -f amazon/aws-for-fluent-bit:latest
 	docker image remove -f amazon/aws-for-fluent-bit:init-latest
