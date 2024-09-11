@@ -76,7 +76,7 @@ linux-plugins:
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 
 .PHONY: linux-plugins-fips
-linux-plugins:
+linux-plugins-fips:
 	./scripts/build_plugins.sh \
     	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
     	--KINESIS_PLUGIN_TAG=${KINESIS_PLUGIN_TAG} \
