@@ -17,12 +17,14 @@ all: release
 export DOCKER_BUILD_FLAGS=--no-cache
 
 .PHONY: release
-release: build build-init linux-plugins
+release: build build-init build-fips linux-plugins linux-plugins-fips
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
 	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-latest -f ./scripts/dockerfiles/Dockerfile.init-release .
+	docker system prune -f
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:fips-latest -f ./scripts/dockerfiles/Dockerfile.fips-release .
 
 .PHONY: debug
 debug: main-debug init-debug
@@ -36,9 +38,14 @@ build:
 build-init:
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
 
+.PHONY: build-fips
+build-fips:
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-fips -f ./scripts/dockerfiles/Dockerfile.build-fips .
+
 #TODO: the bash script opts does not work on developer Macs
 windows-plugins: export OS_TYPE = windows
 linux-plugins: export OS_TYPE = linux
+linux-plugins-fips: export OS_TYPE = linux; export FIPS = true
 
 .PHONY: windows-plugins
 windows-plugins:
@@ -55,6 +62,20 @@ windows-plugins:
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 
 .PHONY: linux-plugins
+linux-plugins:
+	./scripts/build_plugins.sh \
+    	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
+    	--KINESIS_PLUGIN_TAG=${KINESIS_PLUGIN_TAG} \
+    	--KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
+    	--FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
+    	--FIREHOSE_PLUGIN_TAG=${FIREHOSE_PLUGIN_TAG} \
+    	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
+    	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
+    	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
+    	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
+    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
+
+.PHONY: linux-plugins-fips
 linux-plugins:
 	./scripts/build_plugins.sh \
     	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
@@ -211,10 +232,12 @@ clean:
 
 	docker image remove -f amazon/aws-for-fluent-bit:build
 	docker image remove -f amazon/aws-for-fluent-bit:build-init
+	docker image remove -f amazon/aws-for-fluent-bit:build-fips
 	docker image remove -f amazon/aws-for-fluent-bit:init-debug-base
 	docker image remove -f amazon/aws-for-fluent-bit:main-debug-base
 
 	docker image remove -f amazon/aws-for-fluent-bit:init-release
+	docker image remove -f amazon/aws-for-fluent-bit:fips-release
 	docker image remove -f amazon/aws-for-fluent-bit:main-release
 	docker image remove -f amazon/aws-for-fluent-bit:debug-fs
 	docker image remove -f amazon/aws-for-fluent-bit:debug-s3

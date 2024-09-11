@@ -5,7 +5,7 @@ RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/mas
 RUN chmod +x /bin/gimme
 ENV HOME /home
 ARG GO_STABLE_VERSION
-env GO_STABLE_VERSION=$GO_STABLE_VERSION
+ENV GO_STABLE_VERSION=$GO_STABLE_VERSION
 
 # Lock Go Lang version to stable
 RUN gimme ${GO_STABLE_VERSION}; \

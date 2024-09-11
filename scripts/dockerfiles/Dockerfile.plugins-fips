@@ -1,8 +1,10 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
-RUN yum upgrade -y && yum install -y tar gzip git make gcc
+RUN yum upgrade -y && yum install -y tar gzip git make gcc dracut-fips openssl-devel
 ENV HOME /home
+ENV GOEXPERIMENT=boringcrypto
+ENV CGO_ENABLED=1
 ARG GO_STABLE_VERSION
 ENV GO_STABLE_VERSION=$GO_STABLE_VERSION
 

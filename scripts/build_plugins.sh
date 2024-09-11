@@ -199,3 +199,7 @@ then
   docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 fi
 
+if [ "$OS_TYPE" == "linux" && "$FIPS" == "true" ];
+then
+  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:fips-latest -f ./scripts/dockerfiles/Dockerfile.plugins-fips .
+fi
