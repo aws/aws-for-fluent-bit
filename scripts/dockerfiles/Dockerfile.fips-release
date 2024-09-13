@@ -20,8 +20,6 @@ RUN install bin/fluent-bit /fluent-bit/bin/
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
     && yum install -y \
-        dracut-fips \
-        grubby \
         openssl \
         openssl-devel \
         cyrus-sasl-devel \
@@ -30,10 +28,6 @@ RUN yum upgrade -y \
         zlib-devel \
         libyaml \
         nc && rm -fr /var/cache/yum
-
-# Enable FIPS Mode on AL2
-RUN dracut -f 
-RUN /sbin/grubby --update-kernel=ALL --args="fips=1"
 
 COPY --from=builder /fluent-bit /fluent-bit
 COPY --from=aws-fluent-bit-plugins:fips-latest /kinesis-streams/bin/kinesis.so /fluent-bit/kinesis.so

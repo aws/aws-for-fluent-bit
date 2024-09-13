@@ -18,8 +18,6 @@ RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
 RUN yum install -y  \
       glibc-devel \
       libyaml-devel \
-      dracut-fips \
-      grubby \
       openssl \
       openssl-devel \
       cmake3 \
@@ -45,10 +43,6 @@ RUN yum install -y  \
       --family cmake
 ENV HOME /home
 ENV GO_STABLE_VERSION 1.20.7
-
-# Enable FIPS Mode on AL2
-RUN dracut -f 
-RUN /sbin/grubby --update-kernel=ALL --args="fips=1"
 
 # Lock Go Lang version to stable
 # RUN export GO_STABLE_OUTPUT=`curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2`; \
