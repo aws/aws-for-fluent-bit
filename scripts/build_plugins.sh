@@ -166,13 +166,10 @@ fi
 # get Go stable version
 # Dockerfiles do not allow env vars to be set by commands
 # and persist from one command to the next
-# GO_OUTPUT=$(curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2)
-# OLD_IFS=$IFS
-# IFS=$'\n' GO_STABLE_VERSION=($GO_OUTPUT)
-# IFS=$OLD_IFS
-# 2023-08-21: pinning to 1.20.7 go as 1.21.0 fails with FLB
-# https://github.com/golang/go/issues/62130#issuecomment-1684431260
-export GO_STABLE_VERSION="1.20.7"
+GO_OUTPUT=$(curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2)
+OLD_IFS=$IFS
+IFS=$'\n' GO_STABLE_VERSION=($GO_OUTPUT)
+IFS=$OLD_IFS
 echo "Using go:stable version ${GO_STABLE_VERSION}"
 PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg GO_STABLE_VERSION=${GO_STABLE_VERSION}"
 
