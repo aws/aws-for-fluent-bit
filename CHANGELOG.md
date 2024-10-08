@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.32.2.20241008 Linux re-build
+
+*This release has the same Fluent Bit contents as 2.32.2. It is a linux-only re-build to mitigate a code bug in the new change-management system in 2.32.2.20241003. There are no windows images for this release.* 
+
 ### 2.32.2.20241003 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.2. It is a linux-only re-build to switch to a new change-management system and merge in recent patches in dependencies installed in the image. There are no windows images for this release.* 
