@@ -35,7 +35,7 @@ PLUGIN_BUILD_ARGS=""
 # set by env var in Makefile right now
 # setting this by env var ensures it works even on platforms where getopt and longoptions does not work
 OS_TYPE="${OS_TYPE}"
-DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS}"
+DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS:-}"
 
 # Go plugin versions can either be set by args to the script, or they will be sourced
 # from the windows.versions or linux.version file
