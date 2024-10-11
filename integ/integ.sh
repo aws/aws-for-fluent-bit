@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -ex
+
 export AWS_REGION="us-west-2"
 export PROJECT_ROOT="$(pwd)"
 export VOLUME_MOUNT_CONTAINER="/out"
@@ -9,8 +12,14 @@ if [ "$ARCHITECTURE" = "aarch64" ]; then
     ARCHITECTURE="arm64"
 fi
 
-export CW_INTEG_VALIDATOR_IMAGE="${CW_INTEG_VALIDATOR_IMAGE_BASE}:${ARCHITECTURE}"
-export S3_INTEG_VALIDATOR_IMAGE="${S3_INTEG_VALIDATOR_IMAGE_BASE}:${ARCHITECTURE}"
+# If we're testing locally, then these are set to local images rather than pulling
+# from ECR. See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-testing
+if [ -z "$CW_INTEG_VALIDATOR_IMAGE" ]; then
+	export CW_INTEG_VALIDATOR_IMAGE="${CW_INTEG_VALIDATOR_IMAGE_BASE}:${ARCHITECTURE}"
+fi
+if [ -z "$S3_INTEG_VALIDATOR_IMAGE" ]; then
+	export S3_INTEG_VALIDATOR_IMAGE="${S3_INTEG_VALIDATOR_IMAGE_BASE}:${ARCHITECTURE}"
+fi
 
 test_cloudwatch() {
 	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
@@ -287,7 +296,7 @@ if [ "${1}" = "cicd" ]; then
 	export TEST_FILE="kinesis-test"
 	export EXPECTED_EVENTS_LEN="1000"
 	clean_s3 && test_kinesis
-	
+
 	# golang firehose plugin
 	export S3_PREFIX="firehose-test"
 	export TEST_FILE="firehose-test"

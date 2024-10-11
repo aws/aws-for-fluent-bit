@@ -7,7 +7,7 @@ ARCHITECTURE=$(uname -m | tr '_' '-')
 if [ "$ARCHITECTURE" = "aarch64" ]; then
     ARCHITECTURE="arm64"
 fi
-stackOutputs=$(aws cloudformation describe-stacks --stack-name integ-test-fluent-bit-${ARCHITECTURE} --output text --query 'Stacks[0].Outputs[*].OutputValue')
+stackOutputs=$(aws cloudformation describe-stacks --region "$AWS_REGION" --stack-name integ-test-fluent-bit-${ARCHITECTURE} --output text --query 'Stacks[0].Outputs[*].OutputValue')
 read -r -a outputArray <<< "$stackOutputs"
 export FIREHOSE_STREAM="${outputArray[0]}"
 export KINESIS_STREAM="${outputArray[1]}"
