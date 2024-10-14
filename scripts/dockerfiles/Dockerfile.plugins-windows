@@ -1,19 +1,10 @@
 FROM public.ecr.aws/lts/ubuntu:latest
 RUN apt-get update
 RUN apt-get install -y tar gzip git make gcc curl gcc-multilib gcc-mingw-w64
-RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
-RUN chmod +x /bin/gimme
 ENV HOME /home
-ARG GO_STABLE_VERSION
-env GO_STABLE_VERSION=$GO_STABLE_VERSION
 
-# Lock Go Lang version to stable
-RUN gimme ${GO_STABLE_VERSION}; \
-      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.arm64 /home/.gimme/versions/gostable.linux.arm64; \
-      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.amd64 /home/.gimme/versions/gostable.linux.amd64
-ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/versions/gostable.linux.amd64/bin
-RUN go version
-
+COPY --from=public.ecr.aws/docker/library/golang:1 /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GO111MODULE on
 
 # The TAG args should always be set to ""
