@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -151,7 +151,7 @@ func validate(s3Client *s3.S3, prefix string, bucket string, testFile string, nu
 			return false, true
 		}
 
-		dataByte, err := ioutil.ReadAll(obj.Body)
+		dataByte, err := io.ReadAll(obj.Body)
 		if err != nil {
 			fmt.Fprintf(os.Stderr,"[TEST FAILURE] Error to parse GetObject response. %v", err)
 			return false, true

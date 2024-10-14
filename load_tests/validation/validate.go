@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -137,7 +137,7 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 			obj := getS3Object(s3Client, input)
 			s3ObjectCounter++
 
-			dataByte, err := ioutil.ReadAll(obj.Body)
+			dataByte, err := io.ReadAll(obj.Body)
 			if err != nil {
 				exitErrorf("[TEST FAILURE] Error to parse GetObject response. %v", err)
 			}

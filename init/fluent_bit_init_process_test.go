@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -281,7 +280,7 @@ func (mhc *MockHTTPClient) Get(str string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Invalid input for HTTP Client: %v", err)
 	} else {
-		body := ioutil.NopCloser(bytes.NewReader([]byte(mhc.Response)))
+		body := io.NopCloser(bytes.NewReader([]byte(mhc.Response)))
 		return &http.Response{
 			StatusCode: 200,
 			Body:       body,
@@ -310,7 +309,7 @@ func createFileHelper(filePath string) *os.File {
 }
 
 func readFileHelper(filePath string) string {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		fmt.Errorf("failed to read the file: %s", filePath)
 	}

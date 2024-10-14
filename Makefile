@@ -14,7 +14,7 @@
 all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
-DOCKER_BUILD_FLAGS := "--no-cache"
+DOCKER_BUILD_FLAGS :=
 
 .PHONY: dev
 dev: DOCKER_BUILD_FLAGS =

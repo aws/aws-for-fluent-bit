@@ -19,11 +19,11 @@ RUN install bin/fluent-bit /fluent-bit/bin/
 # Build lightweight release image
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
-    && yum install -y openssl11-devel \
-          cyrus-sasl-devel \
+    && yum install -y openssl11 \
+          cyrus-sasl \
           pkgconfig \
-          systemd-devel \
-          zlib-devel \
+          systemd \
+          zlib \
           libyaml \
           nc && rm -fr /var/cache/yum
 
