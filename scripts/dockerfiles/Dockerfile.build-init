@@ -11,5 +11,5 @@ ENV GO111MODULE on
 COPY /init/fluent_bit_init_process.go /
 COPY /go.mod /
 COPY /go.sum /
-RUN go build fluent_bit_init_process.go \
-    || ( go env -w GOPROXY=direct && go build fluent_bit_init_process.go )
+ADD /vendor /vendor
+RUN go build -mod vendor fluent_bit_init_process.go
