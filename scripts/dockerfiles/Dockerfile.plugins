@@ -1,17 +1,9 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
-RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
-RUN chmod +x /bin/gimme
 RUN yum upgrade -y && yum install -y tar gzip git make gcc
 ENV HOME /home
-ARG GO_STABLE_VERSION
-env GO_STABLE_VERSION=$GO_STABLE_VERSION
 
-# Lock Go Lang version to stable
-RUN gimme ${GO_STABLE_VERSION}; \
-      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.arm64 /home/.gimme/versions/gostable.linux.arm64; \
-      ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.amd64 /home/.gimme/versions/gostable.linux.amd64
-ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/versions/gostable.linux.amd64/bin
-RUN go version
+COPY --from=public.ecr.aws/docker/library/golang:1 /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 ENV GO111MODULE on
 

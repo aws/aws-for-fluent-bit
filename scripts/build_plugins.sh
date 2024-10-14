@@ -163,15 +163,7 @@ then
   PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG"
 fi
 
-# get Go stable version
-# Dockerfiles do not allow env vars to be set by commands
-# and persist from one command to the next
-GO_OUTPUT=$(curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2)
-OLD_IFS=$IFS
-IFS=$'\n' GO_STABLE_VERSION=($GO_OUTPUT)
-IFS=$OLD_IFS
-echo "Using go:stable version ${GO_STABLE_VERSION}"
-PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg GO_STABLE_VERSION=${GO_STABLE_VERSION}"
+PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS"
 
 echo "Plugin build arguments for ${OS_TYPE} are: $PLUGIN_BUILD_ARGS"
 echo "Docker build flags are: $DOCKER_BUILD_FLAGS"
