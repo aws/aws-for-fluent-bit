@@ -183,8 +183,14 @@ then
   echo "Copied plugin archive to the build output folder"
 fi
 
-if [ "$OS_TYPE" == "linux" ];
-then
-  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+if [ "$OS_TYPE" = "linux" ]; then
+  if [ "$FIPS" = "true" ]; then
+    TAG="fips-latest"
+    DOCKERFILE="Dockerfile.plugins-fips"
+  else
+    TAG="latest"
+    DOCKERFILE="Dockerfile.plugins"
+  fi
+  
+  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:$TAG -f ./scripts/dockerfiles/$DOCKERFILE .
 fi
-
