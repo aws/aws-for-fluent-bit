@@ -35,7 +35,7 @@ PLUGIN_BUILD_ARGS=""
 # set by env var in Makefile right now
 # setting this by env var ensures it works even on platforms where getopt and longoptions does not work
 OS_TYPE="${OS_TYPE}"
-DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS}"
+DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS:-}"
 
 # Go plugin versions can either be set by args to the script, or they will be sourced
 # from the windows.versions or linux.version file
@@ -163,18 +163,7 @@ then
   PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG"
 fi
 
-# get Go stable version
-# Dockerfiles do not allow env vars to be set by commands
-# and persist from one command to the next
-# GO_OUTPUT=$(curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2)
-# OLD_IFS=$IFS
-# IFS=$'\n' GO_STABLE_VERSION=($GO_OUTPUT)
-# IFS=$OLD_IFS
-# 2023-08-21: pinning to 1.20.7 go as 1.21.0 fails with FLB
-# https://github.com/golang/go/issues/62130#issuecomment-1684431260
-export GO_STABLE_VERSION="1.20.7"
-echo "Using go:stable version ${GO_STABLE_VERSION}"
-PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg GO_STABLE_VERSION=${GO_STABLE_VERSION}"
+PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS"
 
 echo "Plugin build arguments for ${OS_TYPE} are: $PLUGIN_BUILD_ARGS"
 echo "Docker build flags are: $DOCKER_BUILD_FLAGS"

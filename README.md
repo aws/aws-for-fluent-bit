@@ -354,16 +354,32 @@ For more details about running Fluent Bit Windows containers in Amazon ECS, plea
 
 ### Development
 
-#### Local testing
+#### Local integ testing
 
-Use `make release` to build the image.
+Use `make dev` to build the image.
 
-To run the integration tests, run `make integ-dev`. The `make integ-dev` command will run the integration tests for all of our plugins-
+The `make integ-dev` command will run the integration tests for all of our plugins-
 kinesis streams, kinesis firehose, and cloudwatch.
 
-The integ tests require the following env vars to be set:
-* `CW_INTEG_VALIDATOR_IMAGE`: Build the [integ/validate_cloudwatch/](integ/validate_cloudwatch/) folder with `docker build` and set the resulting image as the value of this env var.
-* `S3_INTEG_VALIDATOR_IMAGE`: Build the [integ/s3/](integ/s3/) folder with `docker build` and set the resulting image as the value of this env var.
+Note that these steps rely on creating Cfn stacks in an AWS account in region us-west-2,
+so AWS credentials must be setup before they are run.
+
+Instructions:
+1. Setup AWS access via EC2 instance role or AWS_* env vars
+2. Install dependent packages: `docker awscli`
+3. Install docker-compose:
+```
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+4. Build validator images:
+```
+pushd integ/validate_cloudwatch && docker build -t flbcwinteg . && popd
+pushd integ/s3 && docker build -t flbs3integ . && popd
+export CW_INTEG_VALIDATOR_IMAGE="flbcwinteg"
+export S3_INTEG_VALIDATOR_IMAGE="flbs3integ"
+```
+5. Run `make integ-dev`
 
 To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis` or `make integ-firehose`.
 

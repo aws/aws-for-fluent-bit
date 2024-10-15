@@ -8,4 +8,4 @@ ARCHITECTURE=$(uname -m | tr '_' '-')
 if [ "$ARCHITECTURE" = "aarch64" ]; then
     ARCHITECTURE="arm64"
 fi
-aws cloudformation deploy --template-file ./integ/resources/cfn-kinesis-s3-firehose.yml --stack-name integ-test-fluent-bit-${ARCHITECTURE} --region us-west-2 --capabilities CAPABILITY_NAMED_IAM
+aws cloudformation deploy --template-file ./integ/resources/cfn-kinesis-s3-firehose.yml --stack-name integ-test-fluent-bit-${ARCHITECTURE} --region "$AWS_REGION" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset

@@ -13,8 +13,12 @@
 
 all: release
 
-# Improve build speeds during development by removing the --no-cache flag
-export DOCKER_BUILD_FLAGS=--no-cache
+# Execute set-cache to turn docker cache back on for faster development.
+DOCKER_BUILD_FLAGS := "--no-cache"
+
+.PHONY: dev
+dev: DOCKER_BUILD_FLAGS =
+dev: release
 
 .PHONY: release
 release: build build-init build-fips linux-plugins linux-plugins-fips
@@ -154,40 +158,43 @@ kinesis-dev:
 	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
+integ/out:
+	mkdir -p integ/out
+
 .PHONY: integ-cloudwatch
-integ-cloudwatch: release
+integ-cloudwatch: integ/out release
 	./integ/integ.sh cloudwatch
 
 .PHONY: integ-cloudwatch-dev
-integ-cloudwatch-dev: cloudwatch-dev
+integ-cloudwatch-dev: integ/out cloudwatch-dev
 	./integ/integ.sh cloudwatch
 
 .PHONY: integ-clean-cloudwatch
-integ-clean-cloudwatch:
+integ-clean-cloudwatch: integ/out
 	./integ/integ.sh clean-cloudwatch
 
 .PHONY: integ-kinesis
-integ-kinesis: release
+integ-kinesis: integ/out release
 	./integ/integ.sh kinesis
 
 .PHONY: integ-kinesis-dev
-integ-kinesis-dev: kinesis-dev
+integ-kinesis-dev: integ/out kinesis-dev
 	./integ/integ.sh kinesis
 
 .PHONY: integ-firehose
-integ-firehose: release
+integ-firehose: integ/out release
 	./integ/integ.sh firehose
 
 .PHONY: integ-firehose-dev
-integ-firehose-dev: firehose-dev
+integ-firehose-dev: integ/out firehose-dev
 	./integ/integ.sh firehose
 
 .PHONY: integ-clean-s3
-integ-clean-s3:
+integ-clean-s3: integ/out
 	./integ/integ.sh clean-s3
 
 .PHONY: integ-dev
-integ-dev: release
+integ-dev: integ/out dev
 	./integ/integ.sh kinesis
 	./integ/integ.sh kinesis_streams
 	./integ/integ.sh firehose
@@ -196,7 +203,7 @@ integ-dev: release
 	./integ/integ.sh cloudwatch_logs
 
 .PHONY: integ
-integ:
+integ: integ/out
 	./integ/integ.sh cicd
 
 .PHONY: delete-resources
@@ -206,6 +213,7 @@ delete-resources:
 .PHONY: clean
 clean:
 	rm -rf ./build
+	rm -rf ./integ/out
 	docker image remove -f aws-fluent-bit-plugins:latest
 	docker image remove -f amazon/aws-fluent-bit-plugins:fips-latest
 

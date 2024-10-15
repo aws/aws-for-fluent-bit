@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.32.2.20241008 Linux re-build
+
+*This release has the same Fluent Bit contents as 2.32.2. It is a linux-only re-build to mitigate a code bug in the new change-management system in 2.32.2.20241003. There are no windows images for this release.* 
+
+### 2.32.2.20241003 Linux re-build
+
+*This release has the same Fluent Bit contents as 2.32.2. It is a linux-only re-build to switch to a new change-management system and merge in recent patches in dependencies installed in the image. There are no windows images for this release.* 
+* Amazon Linux Base: [2.0.20240916.0](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20240916.html)
+
+
 ### 2.32.2.20240820 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.2, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.* 
