@@ -1,5 +1,19 @@
 # Changelog
 
+### 2.32.3
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux Base: [2.0.20241014](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20241014.html)
+
+Compared to `2.32.2` this release adds:
+* Feature - In Kubernetes or EKS environments, customers can use the `Use_Pod_association` setting in the kubernetes filter and the `add_entity` setting in the cloudwatch_logs output plugin to get additional pod metadata from a CloudWatch Agent pod on the same node. (README in progress)
+  * Note: This feature's API is subject to change until it is merged into Fluent Bit upstream. AWS-vended usage of this feature will be kept up to date with any future changes to the API.
+* Fix - Fix setup and readme for local integ tests.
+* Fix - Fix networking edge case causing rare segfaults with the HTTP output.
+
 ### 2.32.2.20241008 Linux re-build
 
 *This release has the same Fluent Bit contents as 2.32.2. It is a linux-only re-build to mitigate a code bug in the new change-management system in 2.32.2.20241003. There are no windows images for this release.* 
