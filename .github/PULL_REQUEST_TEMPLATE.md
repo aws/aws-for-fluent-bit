@@ -16,6 +16,8 @@ See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-testing
 for instructions on how to run integ tests locally.
 -->
 
+`make debug` succeeded: <!-- yes|no -->
+Integ tests succeeded: <!-- yes|no -->
 New tests cover the changes: <!-- yes|no -->
 
 ### Description for the changelog
