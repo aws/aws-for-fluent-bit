@@ -12,7 +12,7 @@ Please provide the following information:
 
 ### Testing
 <!-- How was this tested?
-See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-testing
+See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-integ-testing
 for instructions on how to run integ tests locally.
 -->
 
