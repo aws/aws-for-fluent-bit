@@ -12,10 +12,12 @@ Please provide the following information:
 
 ### Testing
 <!-- How was this tested?
-See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-testing
+See https://github.com/aws/aws-for-fluent-bit?tab=readme-ov-file#local-integ-testing
 for instructions on how to run integ tests locally.
 -->
 
+`make debug` succeeded: <!-- yes|no -->
+Integ tests succeeded: <!-- yes|no -->
 New tests cover the changes: <!-- yes|no -->
 
 ### Description for the changelog
