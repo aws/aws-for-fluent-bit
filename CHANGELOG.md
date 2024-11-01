@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.32.4
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux Base: [2.0.20241014](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20241014.html)
+
+Compared to `2.32.3` this release adds:
+* Fix - out_cloudwatch: add account ID support for CloudWatch entity [#4](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/4)
+
 ### 2.32.3
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
