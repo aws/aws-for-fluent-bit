@@ -28,7 +28,7 @@ Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this 
 - [Using the AWS Plugins outside of a container](#using-the-aws-plugins-outside-of-a-container)
 - [Running aws-for-fluent-bit Windows containers](#running-aws-for-fluent-bit-windows-containers)
 - [Development](#development)
-    - [Local testing](#local-testing)
+    - [Local integ testing](#local-integ-testing)
     - [Developing Features in the AWS Plugins](#developing-features-in-the-aws-plugins)
 - [Fluent Bit Examples](#fluent-bit-examples)
 - [License](#license)
