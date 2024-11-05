@@ -20,8 +20,7 @@ RUN install bin/fluent-bit /fluent-bit/bin/
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y \
     && yum install -y \
-        openssl \
-        openssl-devel \
+        openssl11-devel \
         cyrus-sasl-devel \
         pkgconfig \
         systemd-devel \

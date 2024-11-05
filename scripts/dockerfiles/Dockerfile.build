@@ -1,4 +1,3 @@
-
 FROM public.ecr.aws/amazonlinux/amazonlinux:2 as builder
 
 # Fluent Bit version; update these for each release

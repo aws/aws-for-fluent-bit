@@ -18,8 +18,6 @@ RUN amazon-linux-extras install -y epel && yum install -y libASL --skip-broken
 RUN yum install -y  \
       glibc-devel \
       libyaml-devel \
-      openssl \
-      openssl-devel \
       cmake3 \
       gcc \
       gcc-c++ \
@@ -28,6 +26,7 @@ RUN yum install -y  \
       unzip \
       tar \
       git \
+      openssl11-devel \
       cyrus-sasl-devel \
       pkgconfig \
       systemd-devel \
@@ -42,12 +41,11 @@ RUN yum install -y  \
       --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
       --family cmake
 ENV HOME /home
-ENV GO_STABLE_VERSION 1.20.7
 
 # Lock Go Lang version to stable
-# RUN export GO_STABLE_OUTPUT=`curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2`; \
-#       IFS=$'\n' GO_STABLE_VERSION=($GO_STABLE_OUTPUT); \
-RUN   echo "Using go:stable version ${GO_STABLE_VERSION}"; \
+RUN export GO_STABLE_OUTPUT=`curl --silent https://go.dev/VERSION?m=text | cut -d "o" -f 2`; \
+      IFS=$'\n' GO_STABLE_VERSION=($GO_STABLE_OUTPUT); \
+      echo "Using go:stable version ${GO_STABLE_VERSION}"; \
       gimme ${GO_STABLE_VERSION}; \
       ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.arm64 /home/.gimme/versions/gostable.linux.arm64; \
       ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.amd64 /home/.gimme/versions/gostable.linux.amd64
@@ -81,9 +79,9 @@ FROM builder as compile
 
 # Get Fluent Bit source code
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/
-RUN git clone https://github.com/fluent/fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
+RUN git clone https://github.com/amazon-contributing/upstream-to-fluent-bit.git /tmp/fluent-bit-$FLB_VERSION/
 WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
-RUN git fetch --all --tags && git checkout tags/v${FLB_VERSION} -b v${FLB_VERSION} && git describe --tags
+RUN git checkout $FLB_VERSION
 
 # Apply Fluent Bit patches to base version
 COPY AWS_FLB_CHERRY_PICKS \
@@ -96,7 +94,7 @@ RUN AWS_FLB_CHERRY_PICKS_COUNT=`awk '{print $0 }' /AWS_FLB_CHERRY_PICKS | sed '/
   if [ $AWS_FLB_CHERRY_PICKS_COUNT -gt 0 ]; \
   then \
     cat /AWS_FLB_CHERRY_PICKS | sed '/^#/d' \
-    | xargs -l bash -c 'git fetch $0 $1 && git cherry-pick $2 || exit 255' && \
+    | xargs -L1 bash -c 'git fetch $0 $1 && git cherry-pick $2 || exit 255' && \
     \
     (echo "Cherry Pick Patch Summary:"; \
     echo -n "Base "; \
