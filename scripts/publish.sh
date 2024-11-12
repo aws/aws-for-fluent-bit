@@ -34,7 +34,7 @@ echo "Publish Latest? ${PUBLISH_LATEST}"
 # and it should keep working because dockerhub returns the latest tags first
 public_ecr_image_tags_token=$(curl -s -S -k https://public.ecr.aws/token/ | jq -r '.token')
 public_ecr_image_tags=$(curl -s -S -k -H "Authorization: Bearer $public_ecr_image_tags_token" 'https://public.ecr.aws/v2/aws-observability/aws-for-fluent-bit/tags/list' | jq -r '.tags[]' | sort -rV)
-tag_array=(`echo ${public_ecr_image_tags}`)
+tag_array=($(echo ${public_ecr_image_tags}))
 AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR=$(./get_latest_dockerhub_version.py linux latest ${tag_array[@]})
 
 # If the AWS_FOR_FLUENT_BIT_VERSION is an older version which is already published to dockerhub
@@ -47,10 +47,8 @@ if [ "${PUBLISH_LATEST}" = "false" ]; then
 	fi
 fi
 
-
 # Enforce STS regional endpoints
 AWS_STS_REGIONAL_ENDPOINTS=regional
-
 
 classic_regions="
 us-east-1
@@ -175,14 +173,13 @@ publish_to_docker_hub() {
 			create_manifest_list ${1} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
-		for arch in "${ARCHITECTURES[@]}"
-		do
+		for arch in "${ARCHITECTURES[@]}"; do
 			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
 			docker tag ${1}:"$arch"-"debug" ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			
+
 			docker tag ${1}:"$init"-"$arch" ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
@@ -223,8 +220,7 @@ publish_to_public_ecr() {
 	else
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 
-		for arch in "${ARCHITECTURES[@]}"
-		do
+		for arch in "${ARCHITECTURES[@]}"; do
 			docker tag ${1}:"$arch" public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
@@ -241,7 +237,7 @@ publish_to_public_ecr() {
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
-		
+
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
@@ -274,7 +270,7 @@ publish_ssm() {
 				--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:latest
 		fi
-		
+
 		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:"$init"-${3}
@@ -305,7 +301,7 @@ check_parameter() {
 	repo_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
 	docker pull $repo_uri
 
-	if [ "${2}" != "stable" ]; then 
+	if [ "${2}" != "stable" ]; then
 		repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
 		IFS='.' read -r -a array <<<"$repo_uri_init"
 		region="${array[3]}"
@@ -327,11 +323,11 @@ sync_public_and_repo() {
 
 	docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag}
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag})
-	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
+	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 	repoList=$(aws ecr describe-repositories --region ${region})
 	repoName=$(echo $repoList | jq .repositories[0].repositoryName)
 	if [ "$repoName" = '"aws-for-fluent-bit"' ]; then
-		tagCount=$(aws ecr list-images  --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+		tagCount=$(aws ecr list-images --repository-name aws-for-fluent-bit --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 		if [ "$tagCount" = '1' ]; then
 			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag}
 			sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag})
@@ -345,7 +341,7 @@ sync_public_and_repo() {
 	match_two_sha $sha1 $sha2
 
 	if [ "$IMAGE_SHA_MATCHED" = "FALSE" ]; then
-		aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
+		aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region} || true
 		push_image_ecr public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag} \
 			${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${tag}
 	fi
@@ -359,7 +355,7 @@ sync_ssm() {
 
 	# Check the namespace_path looking for stable at the end, if the string were too short it would return an empty string
 	is_stable=false
-	if [ "${namespace_path:(-6)}" = "stable" ]; then
+	if [ "${namespace_path: -6}" = "stable" ]; then
 		is_stable=true
 	fi
 
@@ -385,9 +381,8 @@ sync_image_version() {
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
-	
-	for arch in "${ARCHITECTURES[@]}"
-	do
+
+	for arch in "${ARCHITECTURES[@]}"; do
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 		sync_public_and_repo ${region} ${account_id} ${endpoint} "${arch}-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}"
 
@@ -438,7 +433,7 @@ verify_ssm() {
 	is_sync_task=${2:-false}
 
 	endpoint='amazonaws.com'
-	
+
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
@@ -465,13 +460,12 @@ create_manifest_list() {
 	# TODO: Add a way to automatically generate arch images in manifest
 	docker manifest create ${1}:${tag} ${1}:arm64-${version} ${1}:amd64-${version}
 
-	for arch in "${ARCHITECTURES[@]}"
-	do
+	for arch in "${ARCHITECTURES[@]}"; do
 		docker manifest annotate --arch "$arch" ${1}:${tag} ${1}:"$arch"-${version}
 	done
 
 	# sanity check on the debug log.
- 	docker manifest inspect ${1}:${tag}
+	docker manifest inspect ${1}:${tag}
 	docker manifest push ${1}:${tag}
 }
 
@@ -484,19 +478,18 @@ create_manifest_list_init() {
 	# TODO: Add a way to automatically generate arch images in manifest
 	docker manifest create ${1}:${tag} ${1}:"$init"-arm64-${version} ${1}:"$init"-amd64-${version}
 
-	for arch in "${ARCHITECTURES[@]}"
-	do
+	for arch in "${ARCHITECTURES[@]}"; do
 		docker manifest annotate --arch "$arch" ${1}:${tag} ${1}:"$init"-"$arch"-${version}
 	done
 
 	# sanity check on the debug log.
- 	docker manifest inspect ${1}:${tag}
+	docker manifest inspect ${1}:${tag}
 	docker manifest push ${1}:${tag}
 }
 
 push_image_ecr() {
 	docker tag ${1} ${2}
-    	docker push ${2}
+	docker push ${2}
 }
 
 make_repo_public() {
@@ -507,11 +500,10 @@ publish_ecr() {
 	region=${1}
 	account_id=${2}
 
-	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
-	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
+	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region} || true
 
-	for arch in "${ARCHITECTURES[@]}"
-	do
+	for arch in "${ARCHITECTURES[@]}"; do
 		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
@@ -535,7 +527,7 @@ publish_ecr() {
 		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
-	fi 
+	fi
 
 	make_repo_public ${region}
 }
@@ -587,7 +579,7 @@ verify_ecr() {
 	# we can't verify the SHA against any other tag
 	# only verification is the above steps to pull the image
 	if [ "${PUBLISH_LATEST}" = "true" ]; then
-	    # Also validate version number tag against latest tag
+		# Also validate version number tag against latest tag
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:latest)
 
@@ -595,9 +587,9 @@ verify_ecr() {
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest
 		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest)
-		
+
 		verify_sha $sha1_init $sha2_init
-	fi 
+	fi
 }
 
 check_image_version() {
@@ -605,9 +597,9 @@ check_image_version() {
 	EXIT_CODE=0
 
 	docker_hub_login
-	
+
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
-	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
+	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} >/dev/null || EXIT_CODE=$?
 	if [ "${EXIT_CODE}" = "0" ]; then
 		echo "Accidental release: current image version from github source file match a previous version from dockerhub."
 		exit 1
@@ -621,10 +613,10 @@ verify_ecr_image_scan() {
 	repo_uri=${2}
 	tag=${3}
 
-	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
+	tagCount=$(aws ecr list-images --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$tagCount" = '1' ]; then
-        # one-time image scanning is only compatible with "BASIC" scanning type registries
-        aws ecr put-registry-scanning-configuration --scan-type BASIC --region us-west-2
+		# one-time image scanning is only compatible with "BASIC" scanning type registries
+		aws ecr put-registry-scanning-configuration --scan-type BASIC --region us-west-2
 		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
 		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
@@ -638,7 +630,7 @@ verify_ecr_image_scan() {
 
 verify_dockerhub() {
 	docker_hub_login
-	
+
 	# Verify the image with stable tag
 	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
@@ -724,7 +716,6 @@ match_two_sha() {
 		IMAGE_SHA_MATCHED="FALSE"
 	fi
 }
-
 
 if [ "${1}" = "publish" ]; then
 	if [ "${2}" = "dockerhub" ]; then
@@ -1253,5 +1244,5 @@ if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
 fi
 
 if [ "${1}" = "cicd-check-image-version" ]; then
-	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} 
+	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION}
 fi
