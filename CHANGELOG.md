@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.32.4.20241217 Linux re-build
+*This release has the same Fluent Bit contents as 2.32.4, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.*
+* Amazon Linux base container image version: [2.0.20241113.1](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20241113.html)
+
 ### 2.32.4
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
