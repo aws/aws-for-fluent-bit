@@ -37,7 +37,7 @@
 				}
 			},
 			"cpu": 512,
-			"memoryReservation": 50
+			"memoryReservation": 20480
 		},
 		{
 			"essential": true,
@@ -50,7 +50,7 @@
 				}
 			],
 			"name": "app",
-			"environment" : [ 
+			"environment" : [
 				{ "name" : "ITERATION", "value" : "$THROUGHPUT" },
 				{ "name" : "TIME", "value" : "$LOGGER_RUN_TIME_IN_SECOND" },
 				{ "name" : "LOGGER_PORT", "value": "$LOGGER_PORT" },

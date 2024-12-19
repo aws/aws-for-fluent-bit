@@ -219,6 +219,7 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 				LogGroupName:  aws.String(logGroup),
 				LogStreamName: aws.String(logStream),
 				StartFromHead: aws.Bool(true),
+				Limit:         aws.Int64(10000),
 			}
 		} else {
 			input = &cloudwatchlogs.GetLogEventsInput{
@@ -226,22 +227,17 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 				LogStreamName: aws.String(logStream),
 				NextToken:     forwardToken,
 				StartFromHead: aws.Bool(true),
+				Limit:         aws.Int64(10000),
 			}
+			// Sleep between GetLogEvents calls to avoid throttling
+			time.Sleep(100 * time.Millisecond)
 		}
-
-		/*
-		 * In testing we have found that CW GetLogEvents results are highly inconsistent
-		 * Re-running validation long after tests shows that fewer events were lost than
-		 * first calculated. So we sleep between calls to ensure we never exceed 1 TPS
-		 * load_test.py also has a sleep before validation runs.
-		 */
-		time.Sleep(1 * time.Second)
 
 		response, err := cwClient.GetLogEvents(input)
 		for err != nil {
 			// retry for throttling exception
 			if strings.Contains(err.Error(), "ThrottlingException: Rate exceeded") {
-				time.Sleep(1 * time.Second)
+				time.Sleep(5 * time.Second)
 				response, err = cwClient.GetLogEvents(input)
 			} else {
 				exitErrorf("[TEST FAILURE] Error occured to get the log events from log group: %q., %v", logGroup, err)
