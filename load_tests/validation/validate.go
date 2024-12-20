@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -107,12 +108,17 @@ func getS3Client(region string) (*s3.S3, error) {
 // To validate, we need to make sure all the log records from input file are stored at least once.
 func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[string]bool) (int, map[string]bool) {
 	var continuationToken *string
-	var input *s3.ListObjectsV2Input
 	s3RecordCounter := 0
 	s3ObjectCounter := 0
 
+	tempDir, err := os.MkdirTemp("", "s3-validation")
+	if err != nil {
+		exitErrorf("[TEST FAILURE] Error creating temp directory: %v", err)
+	}
+	defer os.RemoveAll(tempDir) // Clean up temp directory when done
+
 	for {
-		input = &s3.ListObjectsV2Input{
+		input := &s3.ListObjectsV2Input{
 			Bucket:            aws.String(bucket),
 			ContinuationToken: continuationToken,
 			Prefix:            aws.String(prefix),
@@ -124,38 +130,12 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 		}
 
 		for _, content := range response.Contents {
-			input := &s3.GetObjectInput{
-				Bucket: aws.String(bucket),
-				Key:    content.Key,
-			}
-			obj, err := s3Client.GetObject(input)
-			if err != nil {
-				exitErrorf("[TEST FAILURE] Error to get S3 object. %v", err)
-			}
 			s3ObjectCounter++
 
-			// Directly unmarshal the JSON objects from the S3 object body
-			decoder := json.NewDecoder(obj.Body)
-			for {
-				var message Message
-				err := decoder.Decode(&message)
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", err)
-					continue
-				}
-
-				recordId := message.Log[:8]
-				s3RecordCounter++
-				if _, ok := inputMap[recordId]; ok {
-					inputMap[recordId] = true
-				}
+			err := downloadAndProcessS3Object(s3Client, bucket, *content.Key, tempDir, inputMap, &s3RecordCounter)
+			if err != nil {
+				fmt.Printf("[TEST ERROR] Error processing S3 object %s: %v\n", *content.Key, err)
 			}
-
-			// Close the S3 object body
-			obj.Body.Close()
 		}
 
 		if !aws.BoolValue(response.IsTruncated) {
@@ -169,15 +149,56 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 	return s3RecordCounter, inputMap
 }
 
-// Retrieves an object from a S3 bucket
-func getS3Object(s3Client *s3.S3, input *s3.GetObjectInput) *s3.GetObjectOutput {
-	obj, err := s3Client.GetObject(input)
-
+func downloadAndProcessS3Object(s3Client *s3.S3, bucket, key, tempDir string, inputMap map[string]bool, s3RecordCounter *int) error {
+	// Create a temporary file
+	tempFile, err := os.CreateTemp(tempDir, "s3-object-*")
 	if err != nil {
-		exitErrorf("[TEST FAILURE] Error occured to get s3 object: %v", err)
+		return fmt.Errorf("error creating temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name()) // Clean up temp file when done
+
+	// Download the S3 object to the temporary file
+	obj, err := s3Client.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+
+	_, err = io.Copy(tempFile, obj.Body)
+	if err != nil {
+		return fmt.Errorf("error downloading S3 object: %v", err)
 	}
 
-	return obj
+	// Close the file to ensure all data is written
+	tempFile.Close()
+
+	// Open the file for reading
+	file, err := os.Open(tempFile.Name())
+	if err != nil {
+		return fmt.Errorf("error opening temp file: %v", err)
+	}
+	defer file.Close()
+
+	// Process the downloaded file
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var message Message
+		if err := json.Unmarshal(scanner.Bytes(), &message); err != nil {
+			fmt.Printf("[TEST ERROR] Malformed log entry. Unmarshal Error: %v\n", err)
+			continue
+		}
+
+		recordId := message.Log[:8]
+		*s3RecordCounter++
+		if _, ok := inputMap[recordId]; ok {
+			inputMap[recordId] = true
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading temp file: %v", err)
+	}
+
+	return nil
 }
 
 // Creates a new CloudWatch Client
