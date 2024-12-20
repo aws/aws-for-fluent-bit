@@ -460,18 +460,41 @@ def publish_fluent_config_s3(input_logger):
 def delete_testing_data(session):
     # Delete associated cloudwatch log streams
     client = session.client('logs')
+    log_group_name = os.environ['CW_LOG_GROUP_NAME']
     response = client.describe_log_streams(
-        logGroupName=os.environ['CW_LOG_GROUP_NAME']
+        logGroupName=log_group_name
     )
     for stream in response["logStreams"]:
+        print("Deleting log stream. logGroupName={} logStreamName={}".format(log_group_name, stream["logStreamName"]), flush=True)
         client.delete_log_stream(
-            logGroupName=os.environ['CW_LOG_GROUP_NAME'],
+            logGroupName=log_group_name,
             logStreamName=stream["logStreamName"]
         )
-    # Empty s3 bucket
-    s3 = session.resource('s3')
-    bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
-    bucket.objects.all().delete()
+
+    # Set 5-day retention period for s3 bucket
+    s3 = session.client('s3')
+    bucket_name = os.environ['S3_BUCKET_NAME']
+
+    # Configure the lifecycle rule
+    lifecycle_configuration = {
+        'Rules': [
+            {
+                'ID': 'Delete after 5 days',
+                'Status': 'Enabled',
+                'Expiration': {'Days': 5},
+            }
+        ]
+    }
+
+    try:
+        # Apply the lifecycle configuration to the bucket
+        response = s3_client.put_bucket_lifecycle_configuration(
+            Bucket=bucket_name,
+            LifecycleConfiguration=lifecycle_configuration
+        )
+        print(f"Lifecycle rule set successfully for bucket: {bucket_name}", flush=True)
+    except ClientError as e:
+        print(f"Error setting lifecycle rule: {e}")
 
 def generate_daemonset_config(throughput):
     daemonset_config_dict = {
