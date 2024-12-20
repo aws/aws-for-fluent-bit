@@ -333,8 +333,10 @@ def run_ecs_tests():
             print("Waiting for validator process to complete cmd=[{}]".format(' '.join(p["process"].args)), flush=True)
             p["process"].wait()
             stdout, stderr = p["process"].communicate()
+            return_code = p["process"].returncode
             print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stdout: {stdout}', flush=True)
             print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stderr: {stderr}', flush=True)
+            print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator return code: {return_code}', flush=True)
             p["result"] = stdout
         print(f'Test {input_logger["name"]} to {OUTPUT_PLUGIN} complete.', flush=True)
 
@@ -455,7 +457,7 @@ def publish_fluent_config_s3(input_logger):
 # we can debug and run validation manually if necessary.
 def delete_testing_data(session):
     print("Setting auto-delete policies for CW log groups and S3 buckets")
-    retention_days = 4
+    retention_days = 5
 
     logs_client = session.client('logs')
     try:
@@ -478,6 +480,7 @@ def delete_testing_data(session):
                 'ID': "Delete after {} days".format(retention_days),
                 'Status': 'Enabled',
                 'Expiration': {'Days': retention_days},
+                'Prefix': ''
             }
         ]
     }
