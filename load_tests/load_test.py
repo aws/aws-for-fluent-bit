@@ -15,6 +15,9 @@ MAX_WAITER_DESCRIBE_FAILURES = 2
 IS_TASK_DEFINITION_PRINTED = True
 PLATFORM = os.environ['PLATFORM'].lower()
 OUTPUT_PLUGIN = os.environ['OUTPUT_PLUGIN'].lower()
+LOG_GROUP_NAME = os.environ.get('CW_LOG_GROUP_NAME', "unavailable")
+AWS_REGION = os.environ['AWS_REGION']
+S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', "unavailable")
 TESTING_RESOURCES_STACK_NAME = os.environ['TESTING_RESOURCES_STACK_NAME']
 PREFIX = os.environ['PREFIX']
 EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
@@ -64,7 +67,9 @@ def get_log_delay(log_delay_epoch_time):
 def set_buffer(stop_epoch_time):
     curr_epoch_time = time.time()
     if (curr_epoch_time - stop_epoch_time) < BUFFER_TIME_IN_SECOND:
-        __sleep(int(BUFFER_TIME_IN_SECOND - curr_epoch_time + stop_epoch_time), "Waiting for all logs to be sent to destination")
+        __sleep(int(BUFFER_TIME_IN_SECOND - curr_epoch_time + stop_epoch_time),
+            "Waiting for all logs to be sent to destination. "+
+            f"destination={OUTPUT_PLUGIN} logGroupName={LOG_GROUP_NAME} s3Bucket={S3_BUCKET_NAME} prefix={PREFIX}")
 
 # convert datetime to epoch time
 def parse_time(time):
@@ -116,7 +121,7 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
 
         # Plugin Specific Environment Variables
         'cloudwatch': {
-            '$CW_LOG_GROUP_NAME':               os.environ['CW_LOG_GROUP_NAME'],
+            '$CW_LOG_GROUP_NAME':               LOG_GROUP_NAME,
             '$STD_LOG_STREAM_NAME':             resource_resolver.resolve_cloudwatch_logs_stream_name(std_config),
             '$CUSTOM_LOG_STREAM_NAME':          resource_resolver.resolve_cloudwatch_logs_stream_name(custom_config)
         },
@@ -129,7 +134,7 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
             '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_delivery_stream_name(custom_config),
         },
         's3': {
-            '$S3_BUCKET_NAME':                  os.environ['S3_BUCKET_NAME'],
+            '$S3_BUCKET_NAME':                  S3_BUCKET_NAME,
             '$STD_S3_OBJECT_NAME':              resource_resolver.resolve_s3_object_name(std_config),
         },
     }
@@ -197,7 +202,7 @@ def wait_ecs_tasks(ecs_cluster_name, task_arn):
     running = True
     attempts = 0
     failures = 0
-    print(f'waiting on task_arn={task_arn}', flush=True)
+    print(f'Waiting on task_arn={task_arn}', flush=True)
     client = boto3.client('ecs')
 
     while running:
@@ -302,28 +307,19 @@ def run_ecs_tests():
                 "input_configuration": input_configuration,
             }
 
-            validator_env = {
-                **os.environ.copy(),
-            }
-
             if OUTPUT_PLUGIN == 'cloudwatch':
-                validator_env['LOG_PREFIX'] = resource_resolver.get_destination_cloudwatch_prefix(test_configuration["input_configuration"])
-                validator_env['DESTINATION'] = 'cloudwatch'
+                log_prefix = resource_resolver.get_destination_cloudwatch_prefix(test_configuration["input_configuration"])
             else:
-                validator_env['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
-                validator_env['DESTINATION'] = 's3'
+                log_prefix = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
 
-            log_group_name = os.environ['CW_LOG_GROUP_NAME']
-            if len(log_group_name) == 0:
-                log_group_name = "unavailable"
             exec_args = ['go', 'run', './load_tests/validation/validate.go',
                 '-input-record', input_record,
                 '-log-delay', log_delay,
-                '-region', os.environ['AWS_REGION'],
-                '-bucket', os.environ['S3_BUCKET_NAME'],
-                '-log-group', log_group_name,
-                '-prefix', validator_env['LOG_PREFIX'],
-                '-destination', validator_env['DESTINATION'],
+                '-region', AWS_REGION,
+                '-bucket', S3_BUCKET_NAME,
+                '-log-group', LOG_GROUP_NAME,
+                '-prefix', log_prefix,
+                '-destination', OUTPUT_PLUGIN,
             ]
             print("Running validator process. cmd=[{}]".format(' '.join(exec_args)), flush=True)
             processes.append({
@@ -335,7 +331,7 @@ def run_ecs_tests():
         # Wait until all subprocesses for validation completed
         print("Waiting for all validation processes to complete", flush=True)
         for p in processes:
-            print("Waiting for validator process to complete {}".format(p["process"].args), flush=True)
+            print("Waiting for validator process to complete {}".format(' '.join(p["process"].args)), flush=True)
             p["process"].wait()
             stdout, stderr = p["process"].communicate()
             print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stdout: {stdout}', flush=True)
@@ -447,53 +443,52 @@ def parse_json_template(template, dict):
 
 # Returns s3 arn
 def publish_fluent_config_s3(input_logger):
-    bucket_name = os.environ['S3_BUCKET_NAME']
     s3 = boto3.client('s3')
     s3.upload_file(
         input_logger["fluent_config_file_path"],
-        bucket_name,
+        S3_BUCKET_NAME,
         f'{OUTPUT_PLUGIN}-test/{PLATFORM}/fluent-{input_logger["name"]}.conf',
     )
-    return f'arn:aws:s3:::{bucket_name}/{OUTPUT_PLUGIN}-test/{PLATFORM}/fluent-{input_logger["name"]}.conf'
+    return f'arn:aws:s3:::{S3_BUCKET_NAME}/{OUTPUT_PLUGIN}-test/{PLATFORM}/fluent-{input_logger["name"]}.conf'
 
-# The following method is used to clear data after all tests run
+# The following method is used to clear data after all tests run.
+# We set retention/expiration policies so that tests do not interfere with each other, and so that
+# we can debug and run validation manually if necessary.
 def delete_testing_data(session):
-    # Delete associated cloudwatch log streams
-    client = session.client('logs')
-    log_group_name = os.environ['CW_LOG_GROUP_NAME']
-    response = client.describe_log_streams(
-        logGroupName=log_group_name
-    )
-    for stream in response["logStreams"]:
-        print("Deleting log stream. logGroupName={} logStreamName={}".format(log_group_name, stream["logStreamName"]), flush=True)
-        client.delete_log_stream(
-            logGroupName=log_group_name,
-            logStreamName=stream["logStreamName"]
-        )
+    retention_days = 4
 
-    # Set 5-day retention period for s3 bucket
-    s3 = session.client('s3')
-    bucket_name = os.environ['S3_BUCKET_NAME']
+    logs_client = session.client('logs')
+    try:
+        # Set the retention policy for the log group
+        response = logs_client.put_retention_policy(
+            logGroupName=LOG_GROUP_NAME,
+            retentionInDays=retention_days
+        )
+        print(f"Retention policy set successfully for log group. logGroupName={LOG_GROUP_NAME} retentionDays={retention_days}")
+    except Exception as e:
+        print(f"Error setting retention policy: {e}")
+
+    # Set retention period for s3 bucket
+    s3_client = session.client('s3')
 
     # Configure the lifecycle rule
     lifecycle_configuration = {
         'Rules': [
             {
-                'ID': 'Delete after 5 days',
+                'ID': "Delete after {} days".format(retention_days),
                 'Status': 'Enabled',
-                'Expiration': {'Days': 5},
+                'Expiration': {'Days': retention_days},
             }
         ]
     }
-
     try:
         # Apply the lifecycle configuration to the bucket
         response = s3_client.put_bucket_lifecycle_configuration(
-            Bucket=bucket_name,
+            Bucket=S3_BUCKET_NAME,
             LifecycleConfiguration=lifecycle_configuration
         )
-        print(f"Lifecycle rule set successfully for bucket: {bucket_name}", flush=True)
-    except ClientError as e:
+        print(f"Lifecycle rule set successfully for S3 bucket. bucketName={S3_BUCKET_NAME} retentionDays={retention_days}", flush=True)
+    except Exception as e:
         print(f"Error setting lifecycle rule: {e}")
 
 def generate_daemonset_config(throughput):
@@ -502,7 +497,7 @@ def generate_daemonset_config(throughput):
         '$FLUENT_BIT_IMAGE': os.environ['FLUENT_BIT_IMAGE'],
         '$APP_IMAGE': os.environ['EKS_APP_IMAGE'],
         '$TIME': str(LOGGER_RUN_TIME_IN_SECOND),
-        '$CW_LOG_GROUP_NAME': os.environ['CW_LOG_GROUP_NAME'],
+        '$CW_LOG_GROUP_NAME': LOG_GROUP_NAME,
     }
     fin = open(f'./load_tests/daemonset/{OUTPUT_PLUGIN}.yaml', 'r')
     data = fin.read()
@@ -525,7 +520,7 @@ def run_eks_tests():
     for throughput in THROUGHPUT_LIST:
         input_record = calculate_total_input_number(throughput)
         response = client.describe_log_streams(
-            logGroupName=os.environ['CW_LOG_GROUP_NAME'],
+            logGroupName=LOG_GROUP_NAME,
             logStreamNamePrefix=f'{PREFIX}kube.var.log.containers.ds-cloudwatch-{throughput}',
             orderBy='LogStreamName'
         )
