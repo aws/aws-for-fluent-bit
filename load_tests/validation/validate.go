@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -20,6 +20,10 @@ import (
 
 const (
 	idCounterBase = 10000000
+)
+
+var (
+	inputMap map[string]bool
 )
 
 type Message struct {
@@ -63,7 +67,7 @@ func main() {
 	}
 
 	// Map for counting unique records in corresponding destination
-	inputMap := make(map[string]bool)
+	inputMap = make(map[string]bool, *inputRecord)
 	for i := 0; i < *inputRecord; i++ {
 		recordId := strconv.Itoa(idCounterBase + i)
 		inputMap[recordId] = false
@@ -76,18 +80,18 @@ func main() {
 			exitErrorf("[TEST FAILURE] Unable to create new S3 client: %v", err)
 		}
 
-		totalRecordFound, inputMap = validate_s3(s3Client, downloader, *bucket, *prefix, inputMap)
+		totalRecordFound = validate_s3(s3Client, downloader, *bucket, *prefix)
 	} else if *destination == "cloudwatch" {
 		cwClient, err := getCWClient(*region)
 		if err != nil {
 			exitErrorf("[TEST FAILURE] Unable to create new CloudWatch client: %v", err)
 		}
 
-		totalRecordFound, inputMap = validate_cloudwatch(cwClient, *logGroup, *prefix, inputMap)
+		totalRecordFound = validate_cloudwatch(cwClient, *logGroup, *prefix)
 	}
 
 	// Get benchmark results based on log loss, log delay and log duplication
-	get_results(*inputRecord, totalRecordFound, inputMap, *logDelay)
+	get_results(*inputRecord, totalRecordFound, *logDelay)
 }
 
 // Creates a new S3 Client
@@ -115,7 +119,7 @@ type fileInfo struct {
 	key  string
 }
 
-func validate_s3(s3Client *s3.S3, downloader *s3manager.Downloader, bucket string, prefix string, inputMap map[string]bool) (int, map[string]bool) {
+func validate_s3(s3Client *s3.S3, downloader *s3manager.Downloader, bucket string, prefix string) int {
 	var continuationToken *string
 	s3ObjectCounter := 0
 	s3RecordCounter := 0
@@ -126,18 +130,16 @@ func validate_s3(s3Client *s3.S3, downloader *s3manager.Downloader, bucket strin
 	}
 	defer os.RemoveAll(tempDir)
 
-	fileChan := make(chan fileInfo, 100) // Buffer for 100 files
+	fileChan := make(chan fileInfo, 25) // Buffer for 25 files
 	var wg sync.WaitGroup
 
 	// Start the worker goroutine
 	wg.Add(1)
 	go func() {
-		scanner := &bufio.Scanner{}
 		filePtr := &os.File{}
 		defer wg.Done()
-		message := Message{}
 		for file := range fileChan {
-			localCounter, err := processFile(filePtr, scanner, file.path, inputMap, &message)
+			localCounter, err := processFile(filePtr, file.path)
 			if err != nil {
 				fmt.Printf("[TEST ERROR] Error processing file %s: %v\n", file.key, err)
 				continue
@@ -187,60 +189,8 @@ func validate_s3(s3Client *s3.S3, downloader *s3manager.Downloader, bucket strin
 
 	fmt.Println("total_s3_obj, ", s3ObjectCounter)
 
-	return s3RecordCounter, inputMap
+	return s3RecordCounter
 }
-
-// func downloadFileFromS3(downloader *s3manager.Downloader, bucket, key, localFilePath string) error {
-// 	// Create a file to write the S3 Object contents to.
-// 	f, err := os.Create(localFilePath)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create file %q: %v", localFilePath, err)
-// 	}
-// 	defer f.Close()
-
-// 	// Download the file from S3 to the local file
-// 	n, err := downloader.Download(f, &s3.GetObjectInput{
-// 		Bucket: aws.String(bucket),
-// 		Key:    aws.String(key),
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to download file: %v", err)
-// 	}
-
-// 	return nil
-// }
-
-// func downloadFileFromS32(bucket, key, localFilePath string) error {
-// 	// Create a new AWS session
-// 	sess, err := session.NewSession(&aws.Config{
-// 		Region: aws.String("us-west-2"), // Replace with your AWS region
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create AWS session: %v", err)
-// 	}
-
-// 	// Create a file to write the S3 Object contents to.
-// 	f, err := os.Create(localFilePath)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create file %q: %v", localFilePath, err)
-// 	}
-// 	defer f.Close()
-
-// 	// Create a downloader with the session and default options
-// 	downloader := s3manager.NewDownloader(sess)
-
-// 	// Download the file from S3 to the local file
-// 	n, err := downloader.Download(f, &s3.GetObjectInput{
-// 		Bucket: aws.String(bucket),
-// 		Key:    aws.String(key),
-// 	})
-// 	if err != nil {
-// 		return fmt.Errorf("failed to download file: %v", err)
-// 	}
-
-// 	fmt.Printf("Downloaded %d bytes to %s\n", n, localFilePath)
-// 	return nil
-// }
 
 func downloadS3Object(downloader *s3manager.Downloader, bucket, key, tempDir string) (string, error) {
 	tempFile, err := os.CreateTemp(tempDir, "s3-object-*")
@@ -263,59 +213,35 @@ func downloadS3Object(downloader *s3manager.Downloader, bucket, key, tempDir str
 	return tempFile.Name(), nil
 }
 
-// func downloadS3Object(s3Client *s3.S3, bucket, key, tempDir string) (string, error) {
-// 	tempFile, err := os.CreateTemp(tempDir, "s3-object-*")
-// 	if err != nil {
-// 		return "", fmt.Errorf("error creating temp file: %v", err)
-// 	}
-// 	defer tempFile.Close()
-
-// 	input := &s3.GetObjectInput{
-// 		Bucket: aws.String(bucket),
-// 		Key:    aws.String(key),
-// 	}
-
-// 	result, err := s3Client.GetObject(input)
-// 	if err != nil {
-// 		os.Remove(tempFile.Name()) // Clean up the file if download fails
-// 		return "", fmt.Errorf("error getting S3 object: %v", err)
-// 	}
-// 	defer result.Body.Close()
-
-// 	_, err = io.Copy(tempFile, result.Body)
-// 	if err != nil {
-// 		os.Remove(tempFile.Name()) // Clean up the file if copy fails
-// 		return "", fmt.Errorf("error copying S3 object to file: %v", err)
-// 	}
-
-// 	return tempFile.Name(), nil
-// }
-
-func processFile(file *os.File, scanner *bufio.Scanner, filePath string, inputMap map[string]bool, message *Message) (int, error) {
+func processFile(file *os.File, filePath string) (int, error) {
 	var err error
 	file, err = os.Open(filePath)
 	if err != nil {
 		return 0, fmt.Errorf("error opening file: %v", err)
 	}
 	defer file.Close()
+	var message Message
+	var recordId string
+	var ok bool
 
 	localCounter := 0
-	scanner = bufio.NewScanner(file)
-	for scanner.Scan() {
-		if err := json.Unmarshal(scanner.Bytes(), message); err != nil {
-			fmt.Printf("[TEST ERROR] Malformed log entry. Unmarshal Error: %v\n", err)
+	// Directly unmarshal the JSON objects from the S3 object body
+	decoder := json.NewDecoder(file)
+	for {
+		err = decoder.Decode(&message)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", err)
 			continue
 		}
 
-		recordId := message.Log[:8]
+		recordId = message.Log[:8]
 		localCounter++
-		if _, ok := inputMap[recordId]; ok {
+		if _, ok = inputMap[recordId]; ok {
 			inputMap[recordId] = true
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return localCounter, fmt.Errorf("error reading file: %v", err)
 	}
 
 	return localCounter, nil
@@ -336,7 +262,7 @@ func getCWClient(region string) (*cloudwatchlogs.CloudWatchLogs, error) {
 
 // Validate logs in CloudWatch.
 // Similar logic as S3 validation.
-func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup string, logStream string, inputMap map[string]bool) (int, map[string]bool) {
+func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup string, logStream string) int {
 	var forwardToken *string
 	var input *cloudwatchlogs.GetLogEventsInput
 	cwRecoredCounter := 0
@@ -394,13 +320,13 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 		forwardToken = response.NextForwardToken
 	}
 
-	return cwRecoredCounter, inputMap
+	return cwRecoredCounter
 }
 
-func get_results(totalInputRecord int, totalRecordFound int, recordMap map[string]bool, logDelay string) {
+func get_results(totalInputRecord int, totalRecordFound int, logDelay string) {
 	uniqueRecordFound := 0
 	// Count how many unique records were found in the destination
-	for _, v := range recordMap {
+	for _, v := range inputMap {
 		if v {
 			uniqueRecordFound++
 		}
