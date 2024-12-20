@@ -329,9 +329,8 @@ def run_ecs_tests():
             })
 
         # Wait until all subprocesses for validation completed
-        print("Waiting for all validation processes to complete", flush=True)
         for p in processes:
-            print("Waiting for validator process to complete {}".format(' '.join(p["process"].args)), flush=True)
+            print("Waiting for validator process to complete cmd=[{}]".format(' '.join(p["process"].args)), flush=True)
             p["process"].wait()
             stdout, stderr = p["process"].communicate()
             print(f'{input_logger["name"]} to {OUTPUT_PLUGIN} raw validator stdout: {stdout}', flush=True)
@@ -455,6 +454,7 @@ def publish_fluent_config_s3(input_logger):
 # We set retention/expiration policies so that tests do not interfere with each other, and so that
 # we can debug and run validation manually if necessary.
 def delete_testing_data(session):
+    print("Setting auto-delete policies for CW log groups and S3 buckets")
     retention_days = 4
 
     logs_client = session.client('logs')
@@ -539,6 +539,7 @@ def run_eks_tests():
         p.wait()
 
 def delete_testing_resources():
+    print("Deleting test resources")
     # Create sts session
     session = get_sts_boto_session()
 
@@ -546,6 +547,7 @@ def delete_testing_resources():
     # delete all S3 config files
     delete_testing_data(session)
 
+    print(f"Deleting cloudformation stack. stackName={TESTING_RESOURCES_STACK_NAME}", flush=True)
     # All related testing resources will be destroyed once the stack is deleted
     client = session.client('cloudformation')
     client.delete_stack(
@@ -553,6 +555,7 @@ def delete_testing_resources():
     )
     # scale down eks cluster
     if PLATFORM == 'eks':
+        print("Scaling down EKS cluster", flush=True)
         os.system('kubectl delete namespace load-test-fluent-bit-eks-ns')
         os.system(f'eksctl scale nodegroup --cluster={EKS_CLUSTER_NAME} --nodes=0 ng')
 

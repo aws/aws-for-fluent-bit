@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -111,8 +111,6 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 	s3RecordCounter := 0
 	s3ObjectCounter := 0
 
-	// Returns all the objects from a S3 bucket with the given prefix.
-	// This approach utilizes NextContinuationToken to pull all the objects from the S3 bucket.
 	for {
 		input = &s3.ListObjectsV2Input{
 			Bucket:            aws.String(bucket),
@@ -122,7 +120,7 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 
 		response, err := s3Client.ListObjectsV2(input)
 		if err != nil {
-			exitErrorf("[TEST FAILURE] Error occured to get the objects from bucket: %q., %v", bucket, err)
+			exitErrorf("[TEST FAILURE] Error occurred to get the objects from bucket: %q., %v", bucket, err)
 		}
 
 		for _, content := range response.Contents {
@@ -130,39 +128,34 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string, inputMap map[str
 				Bucket: aws.String(bucket),
 				Key:    content.Key,
 			}
-			obj := getS3Object(s3Client, input)
+			obj, err := s3Client.GetObject(input)
+			if err != nil {
+				exitErrorf("[TEST FAILURE] Error to get S3 object. %v", err)
+			}
 			s3ObjectCounter++
 
-			dataByte, err := ioutil.ReadAll(obj.Body)
-			if err != nil {
-				exitErrorf("[TEST FAILURE] Error to parse GetObject response. %v", err)
-			}
-
-			data := strings.Split(string(dataByte), "\n")
-
-			for _, d := range data {
-				if d == "" {
-					continue
-				}
-
+			// Directly unmarshal the JSON objects from the S3 object body
+			decoder := json.NewDecoder(obj.Body)
+			for {
 				var message Message
-
-				decodeError := json.Unmarshal([]byte(d), &message)
-				if decodeError != nil {
-					fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", decodeError)
-					fmt.Println("             Malform entry: %s", d)
-					// Skip malform log entries (count them as lost logs)
+				err := decoder.Decode(&message)
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", err)
 					continue
 				}
 
-				// First 8 char is the unique record ID
 				recordId := message.Log[:8]
-				s3RecordCounter += 1
+				s3RecordCounter++
 				if _, ok := inputMap[recordId]; ok {
-					// Setting true to indicate that this record was found in the destination
 					inputMap[recordId] = true
 				}
 			}
+
+			// Close the S3 object body
+			obj.Body.Close()
 		}
 
 		if !aws.BoolValue(response.IsTruncated) {
