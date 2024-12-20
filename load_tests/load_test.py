@@ -313,12 +313,23 @@ def run_ecs_tests():
                 validator_env['LOG_PREFIX'] = resource_resolver.get_destination_s3_prefix(test_configuration["input_configuration"], OUTPUT_PLUGIN)
                 validator_env['DESTINATION'] = 's3'
 
-            exec_args = ['go', 'run', './load_tests/validation/validate.go', input_record, log_delay]
-            print("Running validator process. args={}".format(exec_args), flush=True)
+            log_group_name = os.environ['CW_LOG_GROUP_NAME']
+            if len(log_group_name) == 0:
+                log_group_name = "unavailable"
+            exec_args = ['go', 'run', './load_tests/validation/validate.go',
+                '-input-record', input_record,
+                '-log-delay', log_delay,
+                '-region', os.environ['AWS_REGION'],
+                '-bucket', os.environ['S3_BUCKET_NAME'],
+                '-log-group', log_group_name,
+                '-prefix', validator_env['LOG_PREFIX'],
+                '-destination', validator_env['DESTINATION'],
+            ]
+            print("Running validator process. cmd=[{}]".format(' '.join(exec_args)), flush=True)
             processes.append({
                 "input_logger": input_logger,
                 "test_configuration": test_configuration,
-                "process": subprocess.Popen(exec_args, stdout=subprocess.PIPE, env=validator_env)
+                "process": subprocess.Popen(exec_args, stdout=subprocess.PIPE)
             })
 
         # Wait until all subprocesses for validation completed

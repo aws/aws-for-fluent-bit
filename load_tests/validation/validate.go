@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,12 +17,7 @@ import (
 )
 
 const (
-	envAWSRegion   = "AWS_REGION"
-	envS3Bucket    = "S3_BUCKET_NAME"
-	envCWLogGroup  = "CW_LOG_GROUP_NAME"
-	envLogPrefix   = "LOG_PREFIX"
-	envDestination = "DESTINATION"
-	idCounterBase  = 10000000
+	idCounterBase = 10000000
 )
 
 type Message struct {
@@ -29,67 +25,67 @@ type Message struct {
 }
 
 func main() {
-	region := os.Getenv(envAWSRegion)
-	if region == "" {
-		exitErrorf("[TEST FAILURE] AWS Region required. Set the value for environment variable- %s", envAWSRegion)
+	// Define flags
+	region := flag.String("region", "", "AWS Region")
+	bucket := flag.String("bucket", "", "S3 Bucket Name")
+	logGroup := flag.String("log-group", "", "CloudWatch Log Group Name")
+	prefix := flag.String("prefix", "", "Log Prefix")
+	destination := flag.String("destination", "", "Log Destination (s3 or cloudwatch)")
+	inputRecord := flag.Int("input-record", 0, "Total input record number")
+	logDelay := flag.String("log-delay", "", "Log delay")
+
+	// Parse flags
+	flag.Parse()
+
+	// Validate required flags
+	if *region == "" {
+		exitErrorf("[TEST FAILURE] AWS Region required. Use the -region flag.")
+	}
+	if *bucket == "" {
+		exitErrorf("[TEST FAILURE] Bucket name required. Use the -bucket flag.")
+	}
+	if *logGroup == "" {
+		exitErrorf("[TEST FAILURE] Log group name required. Use the -log-group flag.")
+	}
+	if *prefix == "" {
+		exitErrorf("[TEST FAILURE] Object prefix required. Use the -prefix flag.")
+	}
+	if *destination == "" {
+		exitErrorf("[TEST FAILURE] Log destination for validation required. Use the -destination flag.")
+	}
+	if *inputRecord == 0 {
+		exitErrorf("[TEST FAILURE] Total input record number required. Use the -input-record flag.")
+	}
+	if *logDelay == "" {
+		exitErrorf("[TEST FAILURE] Log delay required. Use the -log-delay flag.")
 	}
 
-	bucket := os.Getenv(envS3Bucket)
-	if bucket == "" {
-		exitErrorf("[TEST FAILURE] Bucket name required. Set the value for environment variable- %s", envS3Bucket)
-	}
-
-	logGroup := os.Getenv(envCWLogGroup)
-	if logGroup == "" {
-		exitErrorf("[TEST FAILURE] Log group name required. Set the value for environment variable- %s", envCWLogGroup)
-	}
-
-	prefix := os.Getenv(envLogPrefix)
-	if prefix == "" {
-		exitErrorf("[TEST FAILURE] Object prefix required. Set the value for environment variable- %s", envLogPrefix)
-	}
-
-	destination := os.Getenv(envDestination)
-	if destination == "" {
-		exitErrorf("[TEST FAILURE] Log destination for validation required. Set the value for environment variable- %s", envDestination)
-	}
-
-	inputRecord := os.Args[1]
-	if inputRecord == "" {
-		exitErrorf("[TEST FAILURE] Total input record number required. Set the value as the first argument")
-	}
-	totalInputRecord, _ := strconv.Atoi((inputRecord))
 	// Map for counting unique records in corresponding destination
 	inputMap := make(map[string]bool)
-	for i := 0; i < totalInputRecord; i++ {
+	for i := 0; i < *inputRecord; i++ {
 		recordId := strconv.Itoa(idCounterBase + i)
 		inputMap[recordId] = false
 	}
 
-	logDelay := os.Args[2]
-	if logDelay == "" {
-		exitErrorf("[TEST FAILURE] Log delay required. Set the value as the second argument")
-	}
-
 	totalRecordFound := 0
-	if destination == "s3" {
-		s3Client, err := getS3Client(region)
+	if *destination == "s3" {
+		s3Client, err := getS3Client(*region)
 		if err != nil {
 			exitErrorf("[TEST FAILURE] Unable to create new S3 client: %v", err)
 		}
 
-		totalRecordFound, inputMap = validate_s3(s3Client, bucket, prefix, inputMap)
-	} else if destination == "cloudwatch" {
-		cwClient, err := getCWClient(region)
+		totalRecordFound, inputMap = validate_s3(s3Client, *bucket, *prefix, inputMap)
+	} else if *destination == "cloudwatch" {
+		cwClient, err := getCWClient(*region)
 		if err != nil {
 			exitErrorf("[TEST FAILURE] Unable to create new CloudWatch client: %v", err)
 		}
 
-		totalRecordFound, inputMap = validate_cloudwatch(cwClient, logGroup, prefix, inputMap)
+		totalRecordFound, inputMap = validate_cloudwatch(cwClient, *logGroup, *prefix, inputMap)
 	}
 
 	// Get benchmark results based on log loss, log delay and log duplication
-	get_results(totalInputRecord, totalRecordFound, inputMap, logDelay)
+	get_results(*inputRecord, totalRecordFound, inputMap, *logDelay)
 }
 
 // Creates a new S3 Client
