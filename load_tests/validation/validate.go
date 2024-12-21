@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -23,7 +22,7 @@ const (
 )
 
 var (
-	inputMap map[string]bool
+	inputMap map[string]struct{}
 )
 
 type Message struct {
@@ -67,11 +66,11 @@ func main() {
 	}
 
 	// Map for counting unique records in corresponding destination
-	inputMap = make(map[string]bool, *inputRecord)
-	for i := 0; i < *inputRecord; i++ {
-		recordId := strconv.Itoa(idCounterBase + i)
-		inputMap[recordId] = false
-	}
+	inputMap = make(map[string]struct{}, *inputRecord)
+	// for i := 0; i < *inputRecord; i++ {
+	// 	recordId := strconv.Itoa(idCounterBase + i)
+	// 	inputMap[recordId] = false
+	// }
 
 	totalRecordFound := 0
 	if *destination == "s3" {
@@ -222,7 +221,6 @@ func processFile(file *os.File, filePath string) (int, error) {
 	defer file.Close()
 	var message Message
 	var recordId string
-	var ok bool
 
 	localCounter := 0
 	// Directly unmarshal the JSON objects from the S3 object body
@@ -239,9 +237,10 @@ func processFile(file *os.File, filePath string) (int, error) {
 
 		recordId = message.Log[:8]
 		localCounter++
-		if _, ok = inputMap[recordId]; ok {
-			inputMap[recordId] = true
-		}
+		inputMap[recordId] = struct{}{}
+		// if _, ok = inputMap[recordId]; ok {
+		// 	inputMap[recordId] = true
+		// }
 	}
 
 	return localCounter, nil
@@ -306,10 +305,11 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 			// First 8 char is the unique record ID
 			recordId := log[:8]
 			cwRecoredCounter += 1
-			if _, ok := inputMap[recordId]; ok {
-				// Setting true to indicate that this record was found in the destination
-				inputMap[recordId] = true
-			}
+			inputMap[recordId] = struct{}{}
+			// if _, ok := inputMap[recordId]; ok {
+			// 	// Setting true to indicate that this record was found in the destination
+			// 	inputMap[recordId] = true
+			// }
 		}
 
 		// Same NextForwardToken will be returned if we reach the end of the log stream
@@ -324,13 +324,13 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 }
 
 func get_results(totalInputRecord int, totalRecordFound int, logDelay string) {
-	uniqueRecordFound := 0
+	uniqueRecordFound := len(inputMap)
 	// Count how many unique records were found in the destination
-	for _, v := range inputMap {
-		if v {
-			uniqueRecordFound++
-		}
-	}
+	// for _, v := range inputMap {
+	// 	if v {
+	// 		uniqueRecordFound++
+	// 	}
+	// }
 
 	fmt.Println("total_input, ", totalInputRecord)
 	fmt.Println("total_destination, ", totalRecordFound)
