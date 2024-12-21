@@ -20,6 +20,10 @@ const (
 	idCounterBase = 10000000
 )
 
+var (
+	inputMap *swiss.Map[uint32, struct{}]
+)
+
 type Message struct {
 	Log string
 }
@@ -177,7 +181,53 @@ func getS3Object(s3Client *s3.S3, input *s3.GetObjectInput) *s3.GetObjectOutput 
 		exitErrorf("[TEST FAILURE] Error occured to get s3 object: %v", err)
 	}
 
-	return obj
+	_, err = downloader.Download(tempFile, input)
+	if err != nil {
+		os.Remove(tempFile.Name()) // Clean up the file if download fails
+		return "", fmt.Errorf("error downloading S3 object: %v", err)
+	}
+
+	return tempFile.Name(), nil
+}
+
+func processFile(file *os.File, filePath string) (int, error) {
+	var err error
+	file, err = os.Open(filePath)
+	if err != nil {
+		return 0, fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+	var message Message
+	var recordId string
+
+	localCounter := 0
+	// Directly unmarshal the JSON objects from the S3 object body
+	decoder := json.NewDecoder(file)
+	for {
+		err = decoder.Decode(&message)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println("[TEST ERROR] Malform log entry. Unmarshal Error:", err)
+			continue
+		}
+
+		recordId = message.Log[:8]
+		value, err := strconv.ParseUint(recordId, 10, 32)
+		if err != nil {
+			fmt.Println("Error:", err)
+			continue
+		}
+		recordIdUint := uint32(value)
+		localCounter++
+		inputMap.Put(recordIdUint, struct{}{})
+		// if _, ok = inputMap[recordId]; ok {
+		// 	inputMap[recordId] = true
+		// }
+	}
+
+	return localCounter, nil
 }
 
 // Creates a new CloudWatch Client
@@ -238,11 +288,18 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 
 			// First 8 char is the unique record ID
 			recordId := log[:8]
-			cwRecoredCounter += 1
-			if _, ok := inputMap[recordId]; ok {
-				// Setting true to indicate that this record was found in the destination
-				inputMap[recordId] = true
+			value, err := strconv.ParseUint(recordId, 10, 32)
+			if err != nil {
+				fmt.Println("Error:", err)
+				continue
 			}
+			recordIdUint := uint32(value)
+			cwRecoredCounter += 1
+			inputMap.Put(recordIdUint, struct{}{})
+			// if _, ok := inputMap[recordId]; ok {
+			// 	// Setting true to indicate that this record was found in the destination
+			// 	inputMap[recordId] = true
+			// }
 		}
 
 		// Same NextForwardToken will be returned if we reach the end of the log stream
