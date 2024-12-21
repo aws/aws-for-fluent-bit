@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,7 +25,7 @@ const (
 )
 
 var (
-	inputMap *swiss.Map[string, struct{}]
+	inputMap *swiss.Map[uint32, struct{}]
 )
 
 type Message struct {
@@ -68,7 +69,7 @@ func main() {
 	}
 
 	// Map for counting unique records in corresponding destination
-	inputMap = swiss.New[string, struct{}](int64(*inputRecord))
+	inputMap = swiss.New[uint32, struct{}](int(*inputRecord))
 	// for i := 0; i < *inputRecord; i++ {
 	// 	recordId := strconv.Itoa(idCounterBase + i)
 	// 	inputMap[recordId] = false
@@ -238,8 +239,14 @@ func processFile(file *os.File, filePath string) (int, error) {
 		}
 
 		recordId = message.Log[:8]
+		value, err := strconv.ParseUint(recordId, 10, 32)
+		if err != nil {
+			fmt.Println("Error:", err)
+			continue
+		}
+		recordIdUint := uint32(value)
 		localCounter++
-		inputMap.Put(recordId, struct{}{})
+		inputMap.Put(recordIdUint, struct{}{})
 		// if _, ok = inputMap[recordId]; ok {
 		// 	inputMap[recordId] = true
 		// }
@@ -306,8 +313,14 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 
 			// First 8 char is the unique record ID
 			recordId := log[:8]
+			value, err := strconv.ParseUint(recordId, 10, 32)
+			if err != nil {
+				fmt.Println("Error:", err)
+				continue
+			}
+			recordIdUint := uint32(value)
 			cwRecoredCounter += 1
-			inputMap.Put(recordId, struct{}{})
+			inputMap.Put(recordIdUint, struct{}{})
 			// if _, ok := inputMap[recordId]; ok {
 			// 	// Setting true to indicate that this record was found in the destination
 			// 	inputMap[recordId] = true
