@@ -15,6 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	"github.com/cockroachdb/swiss"
 )
 
 const (
@@ -22,7 +24,7 @@ const (
 )
 
 var (
-	inputMap map[string]struct{}
+	inputMap *swiss.Map[string, struct{}]
 )
 
 type Message struct {
@@ -66,7 +68,7 @@ func main() {
 	}
 
 	// Map for counting unique records in corresponding destination
-	inputMap = make(map[string]struct{}, *inputRecord)
+	inputMap = swiss.New[string, struct{}](int64(*inputRecord))
 	// for i := 0; i < *inputRecord; i++ {
 	// 	recordId := strconv.Itoa(idCounterBase + i)
 	// 	inputMap[recordId] = false
@@ -237,7 +239,7 @@ func processFile(file *os.File, filePath string) (int, error) {
 
 		recordId = message.Log[:8]
 		localCounter++
-		inputMap[recordId] = struct{}{}
+		inputMap.Put(recordId, struct{}{})
 		// if _, ok = inputMap[recordId]; ok {
 		// 	inputMap[recordId] = true
 		// }
@@ -305,7 +307,7 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 			// First 8 char is the unique record ID
 			recordId := log[:8]
 			cwRecoredCounter += 1
-			inputMap[recordId] = struct{}{}
+			inputMap.Put(recordId, struct{}{})
 			// if _, ok := inputMap[recordId]; ok {
 			// 	// Setting true to indicate that this record was found in the destination
 			// 	inputMap[recordId] = true
@@ -324,7 +326,7 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 }
 
 func get_results(totalInputRecord int, totalRecordFound int, logDelay string) {
-	uniqueRecordFound := len(inputMap)
+	uniqueRecordFound := inputMap.Len()
 	// Count how many unique records were found in the destination
 	// for _, v := range inputMap {
 	// 	if v {
