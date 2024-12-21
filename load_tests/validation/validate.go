@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	inputMap *swiss.Map[uint32, struct{}]
+	inputMap map[uint32]struct{}
 )
 
 type Message struct {
@@ -65,11 +65,11 @@ func main() {
 	}
 
 	// Map for counting unique records in corresponding destination
-	inputMap := make(map[string]bool)
-	for i := 0; i < *inputRecord; i++ {
-		recordId := strconv.Itoa(idCounterBase + i)
-		inputMap[recordId] = false
-	}
+	inputMap = make(map[uint32]struct{}, *inputRecord)
+	// for i := 0; i < *inputRecord; i++ {
+	// 	recordId := strconv.Itoa(idCounterBase + i)
+	// 	inputMap[recordId] = false
+	// }
 
 	totalRecordFound := 0
 	if *destination == "s3" {
@@ -221,7 +221,7 @@ func processFile(file *os.File, filePath string) (int, error) {
 		}
 		recordIdUint := uint32(value)
 		localCounter++
-		inputMap.Put(recordIdUint, struct{}{})
+		inputMap[recordIdUint] = struct{}{}
 		// if _, ok = inputMap[recordId]; ok {
 		// 	inputMap[recordId] = true
 		// }
@@ -295,7 +295,7 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 			}
 			recordIdUint := uint32(value)
 			cwRecoredCounter += 1
-			inputMap.Put(recordIdUint, struct{}{})
+			inputMap[recordIdUint] = struct{}{}
 			// if _, ok := inputMap[recordId]; ok {
 			// 	// Setting true to indicate that this record was found in the destination
 			// 	inputMap[recordId] = true
@@ -313,8 +313,8 @@ func validate_cloudwatch(cwClient *cloudwatchlogs.CloudWatchLogs, logGroup strin
 	return cwRecoredCounter, inputMap
 }
 
-func get_results(totalInputRecord int, totalRecordFound int, recordMap map[string]bool, logDelay string) {
-	uniqueRecordFound := 0
+func get_results(totalInputRecord int, totalRecordFound int, logDelay string) {
+	uniqueRecordFound := len(inputMap)
 	// Count how many unique records were found in the destination
 	for _, v := range recordMap {
 		if v {
