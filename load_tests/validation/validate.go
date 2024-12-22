@@ -155,9 +155,7 @@ func validate_s3(s3Client *s3.S3, bucket string, prefix string) int {
 					continue
 				}
 				recordIdUint := uint32(value)
-				if _, ok := inputMap[recordIdUint]; ok {
-					inputMap[recordIdUint] = struct{}{}
-				}
+				inputMap[recordIdUint] = struct{}{}
 			}
 
 			// Close the S3 object body
@@ -205,9 +203,7 @@ func processFile(file *os.File, filePath string) (int, error) {
 			continue
 		}
 		recordIdUint := uint32(value)
-		if _, ok := inputMap[recordIdUint]; ok {
-			inputMap[recordIdUint] = struct{}{}
-		}
+		inputMap[recordIdUint] = struct{}{}
 	}
 
 	return localCounter, nil
