@@ -456,7 +456,7 @@ def publish_fluent_config_s3(input_logger):
 # We set retention/expiration policies so that tests do not interfere with each other, and so that
 # we can debug and run validation manually if necessary.
 def delete_testing_data(session):
-    print("Setting auto-delete policies for CW log groups and S3 buckets")
+    print("Setting auto-delete policies for CW log groups, deleting S3 bucket")
     retention_days = 5
 
     logs_client = session.client('logs')
@@ -470,29 +470,13 @@ def delete_testing_data(session):
     except Exception as e:
         print(f"Error setting retention policy: {e}")
 
-    # Set retention period for s3 bucket
-    s3_client = session.client('s3')
-
-    # Configure the lifecycle rule
-    lifecycle_configuration = {
-        'Rules': [
-            {
-                'ID': "Delete after {} days".format(retention_days),
-                'Status': 'Enabled',
-                'Expiration': {'Days': retention_days},
-                'Prefix': ''
-            }
-        ]
-    }
-    try:
-        # Apply the lifecycle configuration to the bucket
-        response = s3_client.put_bucket_lifecycle_configuration(
-            Bucket=S3_BUCKET_NAME,
-            LifecycleConfiguration=lifecycle_configuration
-        )
-        print(f"Lifecycle rule set successfully for S3 bucket. bucketName={S3_BUCKET_NAME} retentionDays={retention_days}", flush=True)
-    except Exception as e:
-        print(f"Error setting lifecycle rule: {e}")
+    # Empty s3 bucket
+    # lifecycle config cannot currently be used because the bucket name
+    # is reused between tests, so it must be completely deleted after each test.
+    s3 = session.resource('s3')
+    bucket = s3.Bucket(S3_BUCKET_NAME)
+    print(f"Deleting all objects in s3 bucket: {S3_BUCKET_NAME}")
+    bucket.objects.all().delete()
 
 def generate_daemonset_config(throughput):
     daemonset_config_dict = {
