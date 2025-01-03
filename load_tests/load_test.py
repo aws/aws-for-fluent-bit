@@ -517,9 +517,16 @@ def run_eks_tests():
             expect_time = log_stream['lastEventTimestamp']
             actual_time = log_stream['lastIngestionTime']
             log_delay = get_log_delay(actual_time/1000-expect_time/1000)
-            os.environ['LOG_PREFIX'] = log_stream['logStreamName']
-            os.environ['DESTINATION'] = 'cloudwatch'
-            processes.add(subprocess.Popen(['go', 'run', './load_tests/validation/validate.go', input_record, log_delay]))
+            log_prefix = resource_resolver.get_destination_cloudwatch_prefix(test_configuration["input_configuration"])
+            exec_args = ['go', 'run', './load_tests/validation/validate.go',
+                         '-input-record', input_record,
+                         '-log-delay', log_delay,
+                         '-region', AWS_REGION,
+                         '-bucket', S3_BUCKET_NAME,
+                         '-log-group', LOG_GROUP_NAME,
+                         '-prefix', log_prefix,
+                         '-destination', OUTPUT_PLUGIN]
+            processes.add(subprocess.Popen(exec_args))
 
     # Wait until all subprocesses for validation completed
     for p in processes:
