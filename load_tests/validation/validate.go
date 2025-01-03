@@ -68,7 +68,7 @@ func main() {
 	inputMap = make(map[uint32]struct{}, *inputRecord)
 
 	totalRecordFound := 0
-	if *destination == "s3" {
+	if *destination == "s3" || *destination == "kinesis" || *destination == "firehose" {
 		s3Client, err := getS3Client(*region)
 		if err != nil {
 			exitErrorf("[TEST FAILURE] Unable to create new S3 client: %v", err)
