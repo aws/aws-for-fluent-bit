@@ -1,6 +1,6 @@
 {
   "linux": {
-    "version": "2.32.4.20241217",
+    "version": "2.32.5",
     "latest": "true",
     "build": "1",
     "fluent-bit": "1.9.10",

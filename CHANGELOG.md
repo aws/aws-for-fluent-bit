@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.32.5
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux Base: [2.0.20241113.1](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20241113.html)
+
+Compared to `2.32.4` this release adds:
+* Feature - In EKS, AWS output plugins use Pod Identity information when available ([PR](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/6)). See the [EKS launch announcement for Pod Identity](https://aws.amazon.com/about-aws/whats-new/2023/11/amazon-eks-pod-identity/) to learn more about this feature.
+  * Note: If customers emulate the Pod Identity setup done by EKS in their own K8s containers, the provided info will also be accessed by this feature.
+
 ### 2.32.4.20241217 Linux re-build
 *This release has the same Fluent Bit contents as 2.32.4, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.*
 * Amazon Linux base container image version: [2.0.20241113.1](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20241113.html)
