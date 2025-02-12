@@ -623,6 +623,8 @@ verify_ecr_image_scan() {
 
 	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$tagCount" = '1' ]; then
+		# one-time image scanning is only compatible with "BASIC" scanning type registries
+		aws ecr put-registry-scanning-configuration --scan-type BASIC --region ${region}
 		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
 		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')

@@ -32,7 +32,7 @@ while true; do
 done
 
 # Find the most recent AL2 tag
-most_recent_al2=$(printf '%s\n' "${all_tags[@]}" | grep '^2\.' | grep -v arm | grep -v amd | sort -V | tail -n 1)
+most_recent_al2=$(printf '%s\n' "${all_tags[@]}" | grep '^2\.' | grep -v minimal | grep -v arm | grep -v amd | sort -V | tail -n 1)
 
 # Read the JSON file
 json_file="linux.version"
@@ -55,7 +55,7 @@ This release includes:
 * Amazon Kinesis Firehose for Fluent Bit ${firehose_plugin_version#v}
 * Amazon Linux base container image version: $most_recent_al2
 
-Changes introduced the fluent-bit container:
+Compared to the previous release, this release adds:
 * Fix - TODO blah blah [#TODO](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/TODO)
 * Enhancement - TODO blah blah [#TODO](https://github.com/aws/aws-for-fluent-bit/pull/TODO)
 EOF
