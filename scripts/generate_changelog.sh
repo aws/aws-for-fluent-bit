@@ -1,4 +1,5 @@
 #!/bin/bash
+set -xeuo pipefail
 
 # Initialize variables
 next_token=""
