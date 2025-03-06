@@ -1,4 +1,7 @@
 # Changelog
+### 2.32.5.20250220 Linux re-build
+*This release has the same Fluent Bit contents as 2.32.5, and is simply a linux-only re-build for recent patches in dependencies installed in the image. There are no windows images for this release.*
+* Amazon Linux base container image version: [2.0.20250220.0](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20250220.html)
 
 ### 2.32.5.20250305
 This release includes:
