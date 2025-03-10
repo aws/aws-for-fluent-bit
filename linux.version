@@ -4,8 +4,8 @@
     "latest": "true",
     "build": "1",
     "fluent-bit": "1.9.10",
-    "kinesis-plugin": "v1.10.1",
-    "firehose-plugin": "v1.7.1",
+    "kinesis-plugin": "v1.10.2",
+    "firehose-plugin": "v1.7.2",
     "cloudwatch-plugin": "v1.9.4"
   }
 }
