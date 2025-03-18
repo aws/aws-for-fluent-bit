@@ -26,6 +26,7 @@ ARGUMENT_LIST=(
   "CLOUDWATCH_PLUGIN_TAG"
   "CLOUDWATCH_PLUGIN_BRANCH"
   "DOCKER_BUILD_FLAGS"
+  "AL2_VERSION"
 )
 
 # A variable to hold the build arguments for docker build
@@ -36,6 +37,7 @@ PLUGIN_BUILD_ARGS=""
 # setting this by env var ensures it works even on platforms where getopt and longoptions does not work
 OS_TYPE="${OS_TYPE}"
 DOCKER_BUILD_FLAGS="${DOCKER_BUILD_FLAGS:-}"
+AL2_VERSION="${AL2_VERSION:-}"
 
 # Go plugin versions can either be set by args to the script, or they will be sourced
 # from the windows.versions or linux.version file
@@ -49,7 +51,7 @@ usage() {
   echo "Usage: $0 [--KINESIS_PLUGIN_CLONE_URL <string>] [--KINESIS_PLUGIN_TAG <string>] [--KINESIS_PLUGIN_BRANCH <string>]\
   [--FIREHOSE_PLUGIN_CLONE_URL <string>] [--FIREHOSE_PLUGIN_TAG <string>] [--FIREHOSE_PLUGIN_BRANCH <string>]\
   [--CLOUDWATCH_PLUGIN_CLONE_URL <string>] [--CLOUDWATCH_PLUGIN_TAG <string>] [--CLOUDWATCH_PLUGIN_BRANCH <string>] \
-  [--DOCKER_BUILD_FLAGS <string>]" 1>&2;
+  [--DOCKER_BUILD_FLAGS <string>] [--AL2_VERSION <string>]" 1>&2;
   exit 1;
 }
 
@@ -106,6 +108,9 @@ do
       shift 2;;
     --DOCKER_BUILD_FLAGS)
       if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS $2";fi
+      shift 2;;
+    --AL2_VERSION)
+      if [ -n "$2" ];then PLUGIN_BUILD_ARGS="$PLUGIN_BUILD_ARGS --build-arg AL2_VERSION=$2";fi
       shift 2;;
     # End of arguments. End here and break.
     --) shift; break ;;

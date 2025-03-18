@@ -16,6 +16,11 @@ all: release
 # Execute set-cache to turn docker cache back on for faster development.
 DOCKER_BUILD_FLAGS := "--no-cache"
 
+# read al2_version or fallback to 2
+AL2_VERSION = $(shell cat linux.version | jq -r '.linux.al2_version // 2')
+# setup docker build arg to use pinned version or fallback
+AL2_VERSION_BUILD_ARG := --build-arg AL2_VERSION=$(AL2_VERSION)
+
 .PHONY: dev
 dev: DOCKER_BUILD_FLAGS =
 dev: release
@@ -23,10 +28,10 @@ dev: release
 .PHONY: release
 release: build build-init linux-plugins
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
 	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-latest -f ./scripts/dockerfiles/Dockerfile.init-release .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-latest -f ./scripts/dockerfiles/Dockerfile.init-release .
 
 .PHONY: debug
 debug: main-debug init-debug
@@ -34,11 +39,11 @@ debug: main-debug init-debug
 .PHONY: build
 build:
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
 
 .PHONY: build-init
 build-init:
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
 
 #TODO: the bash script opts does not work on developer Macs
 windows-plugins: export OS_TYPE = windows
@@ -56,7 +61,8 @@ windows-plugins:
     	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
+    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS} \
+    	--AL2_VERSION=${AL2_VERSION}
 
 .PHONY: linux-plugins
 linux-plugins:
@@ -70,7 +76,8 @@ linux-plugins:
     	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
+    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS} \
+    	--AL2_VERSION=${AL2_VERSION}
 
 # Debug and debug init images
 .PHONY: main-debug
@@ -84,46 +91,46 @@ init-debug: init-debug-s3
 # Build all main debug images (Don't build the dependencies multiple times)
 .PHONY: main-debug-all
 main-debug-all: main-debug-base
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-fs       -f ./scripts/dockerfiles/Dockerfile.main-debug-fs .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-s3       -f ./scripts/dockerfiles/Dockerfile.main-debug-s3 .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-valgrind -f ./scripts/dockerfiles/Dockerfile.main-debug-valgrind .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-fs       -f ./scripts/dockerfiles/Dockerfile.main-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-s3       -f ./scripts/dockerfiles/Dockerfile.main-debug-s3 .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-valgrind -f ./scripts/dockerfiles/Dockerfile.main-debug-valgrind .
 	docker tag amazon/aws-for-fluent-bit:debug-s3 amazon/aws-for-fluent-bit:debug
 
 # Debug images
 .PHONY: debug-fs
 debug-fs: main-debug-base
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-fs       -f ./scripts/dockerfiles/Dockerfile.main-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-fs       -f ./scripts/dockerfiles/Dockerfile.main-debug-fs .
 
 .PHONY: debug-s3
 debug-s3: main-debug-base
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-s3       -f ./scripts/dockerfiles/Dockerfile.main-debug-s3 .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-s3       -f ./scripts/dockerfiles/Dockerfile.main-debug-s3 .
 
 .PHONY: debug-valgrind
 debug-valgrind: main-debug-base
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:debug-valgrind -f ./scripts/dockerfiles/Dockerfile.main-debug-valgrind .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:debug-valgrind -f ./scripts/dockerfiles/Dockerfile.main-debug-valgrind .
 
 # Build all init debug images (Don't build the dependencies multiple times)
 .PHONY: init-debug-all
 init-debug-all: main-debug-base build-init
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-fs   -f ./scripts/dockerfiles/Dockerfile.init-debug-fs .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-s3   -f ./scripts/dockerfiles/Dockerfile.init-debug-s3 .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-fs   -f ./scripts/dockerfiles/Dockerfile.init-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-s3   -f ./scripts/dockerfiles/Dockerfile.init-debug-s3 .
 	docker tag amazon/aws-for-fluent-bit:init-debug-s3 amazon/aws-for-fluent-bit:init-debug
 
 # Debug init images
 .PHONY: init-debug-fs
 init-debug-fs: main-debug-base build-init
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-fs   -f ./scripts/dockerfiles/Dockerfile.init-debug-fs .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-fs   -f ./scripts/dockerfiles/Dockerfile.init-debug-fs .
 
 .PHONY: init-debug-s3
 init-debug-s3: main-debug-base build-init
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-debug-s3   -f ./scripts/dockerfiles/Dockerfile.init-debug-s3 .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-base -f ./scripts/dockerfiles/Dockerfile.init-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:init-debug-s3   -f ./scripts/dockerfiles/Dockerfile.init-debug-s3 .
 
 .PHONY: main-debug-base
 main-debug-base: build linux-plugins
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-debug-base  -f ./scripts/dockerfiles/Dockerfile.main-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t amazon/aws-for-fluent-bit:main-debug-base  -f ./scripts/dockerfiles/Dockerfile.main-debug-base .
 
 .PHONY: validate-version-file-format
 validate-version-file-format:
@@ -135,7 +142,7 @@ cloudwatch-dev:
 	docker build \
 	--build-arg CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
 	--build-arg CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 .PHONY: firehose-dev
@@ -143,7 +150,7 @@ firehose-dev:
 	docker build \
 	--build-arg FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
 	--build-arg FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 .PHONY: kinesis-dev
@@ -151,7 +158,7 @@ kinesis-dev:
 	docker build \
 	--build-arg KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
 	--build-arg KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) $(AL2_VERSION_BUILD_ARG) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 integ/out:
