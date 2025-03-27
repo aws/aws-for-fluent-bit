@@ -1,5 +1,16 @@
 # Changelog
 
+### 2.32.5.20250327
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250321.0
+
+Compared to `2.32.5.20250305` this release adds:
+* Fix: in_opentelemetry: fix handling of content-length [(CVE-2024-50609)](https://github.com/advisories/GHSA-4g89-mg9x-4chc). Fixes [#8](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/8)
+
 ### 2.32.5.20250305
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
