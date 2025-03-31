@@ -22,7 +22,7 @@ services:
             options:
                 tag: "basic-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"
     logger-log-key:
         build: ${PROJECT_ROOT}/integ/logger
         depends_on:
@@ -32,7 +32,7 @@ services:
             options:
                 tag: "log-key-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"
     logger-emf:
         build: ${PROJECT_ROOT}/integ/emf_logger
         depends_on:
@@ -44,7 +44,7 @@ services:
             options:
                 tag: "log-emf-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"
         # this volume is used for synchronization between the test
         # and the validator
         volumes:

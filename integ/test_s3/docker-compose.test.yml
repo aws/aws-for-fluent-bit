@@ -22,7 +22,7 @@ services:
             options:
                 tag: "multipart-upload-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"
     logger-put-object-test:
         build: ${PROJECT_ROOT}/integ/s3-logger
         depends_on:
@@ -32,4 +32,4 @@ services:
             options:
                 tag: "put-object-test-${TAG}"
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"
