@@ -34,7 +34,7 @@ debug: main-debug init-debug
 .PHONY: build
 build:
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg FLB_TAG=${FLB_TAG} -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
 
 .PHONY: build-init
 build-init:
