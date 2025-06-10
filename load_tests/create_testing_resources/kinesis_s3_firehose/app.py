@@ -4,21 +4,25 @@ from aws_cdk import (
     aws_kinesis as kinesis,
     aws_kinesisfirehose as firehose,
     aws_iam as iam,
-    core,
+    Stack,
+    App,
+    CfnOutput,
+    RemovalPolicy
 )
+from constructs import Construct
 import resource_resolver
 
 PREFIX = resource_resolver.PREFIX
 
 # Create necessary testing resources - s3 bucket, data streams and delivery streams
-class LogStorage(core.Stack):
+class LogStorage(Stack):
 
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         bucket = s3.Bucket(self, 's3Bucket',
                            versioned=True,
-                           removal_policy=core.RemovalPolicy.DESTROY,
+                           removal_policy=RemovalPolicy.DESTROY,
                            auto_delete_objects=True)
         
         firehose_role = iam.Role(self, 'firehoseRole', assumed_by=iam.ServicePrincipal('firehose.amazonaws.com'))
@@ -80,10 +84,10 @@ class LogStorage(core.Stack):
                                                                               ))
 
         # Add stack outputs
-        core.CfnOutput(self, 'S3BucketName', 
+        CfnOutput(self, 'S3BucketName', 
                       value=bucket.bucket_name,
                       description='S3 Bucket Name')
 
-app = core.App()
+app = App()
 LogStorage(app, 'load-test-fluent-bit-log-storage')
 app.synth()

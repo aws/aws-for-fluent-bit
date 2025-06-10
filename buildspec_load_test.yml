@@ -12,9 +12,9 @@ env:
 phases:
   install:
     runtime-versions:
-      golang: 1.16
+      golang: 1.23
       python: 3.x
-      nodejs: 14
+      nodejs: 22
   pre_build:
     commands:
       - echo Running the load tests
@@ -23,7 +23,7 @@ phases:
       - n stable
       # install cdk
       - npm config set prefix /usr/local
-      - npm install -g aws-cdk@2.38.1
+      - npm install -g aws-cdk
       # install eksctl
       - curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
       - mv /tmp/eksctl /usr/local/bin

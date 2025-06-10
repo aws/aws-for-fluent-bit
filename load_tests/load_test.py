@@ -113,6 +113,7 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
 
         # General Environment Variables
         '$THROUGHPUT': throughput,
+        '$PREFIX': PREFIX,
 
         # Task Environment Variables
         '$TASK_ROLE_ARN': os.environ['LOAD_TEST_TASK_ROLE_ARN'],
