@@ -2,16 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -241,20 +242,44 @@ func TestWriteInclude(t *testing.T) {
 }
 
 func TestDownloadS3ConfigFile(t *testing.T) {
-
-	defer os.RemoveAll(s3FileDirectoryPathTest)
-
+	// Setup
 	s3FilePath := "user/files/aaa.conf"
 	bucketName := "userBucket"
-	s3Downloader := MockS3Downloader{}
-
-	downloadS3ConfigFile(&s3Downloader, s3FilePath, bucketName, s3FileDirectoryPathTest)
-
-	actualContent := readFileHelper(s3FileDirectoryPathTest + "aaa.conf")
 	expectedContent := "S3 config file download and store successfully"
 
-	assert.Equal(t, actualContent, expectedContent)
+	cases := []struct {
+		failFirstAttempt bool
+		downloadCount    int
+	}{
+		// Successful download on first attempt
+		{
+			failFirstAttempt: false,
+			downloadCount:    1,
+		},
+		// Failed first attempt, successful retry
+		{
+			failFirstAttempt: true,
+			downloadCount:    2,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("FailFirstAttempt-%t-downloadCount-%d", test.failFirstAttempt, test.downloadCount)
+		t.Run(testName, func(t *testing.T) {
+			os.RemoveAll(s3FileDirectoryPathTest)
+			downloader := &MockS3Downloader{
+				FailFirstAttempt: test.failFirstAttempt,
+			}
 
+			downloadS3ConfigFile(downloader, s3FilePath, bucketName, s3FileDirectoryPathTest)
+
+			// Verify file content
+			actualContent := readFileHelper(s3FileDirectoryPathTest + "aaa.conf")
+			assert.Equal(t, expectedContent, actualContent)
+
+			// Verify downloader was called with correct parameters
+			assert.Equal(t, test.downloadCount, downloader.DownloadCount)
+		})
+	}
 }
 
 func TestModifyInvokeFile(t *testing.T) {
@@ -269,7 +294,153 @@ func TestModifyInvokeFile(t *testing.T) {
 	actualContent := readFileHelper(filePath)
 
 	assert.Equal(t, actualContent, expectedContent)
+}
 
+func TestCreateS3Client(t *testing.T) {
+	// Setup
+	defaultRegion := "us-east-1"
+	usWest2 := "us-west-2"
+
+	cases := []struct {
+		region   string
+		mdRegion string
+	}{
+		// successful creation of S3 client (default region)
+		{
+			region:   defaultRegion,
+			mdRegion: "",
+		},
+		// successful creation of S3 client (metadataRegion set)
+		{
+			region:   "",
+			mdRegion: usWest2,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("Region-%s-MetadataRegion-%s", test.region, test.mdRegion)
+		t.Run(testName, func(t *testing.T) {
+			metadataRegion = test.mdRegion
+			createS3Client()
+
+			assert.NotNil(t, s3Client)
+			assert.True(t, s3ClientCreated)
+			if test.mdRegion == "" {
+				assert.Equal(t, defaultRegion, s3Client.Options().Region)
+			} else {
+				assert.Equal(t, test.mdRegion, s3Client.Options().Region)
+			}
+		})
+	}
+}
+
+func TestCreateS3Downloader(t *testing.T) {
+	// Setup
+	bucketRegion := "us-east-1"
+
+	downloader := createS3Downloader(bucketRegion)
+	assert.NotNil(t, downloader)
+	assert.Equal(t, bucketRegion, downloader.(*manager.Downloader).S3.(*s3.Client).Options().Region)
+}
+
+func TestCreateFile(t *testing.T) {
+	// Setup
+	filePath, err := os.MkdirTemp("", "test")
+	defer os.RemoveAll(filePath)
+	assert.NoError(t, err)
+
+	cases := []struct {
+		autoClose bool
+	}{
+		// create file with auto close
+		{
+			autoClose: true,
+		},
+		// create file without auto close
+		{
+			autoClose: false,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("AutoClose-%t", test.autoClose)
+		t.Run(testName, func(t *testing.T) {
+			fileName := path.Join(filePath, testName)
+			file := createFile(fileName, test.autoClose)
+
+			assert.NotNil(t, file)
+			if !test.autoClose {
+				file.Close()
+			}
+		})
+	}
+}
+
+func TestProcessConfigFile(t *testing.T) {
+	// Setup
+	expectedBaseCommand := baseCommand
+	filePath := "test_config"
+
+	cases := []struct {
+		content string
+	}{
+		// [PARSER] match in config file content
+		{
+			content: "[PARSER]",
+		},
+		// [MULTILINE_PARSER] match in config file content
+		{
+			content: "[MULTILINE_PARSER]",
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("Content-%s", test.content)
+		t.Run(testName, func(t *testing.T) {
+			file := createFileHelper(filePath)
+			defer os.Remove(filePath)
+			defer file.Close()
+			assert.NotNil(t, file)
+			_, err := file.WriteString(test.content)
+			assert.NoError(t, err)
+
+			processConfigFile(filePath)
+
+			assert.NotEqual(t, expectedBaseCommand, baseCommand)
+		})
+	}
+}
+
+func TestGetAllConfigFiles(t *testing.T) {
+	// Setup
+	expectedBaseCommand := baseCommand
+	filePath := "test_config"
+	content := "[PARSER]"
+
+	cases := []struct {
+		envVariable string
+	}{
+		{
+			envVariable: "aws_fluent_bit_init_File",
+		},
+		{
+			envVariable: "aws_fluent_bit_init_file",
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("EnvVariable-%s", test.envVariable)
+		t.Run(testName, func(t *testing.T) {
+			os.Setenv(test.envVariable, filePath)
+			defer os.Unsetenv(test.envVariable)
+			file := createFileHelper(filePath)
+			defer os.Remove(filePath)
+			defer file.Close()
+			assert.NotNil(t, file)
+			_, err := file.WriteString(content)
+			assert.NoError(t, err)
+
+			getAllConfigFiles()
+
+			assert.NotEqual(t, expectedBaseCommand, baseCommand)
+		})
+	}
 }
 
 type MockHTTPClient struct {
@@ -281,7 +452,7 @@ func (mhc *MockHTTPClient) Get(str string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Invalid input for HTTP Client: %v", err)
 	} else {
-		body := ioutil.NopCloser(bytes.NewReader([]byte(mhc.Response)))
+		body := io.NopCloser(bytes.NewReader([]byte(mhc.Response)))
 		return &http.Response{
 			StatusCode: 200,
 			Body:       body,
@@ -289,9 +460,18 @@ func (mhc *MockHTTPClient) Get(str string) (*http.Response, error) {
 	}
 }
 
-type MockS3Downloader struct{}
+type MockS3Downloader struct {
+	FailFirstAttempt bool
+	DownloadCount    int
+}
 
-func (msd *MockS3Downloader) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
+func (msd *MockS3Downloader) Download(ctx context.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*manager.Downloader)) (int64, error) {
+	msd.DownloadCount++
+
+	if msd.FailFirstAttempt && msd.DownloadCount == 1 {
+		return 0, fmt.Errorf("simulated first attempt failure")
+	}
+
 	filePath := s3FileDirectoryPathTest + "aaa.conf"
 	writeContent := "S3 config file download and store successfully"
 
@@ -310,9 +490,9 @@ func createFileHelper(filePath string) *os.File {
 }
 
 func readFileHelper(filePath string) string {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Errorf("failed to read the file: %s", filePath)
+		fmt.Printf("failed to read the file: %s", filePath)
 	}
 
 	return string(content)
@@ -324,6 +504,6 @@ func writeFileHelper(filePath, writeContent string) {
 
 	_, err := file.WriteString(writeContent)
 	if err != nil {
-		fmt.Errorf("Can not write %s in file %s", writeContent, filePath)
+		fmt.Printf("Cannot write %s in file %s", writeContent, filePath)
 	}
 }

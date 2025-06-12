@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,11 +11,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/arn"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,7 +32,7 @@ var (
 	baseCommand = "exec /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so"
 
 	// global s3 client and flag
-	s3Client        *s3.S3
+	s3Client        *s3.Client
 	s3ClientCreated bool = false
 
 	// global ecs metadata region
@@ -46,7 +46,7 @@ type HTTPClient interface {
 
 // S3Downloader interface
 type S3Downloader interface {
-	Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error)
+	Download(ctx context.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*manager.Downloader)) (int64, error)
 }
 
 // all values in the structure are empty strings by default
@@ -77,7 +77,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 		logrus.Fatalf("[FluentBit Init Process] Failed to get ECS Metadata via HTTP Get: %s\n", err)
 	}
 
-	response, err := ioutil.ReadAll(res.Body)
+	response, err := io.ReadAll(res.Body)
 	if err != nil {
 		logrus.Fatalf("[FluentBit Init Process] Failed to read ECS Metadata from HTTP response: %s\n", err)
 	}
@@ -100,7 +100,7 @@ func getECSTaskMetadata(httpClient HTTPClient) ECSTaskMetadata {
 	metadata.ECS_TASK_DEFINITION = metadata.ECS_FAMILY + ":" + metadata.ECS_REVISION
 
 	// per ECS task metadata docs, Cluster can be an ARN or the name
-	if (strings.Contains(metadata.ECS_CLUSTER, "/")) {
+	if strings.Contains(metadata.ECS_CLUSTER, "/") {
 		clusterARN, err := arn.Parse(metadata.ECS_CLUSTER)
 		if err != nil {
 			logrus.Fatalf("[FluentBit Init Process] Failed to parse ECS Cluster ARN: %s %s\n", metadata.ECS_CLUSTER, err)
@@ -189,7 +189,7 @@ func getAllConfigFiles() {
 }
 
 func processConfigFile(path string) {
-	contentBytes, err := ioutil.ReadFile(path)
+	contentBytes, err := os.ReadFile(path)
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalf("[FluentBit Init Process] Cannot open file: %s\n", path)
@@ -230,13 +230,13 @@ func getS3ConfigFile(userInput string) string {
 		Bucket: aws.String(bucketName),
 	}
 
-	output, err := s3Client.GetBucketLocation(input)
+	output, err := s3Client.GetBucketLocation(context.TODO(), input)
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s, you must be the bucket owner to implement this operation\n", bucketName, s3FilePath)
 	}
 
-	bucketRegion := aws.StringValue(output.LocationConstraint)
+	bucketRegion := string(output.LocationConstraint)
 	// Buckets in Region us-east-1 have a LocationConstraint of null
 	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#GetBucketLocationOutput
 	if bucketRegion == "" {
@@ -259,25 +259,32 @@ func createS3Client() {
 		region = metadataRegion
 	}
 
-	s3Client = s3.New(session.Must(session.NewSession(&aws.Config{
-		// if not specify region here, missingregion error will raise when get bucket location
-		Region: aws.String(region),
-	})))
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(region),
+	)
+	if err != nil {
+		logrus.Errorln(err)
+		logrus.Fatalln("[FluentBit Init Process] Cannot create AWS config")
+	}
 
+	s3Client = s3.NewFromConfig(cfg)
 	s3ClientCreated = true
 }
 
 func createS3Downloader(bucketRegion string) S3Downloader {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(bucketRegion)},
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(bucketRegion),
 	)
 	if err != nil {
 		logrus.Errorln(err)
-		logrus.Fatalln("[FluentBit Init Process] Cannot creat a new session")
+		logrus.Fatalln("[FluentBit Init Process] Cannot create AWS config")
 	}
 
-	// need to specify session region!
-	s3Downloader := s3manager.NewDownloader(sess)
+	// Create S3 client with the specified region
+	s3Client := s3.NewFromConfig(cfg)
+
+	// Create downloader with the S3 client
+	s3Downloader := manager.NewDownloader(s3Client)
 	return s3Downloader
 }
 
@@ -286,7 +293,7 @@ func downloadS3ConfigFile(s3Downloader S3Downloader, s3FilePath, bucketName, s3F
 	fileFromS3 := createFile(s3FileDirectory+s3FileName[len(s3FileName)-1], false)
 	defer fileFromS3.Close()
 
-	_, err := s3Downloader.Download(fileFromS3,
+	_, err := s3Downloader.Download(context.TODO(), fileFromS3,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucketName),
 			Key:    aws.String(s3FilePath),
@@ -294,7 +301,7 @@ func downloadS3ConfigFile(s3Downloader S3Downloader, s3FilePath, bucketName, s3F
 	if err != nil {
 		logrus.Warnf("[FluentBit Init Process] Cannot download %s from s3, retrying...\n", s3FileName)
 
-		_, error := s3Downloader.Download(fileFromS3,
+		_, error := s3Downloader.Download(context.TODO(), fileFromS3,
 			&s3.GetObjectInput{
 				Bucket: aws.String(bucketName),
 				Key:    aws.String(s3FilePath),
