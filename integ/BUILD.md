@@ -43,10 +43,12 @@ For multiplatform builds, you need:
 
 1. **Containerd Image Store**: This is the recommended approach for better performance. See [Docker's containerd documentation](https://docs.docker.com/engine/storage/containerd/) for instructions on enabling this feature in `/etc/docker/daemon.json`.
 
-2. **Temporary Builder Instance**: The script automatically creates a temporary builder instance with a unique timestamp-based name. This builder is automatically cleaned up when the script exits, ensuring no orphaned builders are left behind. The script runs the equivalent of:
+2. **Temporary Builder Instance**: The script defines a unique builder name at initialization and automatically creates a temporary builder instance. This builder is automatically cleaned up when the script exits, ensuring no orphaned builders are left behind:
 ```bash
-# Create a unique temporary builder
+# Define a unique temporary builder name
 MULTI_BUILDER="aws-flb-temp-builder-$(date +%s)"
+
+# Later in the build process:
 docker buildx create --name ${MULTI_BUILDER} --use --platform linux/amd64,linux/arm64
 ```
 
@@ -104,6 +106,21 @@ Options:
 ```bash
 ./build.sh -a 123456789012 -r us-west-2 -v cloudwatch -n custom/repository-name
 ```
+
+## Script Structure
+
+The `build.sh` script follows a modular design with clearly defined functions for better maintainability and readability:
+
+### Key Functions
+
+- **parse_args()**: Processes command-line arguments and sets corresponding variables
+- **validate_args()**: Validates required parameters and sets validator-specific values based on the validator type
+- **setup_repository()**: Checks if the repository exists, creates it if needed, applies policies, and logs in to ECR
+- **build_and_push_image()**: Changes to the validator directory and executes the Docker buildx commands
+- **verify_and_output()**: Verifies the image was pushed successfully and outputs the environment variable to use
+- **main()**: Orchestrates the workflow by calling the above functions in sequence
+
+This modular approach makes the script easier to maintain and extend in the future.
 
 ## Repository Management
 

@@ -1,5 +1,14 @@
 #!/bin/bash
-set -e
+set -ex
+
+# Default values
+AWS_ACCOUNT=""
+AWS_REGION=""
+VALIDATOR_REPOSITORY="amazon/aws-for-fluent-bit-validator"
+VALIDATOR_TYPE=""
+TAG=""
+# Create a unique temporary builder name
+MULTI_BUILDER="aws-flb-temp-builder-$(date +%s)"
 
 # Function to display usage information
 usage() {
@@ -21,51 +30,41 @@ usage() {
   exit 1
 }
 
-# Default values
-AWS_ACCOUNT=""
-AWS_REGION=""
-VALIDATOR_REPOSITORY="amazon/aws-for-fluent-bit-validator"
-VALIDATOR_TYPE=""
-TAG=""
-
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-  key="$1"
-  case $key in
-    -h|--help)
-      usage
-      ;;
-    -a|--account)
-      AWS_ACCOUNT="$2"
-      shift
-      shift
-      ;;
-    -r|--region)
-      AWS_REGION="$2"
-      shift
-      shift
-      ;;
-    -n|--name)
-      VALIDATOR_REPOSITORY="$2"
-      shift
-      shift
-      ;;
-    -t|--tag)
-      TAG="$2"
-      shift
-      shift
-      ;;
-    -v|--validator)
-      VALIDATOR_TYPE="$2"
-      shift
-      shift
-      ;;
-    *)
-      echo "Unknown option: $1"
-      usage
-      ;;
-  esac
-done
+# Function to parse command line arguments
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+      -h|--help)
+        usage
+        ;;
+      -a|--account)
+        AWS_ACCOUNT="$2"
+        shift 2
+        ;;
+      -r|--region)
+        AWS_REGION="$2"
+        shift 2
+        ;;
+      -n|--name)
+        VALIDATOR_REPOSITORY="$2"
+        shift 2
+        ;;
+      -t|--tag)
+        TAG="$2"
+        shift 2
+        ;;
+      -v|--validator)
+        VALIDATOR_TYPE="$2"
+        shift 2
+        ;;
+      *)
+        echo "Unknown option: $1"
+        usage
+        ;;
+    esac
+  done
+}
 
 # Function to handle errors
 error_exit() {
@@ -78,40 +77,41 @@ log() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-log "Starting multiplatform image build process"
-
-# Check required parameters
-[[ -z "${AWS_ACCOUNT}" ]] && error_exit "AWS account ID is required. Use -a or --account to specify it."
-[[ -z "${AWS_REGION}" ]] && error_exit "AWS region is required. Use -r or --region to specify it."
-[[ -z "${VALIDATOR_TYPE}" ]] && error_exit "Validator type is required. Use -v or --validator to specify it."
-
-# Set validator-specific values based on validator type
-if [[ "${VALIDATOR_TYPE}" == "s3" ]]; then
-  VALIDATOR_PREFIX="s3-integ-validator"
-  VALIDATOR_DIR="s3"
-  EXPORT_VAR="S3_INTEG_VALIDATOR_IMAGE"
-elif [[ "${VALIDATOR_TYPE}" == "cloudwatch" ]]; then
-  VALIDATOR_PREFIX="cw-integ-validator"
-  VALIDATOR_DIR="validate_cloudwatch"
-  EXPORT_VAR="CW_INTEG_VALIDATOR_IMAGE"
-else
-  error_exit "Validator type must be specified as 's3' or 'cloudwatch'"
-fi
-
-# Set default tag if not provided
-if [[ -z "${TAG}" ]]; then
-  TAG="${VALIDATOR_PREFIX}-latest"
-fi
-
-# VALIDATOR_REPOSITORY has a default value, so this check is just for extra safety
-[[ -z "${VALIDATOR_REPOSITORY}" ]] && error_exit "Repository name is empty. This shouldn't happen as it has a default value."
-
-# Construct the full repository URL
-ECR_REPOSITORY="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-FULL_REPOSITORY_URL="${ECR_REPOSITORY}/${VALIDATOR_REPOSITORY}"
-log "Using repository: ${FULL_REPOSITORY_URL}"
-log "Using tag: ${TAG}"
-log "Validator type: ${VALIDATOR_TYPE}"
+# Function to validate arguments and set validator-specific values
+validate_args() {
+  # Check required parameters
+  [[ -z "${AWS_ACCOUNT}" ]] && error_exit "AWS account ID is required. Use -a or --account to specify it."
+  [[ -z "${AWS_REGION}" ]] && error_exit "AWS region is required. Use -r or --region to specify it."
+  [[ -z "${VALIDATOR_TYPE}" ]] && error_exit "Validator type is required. Use -v or --validator to specify it."
+  
+  # Set validator-specific values based on validator type
+  if [[ "${VALIDATOR_TYPE}" == "s3" ]]; then
+    VALIDATOR_PREFIX="s3-integ-validator"
+    VALIDATOR_DIR="s3"
+    EXPORT_VAR="S3_INTEG_VALIDATOR_IMAGE"
+  elif [[ "${VALIDATOR_TYPE}" == "cloudwatch" ]]; then
+    VALIDATOR_PREFIX="cw-integ-validator"
+    VALIDATOR_DIR="validate_cloudwatch"
+    EXPORT_VAR="CW_INTEG_VALIDATOR_IMAGE"
+  else
+    error_exit "Validator type must be specified as 's3' or 'cloudwatch'"
+  fi
+  
+  # Set default tag if not provided
+  if [[ -z "${TAG}" ]]; then
+    TAG="${VALIDATOR_PREFIX}-latest"
+  fi
+  
+  # VALIDATOR_REPOSITORY has a default value, so this check is just for extra safety
+  [[ -z "${VALIDATOR_REPOSITORY}" ]] && error_exit "Repository name is empty. This shouldn't happen as it has a default value."
+  
+  # Construct the full repository URL
+  ECR_REPOSITORY="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+  FULL_REPOSITORY_URL="${ECR_REPOSITORY}/${VALIDATOR_REPOSITORY}"
+  log "Using repository: ${FULL_REPOSITORY_URL}"
+  log "Using tag: ${TAG}"
+  log "Validator type: ${VALIDATOR_TYPE}"
+}
 
 # Function to apply public access policy to repository
 apply_public_policy() {
@@ -172,19 +172,25 @@ check_and_create_repository() {
   fi
 }
 
-# Check if repository exists and create it if needed
-check_and_create_repository "${VALIDATOR_REPOSITORY}"
-
-# Verify Docker buildx is available
-if ! docker buildx version > /dev/null 2>&1; then
-  error_exit "Docker buildx is not available. Please install or enable Docker buildx."
-fi
-
-# Login to ECR
-log "Logging in to ECR..."
-if ! aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPOSITORY}; then
-  error_exit "Failed to login to ECR"
-fi
+# Function to setup repository and login
+setup_repository() {
+  # Check if repository exists and create it if needed
+  check_and_create_repository "${VALIDATOR_REPOSITORY}"
+  
+  # Verify Docker buildx is available
+  if ! docker buildx version > /dev/null 2>&1; then
+    error_exit "Docker buildx is not available. Please install or enable Docker buildx."
+  fi
+  
+  # Login to ECR
+  log "Logging in to ECR..."
+  if ! aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPOSITORY}; then
+    error_exit "Failed to login to ECR"
+  fi
+  
+  # Remove existing images before building
+  remove_existing_images
+}
 
 # Function to remove existing images from the repository manifest
 remove_existing_images() {
@@ -232,8 +238,66 @@ remove_existing_images() {
   log "Image cleanup completed"
 }
 
-# Create a unique temporary builder name
-MULTI_BUILDER="aws-flb-temp-builder-$(date +%s)"
+# Function to build and push the image
+build_and_push_image() {
+  # Change to the validator directory
+  log "Changing to validator directory: ${VALIDATOR_DIR}"
+  cd "$(dirname "$0")/${VALIDATOR_DIR}" || error_exit "Failed to change to validator directory: ${VALIDATOR_DIR}"
+  
+  # Build and push multi-architecture image directly
+  log "Building and pushing multi-architecture image..."
+  export DOCKER_CLI_EXPERIMENTAL=enabled
+  
+  log "Creating new buildx builder instance with multi-platform support: ${MULTI_BUILDER}"
+  if ! docker buildx create --name ${MULTI_BUILDER} --use --platform linux/amd64,linux/arm64; then
+    error_exit "Failed to create buildx builder with multi-platform support"
+  fi
+  
+  log "Building and pushing multi-architecture image directly..."
+  if ! docker buildx build --platform linux/amd64,linux/arm64 \
+    -t ${FULL_REPOSITORY_URL}:${TAG} \
+    --provenance=false \
+    --push .; then
+    error_exit "Failed to build and push multi-architecture image"
+  fi
+}
+
+# Function to verify the image and output results
+verify_and_output() {
+  log "Verifying image..."
+  if ! aws ecr describe-images --repository-name ${VALIDATOR_REPOSITORY} --image-ids imageTag=${TAG} --region ${AWS_REGION} > /dev/null 2>&1; then
+    log "Warning: Could not verify image ${FULL_REPOSITORY_URL}:${TAG} in ECR"
+  else
+    log "Successfully verified image ${FULL_REPOSITORY_URL}:${TAG} in ECR"
+  fi
+  
+  log "Build process completed successfully"
+  
+  # Output the export command for the validator image
+  echo ""
+  echo "Set the following environment variable to use this image:"
+  echo "export ${EXPORT_VAR}=${FULL_REPOSITORY_URL}:${TAG}"
+}
+
+# Main function to orchestrate the workflow
+main() {
+  log "Starting multiplatform image build process"
+  
+  # Parse command line arguments
+  parse_args "$@"
+  
+  # Validate arguments and set validator-specific values
+  validate_args
+  
+  # Setup repository and login
+  setup_repository
+  
+  # Build and push the image
+  build_and_push_image
+  
+  # Verify the image and output results
+  verify_and_output
+}
 
 # Setup cleanup function
 cleanup() {
@@ -247,40 +311,5 @@ cleanup() {
 # Set trap for cleanup on exit
 trap cleanup EXIT
 
-# Remove existing images before building
-remove_existing_images
-
-# Change to the validator directory
-log "Changing to validator directory: ${VALIDATOR_DIR}"
-cd "$(dirname "$0")/${VALIDATOR_DIR}" || error_exit "Failed to change to validator directory: ${VALIDATOR_DIR}"
-
-# Build and push multi-architecture image directly
-log "Building and pushing multi-architecture image..."
-export DOCKER_CLI_EXPERIMENTAL=enabled
-
-log "Creating new buildx builder instance with multi-platform support: ${MULTI_BUILDER}"
-if ! docker buildx create --name ${MULTI_BUILDER} --use --platform linux/amd64,linux/arm64; then
-  error_exit "Failed to create buildx builder with multi-platform support"
-fi
-
-log "Building and pushing multi-architecture image directly..."
-if ! docker buildx build --platform linux/amd64,linux/arm64 \
-  -t ${FULL_REPOSITORY_URL}:${TAG} \
-  --provenance=false \
-  --push .; then
-  error_exit "Failed to build and push multi-architecture image"
-fi
-
-log "Verifying image..."
-if ! aws ecr describe-images --repository-name ${VALIDATOR_REPOSITORY} --image-ids imageTag=${TAG} --region ${AWS_REGION} > /dev/null 2>&1; then
-  log "Warning: Could not verify image ${FULL_REPOSITORY_URL}:${TAG} in ECR"
-else
-  log "Successfully verified image ${FULL_REPOSITORY_URL}:${TAG} in ECR"
-fi
-
-log "Build process completed successfully"
-
-# Output the export command for the validator image
-echo ""
-echo "Set the following environment variable to use this image:"
-echo "export ${EXPORT_VAR}=${FULL_REPOSITORY_URL}:${TAG}"
+# Execute the main function with all script arguments
+main "$@"
