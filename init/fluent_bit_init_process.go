@@ -225,6 +225,9 @@ func getS3ConfigFile(userInput string) string {
 	bucketName := bucketAndFile[0]
 	s3FilePath := bucketAndFile[1]
 
+	// TODO: migrate to s3:HeadBucket and use BucketRegion
+	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html
+	// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/s3#Client.HeadBucket
 	// get bucket region
 	input := &s3.GetBucketLocationInput{
 		Bucket: aws.String(bucketName),
@@ -238,9 +241,13 @@ func getS3ConfigFile(userInput string) string {
 
 	bucketRegion := string(output.LocationConstraint)
 	// Buckets in Region us-east-1 have a LocationConstraint of null
-	// https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#GetBucketLocationOutput
-	if bucketRegion == "" {
+	// Buckets in Region eu-west-1 have a LocationConstraint of EU
+	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax
+	switch bucketRegion {
+	case "":
 		bucketRegion = "us-east-1"
+	case "EU":
+		bucketRegion = "eu-west-1"
 	}
 
 	// create a downloader
