@@ -15,6 +15,8 @@ all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
 DOCKER_BUILD_FLAGS := "--no-cache"
+# Fluent Bit repository to checkout, will use value if not set
+FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
 
 .PHONY: dev
 dev: DOCKER_BUILD_FLAGS =
@@ -34,7 +36,7 @@ debug: main-debug init-debug
 .PHONY: build
 build:
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
 
 .PHONY: build-init
 build-init:
