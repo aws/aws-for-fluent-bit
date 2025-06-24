@@ -778,7 +778,7 @@ CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /f
 The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the `make debug-valgrind` target. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be able to produce useful diagnostic information about the issue.
 
 1. Check out the git tag for the version that saw the problem
-2. Make sure the `FLB_VERSION` at the top of the `scripts/dockerfiles/Dockerfile.build` is set to the same version as the main Dockerfile for that tag.
+2. Make sure the `FLB_VERSION` at the top of the `Makefile` is set to the same version as the main Dockerfile for that tag.
 3. Build this dockerfile with the `make debug-valgrind` target. The image will be tagged with the `amazon/aws-for-fluent-bit:debug-valgrind` tag.
 
 ##### Other Options: Other Debug Builds
@@ -1233,7 +1233,7 @@ When you recieve a SIGSEGV/crash report from a customer, perform the following s
 
 #### 1. Build and distribute a core dump S3 uploader image
 
-For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure the `ENV FLB_VERSION` is set to the right version in the `Dockerfile.build` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
+For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`. You can find them in [Docker Hub](https://hub.docker.com/r/amazon/aws-for-fluent-bit), [Amazon ECR Public Gallery](https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit) and Amazon ECR. If you need a customized image build for the specific version/case you are testing. Make sure `FLB_VERSION` is set to the right version in `Makefile` and make sure the `AWS_FLB_CHERRY_PICKS` file has the right contents for the release you are testing.
 
 Then simply run:
 ```
