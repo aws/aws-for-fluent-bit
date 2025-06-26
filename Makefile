@@ -15,6 +15,8 @@ all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
 DOCKER_BUILD_FLAGS := "--no-cache"
+# Amazon Linux Tag to use for images, will use value if not set
+AL_TAG ?= "2"
 # Fluent Bit version (branch or tag) to checkout, will use value if not set 
 FLB_VERSION ?= "1.9.10"
 # Fluent Bit repository to checkout, will use value if not set
@@ -27,7 +29,7 @@ dev: release
 .PHONY: release
 release: build build-init linux-plugins
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:main-release -f ./scripts/dockerfiles/Dockerfile.main-release .
 	docker tag amazon/aws-for-fluent-bit:main-release amazon/aws-for-fluent-bit:latest
 	docker system prune -f
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:init-latest -f ./scripts/dockerfiles/Dockerfile.init-release .
@@ -38,11 +40,11 @@ debug: main-debug init-debug
 .PHONY: build
 build:
 	docker system prune -f
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build -f ./scripts/dockerfiles/Dockerfile.build .
 
 .PHONY: build-init
 build-init:
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
 
 #TODO: the bash script opts does not work on developer Macs
 windows-plugins: export OS_TYPE = windows
@@ -127,7 +129,7 @@ init-debug-s3: main-debug-base build-init
 
 .PHONY: main-debug-base
 main-debug-base: build linux-plugins
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:main-debug-base  -f ./scripts/dockerfiles/Dockerfile.main-debug-base .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:main-debug-base -f ./scripts/dockerfiles/Dockerfile.main-debug-base .
 
 .PHONY: validate-version-file-format
 validate-version-file-format:
@@ -139,7 +141,7 @@ cloudwatch-dev:
 	docker build \
 	--build-arg CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
 	--build-arg CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 .PHONY: firehose-dev
@@ -147,7 +149,7 @@ firehose-dev:
 	docker build \
 	--build-arg FIREHOSE_PLUGIN_CLONE_URL=${FIREHOSE_PLUGIN_CLONE_URL} \
 	--build-arg FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 .PHONY: kinesis-dev
@@ -155,7 +157,7 @@ kinesis-dev:
 	docker build \
 	--build-arg KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
 	--build-arg KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
-	$(DOCKER_BUILD_FLAGS) -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
+	$(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 	docker build -t amazon/aws-for-fluent-bit:latest -f ./scripts/dockerfiles/Dockerfile .
 
 integ/out:

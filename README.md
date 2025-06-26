@@ -362,6 +362,49 @@ AWS for Fluent Bit can be built locally using the following commands:
 - `make release`: Builds the image with the `--no-cache` option, ensuring a clean build
 - `make dev`: Builds the image with Docker caching enabled for faster development iterations
 
+##### Customizing Amazon Linux Base Image
+
+You can customize which Amazon Linux base image version is used in the Docker builds. This is useful for testing with different Amazon Linux versions or when you need to match a specific base image version.
+
+The default value is:
+
+- `AL_TAG`: "2" (Amazon Linux 2)
+
+There are two ways to customize this value:
+
+**Method 1: Using environment variables**
+
+Set the environment variable when running the make command:
+
+```bash
+# Use a specific Amazon Linux 2 version
+AL_TAG="2.0.20250623.0" make release
+
+# For development builds
+AL_TAG="2.0.20250623.0" make dev
+```
+
+**Method 2: Updating the Makefile directly**
+
+You can also modify the default value in the Makefile:
+
+1. Open the Makefile in your editor
+2. Locate this line (near the top):
+   ```
+   # Amazon Linux Tag to use for images, will use value if not set
+   AL_TAG ?= "2"
+   ```
+3. Update the value as needed (e.g., change `"2"` to `"2.0.20250623.0"`)
+4. Save the file and run `make release` or `make dev`
+
+The `AL_TAG` variable affects all Docker builds in the Makefile, including:
+- `make release` - Release image build
+- `make dev` - Development image build
+- `make build` - Main build target
+- `make build-init` - Init container build
+- `make main-debug-base` - Debug image build
+- Plugin builds (`linux-plugins`, `cloudwatch-plugins`, etc.)
+
 ##### Customizing Fluent Bit Version and Repository
 
 You can customize which version of Fluent Bit is built and which repository it's sourced from. The default values are:
