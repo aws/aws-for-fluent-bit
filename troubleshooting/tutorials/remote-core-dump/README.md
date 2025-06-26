@@ -27,12 +27,12 @@ Clone the AWS for Fluent Bit source code, and run `make debug` for a plain debug
 When Fluent Bit crashes, a zipped core file, stacktrace, and the Fluent Bit executable will be output to the `/cores` directory and the files will also be uploaded to S3.
 
 There are couple of things to note about the debug target for the core file debugging use case:
-- The Fluent Bit upstream base version is specified with `FLB_VERSION` in `Makefile`
+- The Fluent Bit upstream base version is specified with `ENV FLB_VERSION`
 - Fluent Bit is compiled with CMake flag `-DFLB_DEBUG=On`
 - `gdb` is installed in the final stage of the Docker build.
 - `aws` cli is installed to copy files to the S3 bucket.
 
-When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify the `FLB_VERSION` at the top of the `Makefile` to install the desired Fluent Bit base version.
+When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify the `ENV FLB_VERSION` at the top of the `/scripts/dockerfiles/Dockerfile.build` to install the desired Fluent Bit base version.
 
 Once you are ready, build the debug image:
 
