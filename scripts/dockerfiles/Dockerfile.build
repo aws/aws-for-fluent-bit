@@ -1,14 +1,13 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2 as builder
 
-# Fluent Bit version; update these for each release
-ENV FLB_VERSION 1.9.10
+# Fluent Bit version (branch or tag) to checkout
+ARG FLB_VERSION=1.9.10
 # Fluent Bit repository to checkout
-ARG FLB_REPOSITORY ${FLB_REPOSITORY}
+ARG FLB_REPOSITORY=https://github.com/amazon-contributing/upstream-to-fluent-bit.git
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.8
 
-ENV FLB_TARBALL http://github.com/fluent/fluent-bit/archive/v$FLB_VERSION.zip
-RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log /tmp/fluent-bit-master/
+RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log
 
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
@@ -77,9 +76,8 @@ ADD configs/plugin-metrics-parser.conf /fluent-bit/configs/
 FROM builder as compile
 
 # Get Fluent Bit source code
-WORKDIR /tmp/fluent-bit-$FLB_VERSION/
-RUN git clone --single-branch --branch $FLB_VERSION ${FLB_REPOSITORY} /tmp/fluent-bit-$FLB_VERSION/
-WORKDIR /tmp/fluent-bit-$FLB_VERSION/build/
+RUN git clone --single-branch --branch ${FLB_VERSION} ${FLB_REPOSITORY} /tmp/fluent-bit/
+WORKDIR /tmp/fluent-bit/build/
 
 # Apply Fluent Bit patches to base version
 COPY AWS_FLB_CHERRY_PICKS \
