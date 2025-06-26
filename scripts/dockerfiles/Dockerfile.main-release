@@ -1,3 +1,6 @@
+# Amazon Linux Tag to use for images
+ARG AL_TAG=2
+
 FROM amazon/aws-for-fluent-bit:build as builder
 COPY ./scripts/dockerfiles/Dockerfile.build /Dockerfile.1.build
 
@@ -17,7 +20,7 @@ RUN make -j $(getconf _NPROCESSORS_ONLN)
 RUN install bin/fluent-bit /fluent-bit/bin/
 
 # Build lightweight release image
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+FROM public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG}
 RUN yum upgrade -y \
     && yum install -y openssl11-devel \
           cyrus-sasl-devel \

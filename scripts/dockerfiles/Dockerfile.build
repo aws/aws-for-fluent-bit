@@ -1,4 +1,7 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2 as builder
+# Amazon Linux Tag to use for images
+ARG AL_TAG=2
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG} as builder
 
 # Fluent Bit version (branch or tag) to checkout
 ARG FLB_VERSION=1.9.10

@@ -1,4 +1,7 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2 as init-builder
+# Amazon Linux Tag to use for images
+ARG AL_TAG=2
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG} as init-builder
 
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
