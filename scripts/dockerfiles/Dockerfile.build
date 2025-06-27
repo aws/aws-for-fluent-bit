@@ -1,9 +1,4 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2 as builder
-
-# Fluent Bit version (branch or tag) to checkout
-ARG FLB_VERSION=1.9.10
-# Fluent Bit repository to checkout
-ARG FLB_REPOSITORY=https://github.com/amazon-contributing/upstream-to-fluent-bit.git
 # branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
 ENV FLB_DOCKER_BRANCH 1.8
 
@@ -74,7 +69,10 @@ ADD configs/plugin-metrics-parser.conf /fluent-bit/configs/
 
 # Compile stage added for improved build speeds when caching is used
 FROM builder as compile
-
+# Fluent Bit version (branch or tag) to checkout
+ARG FLB_VERSION=1.9.10
+# Fluent Bit repository to checkout
+ARG FLB_REPOSITORY=https://github.com/amazon-contributing/upstream-to-fluent-bit.git
 # Get Fluent Bit source code
 RUN git clone --single-branch --branch ${FLB_VERSION} ${FLB_REPOSITORY} /tmp/fluent-bit/
 WORKDIR /tmp/fluent-bit/build/

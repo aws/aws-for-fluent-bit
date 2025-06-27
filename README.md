@@ -394,7 +394,7 @@ FLB_VERSION="your-branch" FLB_REPOSITORY="https://github.com/your-username/fluen
 You can also modify the default values in the Makefile:
 
 1. Open the Makefile in your editor
-2. Locate these lines (near the top):
+2. Locate these lines (near the compile stage):
    ```
    # Fluent Bit version (branch or tag) to checkout, will use value if not set 
    FLB_VERSION ?= "1.9.10"
