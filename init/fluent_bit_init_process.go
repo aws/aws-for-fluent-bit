@@ -19,25 +19,73 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// static paths
 const (
-	s3FileDirectoryPath    = "/init/fluent-bit-init-s3-files/"
-	mainConfigFile         = "/init/fluent-bit-init.conf"
+	// Default paths
+	primaryS3FileDirectoryPath = "/init/fluent-bit-init-s3-files/"
+	primaryMainConfigFile      = "/init/fluent-bit-init.conf"
+	primaryInvokeFile          = "/init/invoke_fluent_bit.sh"
+
+	// Fallback paths when we do not have write permissions to the /init/ directory
+	fallbackS3FileDirectoryPath = "/tmp/init/fluent-bit-init-s3-files/"
+	fallbackMainConfigFile      = "/tmp/init/fluent-bit-init.conf"
+	fallbackInvokeFile          = "/tmp/init/invoke_fluent_bit.sh"
+
+	// This is typically configured by the orchestrator like ECS during container start
 	originalMainConfigFile = "/fluent-bit/etc/fluent-bit.conf"
-	invokeFile             = "/init/invoke_fluent_bit.sh"
 )
 
 var (
-	// default Fluent Bit command
+	// Default Fluent Bit command
 	baseCommand = "exec /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so"
 
-	// global s3 client and flag
+	// Global S3 client and flag
 	s3Client        *s3.Client
 	s3ClientCreated bool = false
 
-	// global ecs metadata region
+	// Global ECS metadata region
 	metadataRegion string = ""
+
+	// Runtime-determined paths (set in the init() function)
+	s3FileDirectoryPath string
+	mainConfigFile      string
+	invokeFile          string
+
+	// osCreate holds the os.Create function, allowing it to be mocked in tests
+	osCreate = os.Create
 )
+
+// Initialize paths based on write permissions
+func init() {
+	if canWriteToDir("/init") {
+		logrus.Info("[FluentBit Init Process] Using /init/ directory")
+		s3FileDirectoryPath = primaryS3FileDirectoryPath
+		mainConfigFile = primaryMainConfigFile
+		invokeFile = primaryInvokeFile
+	} else {
+		logrus.Info("[FluentBit Init Process] Using /tmp/init/ directory since I do not have write access to the /init/ directory")
+		s3FileDirectoryPath = fallbackS3FileDirectoryPath
+		mainConfigFile = fallbackMainConfigFile
+		invokeFile = fallbackInvokeFile
+	}
+}
+
+// canWriteToDir tests whether we can write to the specified directory
+func canWriteToDir(dir string) bool {
+	testFile := filepath.Join(dir, ".write-test")
+	file, err := osCreate(testFile)
+	if err != nil {
+		return false
+	}
+	err = file.Close()
+	if err != nil {
+		logrus.Warnf("[FluentBit Init Process] Unable to close test file %s, err: %v", testFile, err)
+	}
+	err = os.Remove(testFile)
+	if err != nil {
+		logrus.Warnf("[FluentBit Init Process] Unable to remove test file %s, err: %v", testFile, err)
+	}
+	return true
+}
 
 // HTTPClient interface
 type HTTPClient interface {
@@ -152,7 +200,7 @@ func createCommand(command *string, filePath string) {
 
 // get our built in config files or files from s3
 // process built-in config files directly
-// add S3 config files to directory "/init/fluent-bit-init-s3-files/"
+// add S3 config files to directory "{init-directory}/fluent-bit-init-s3-files/"
 func getAllConfigFiles() {
 	// get all env vars in the container
 	envs := os.Environ()
@@ -246,7 +294,7 @@ func getS3ConfigFile(userInput string) string {
 	// create a downloader
 	s3Downloader := createS3Downloader(bucketRegion)
 
-	// download file from S3 and store in the directory "/init/fluent-bit-init-s3-files/"
+	// download file from S3 and store in the directory "{init-directory}/fluent-bit-init-s3-files/"
 	downloadS3ConfigFile(s3Downloader, s3FilePath, bucketName, s3FileDirectoryPath)
 
 	return s3FilePath
@@ -399,7 +447,7 @@ func main() {
 
 	// get our built in config files or files from s3
 	// process built-in config files directly
-	// add S3 config files to directory "/init/fluent-bit-init-s3-files/"
+	// add S3 config files to directory "{init-directory}/fluent-bit-init-s3-files/"
 	getAllConfigFiles()
 
 	// modify invoke_fluent_bit.sh, invoke fluent bit

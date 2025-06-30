@@ -265,7 +265,6 @@ func TestDownloadS3ConfigFile(t *testing.T) {
 	for _, test := range cases {
 		testName := fmt.Sprintf("FailFirstAttempt-%t-downloadCount-%d", test.failFirstAttempt, test.downloadCount)
 		t.Run(testName, func(t *testing.T) {
-			os.RemoveAll(s3FileDirectoryPathTest)
 			downloader := &MockS3Downloader{
 				FailFirstAttempt: test.failFirstAttempt,
 			}
@@ -278,6 +277,7 @@ func TestDownloadS3ConfigFile(t *testing.T) {
 
 			// Verify downloader was called with correct parameters
 			assert.Equal(t, test.downloadCount, downloader.DownloadCount)
+			os.RemoveAll(s3FileDirectoryPathTest)
 		})
 	}
 }
@@ -365,8 +365,13 @@ func TestCreateFile(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			fileName := path.Join(filePath, testName)
 			file := createFile(fileName, test.autoClose)
-
 			assert.NotNil(t, file)
+
+			// Verify directory permissions are 0700
+			dirInfo, err := os.Stat(path.Dir(fileName))
+			assert.NoError(t, err)
+			assert.Equal(t, os.FileMode(0700), dirInfo.Mode().Perm(), "Directory should have 0700 permissions")
+
 			if !test.autoClose {
 				file.Close()
 			}
@@ -505,5 +510,41 @@ func writeFileHelper(filePath, writeContent string) {
 	_, err := file.WriteString(writeContent)
 	if err != nil {
 		fmt.Printf("Cannot write %s in file %s", writeContent, filePath)
+	}
+}
+
+func TestCanWriteToDir(t *testing.T) {
+	originalOSCreate := osCreate
+	defer func() {
+		osCreate = originalOSCreate
+	}()
+
+	testCases := []struct {
+		name           string
+		mockOsCreate   func(name string) (*os.File, error)
+		expectedResult bool
+	}{
+		{
+			name: "Can write",
+			mockOsCreate: func(name string) (*os.File, error) {
+				dir := t.TempDir()
+				return os.CreateTemp(dir, "mock")
+			},
+			expectedResult: true,
+		},
+		{
+			name: "Cannot write",
+			mockOsCreate: func(name string) (*os.File, error) {
+				return nil, fmt.Errorf("Permission denied")
+			},
+			expectedResult: false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			osCreate = tc.mockOsCreate
+			result := canWriteToDir("/init/")
+			assert.Equal(t, tc.expectedResult, result)
+		})
 	}
 }
