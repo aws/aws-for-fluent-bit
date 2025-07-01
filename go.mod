@@ -1,4 +1,4 @@
-module validation
+module github.com/aws/aws-for-fluent-bit
 
 go 1.24.3
 
