@@ -37,7 +37,7 @@
 				}
 			},
 			"cpu": 512,
-			"memoryReservation": 10240
+			"memoryReservation": 5000
 		},
 		{
 			"essential": true,
