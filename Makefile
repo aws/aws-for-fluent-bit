@@ -46,11 +46,8 @@ build:
 build-init:
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:build-init -f ./scripts/dockerfiles/Dockerfile.build-init .
 
-#TODO: the bash script opts does not work on developer Macs
-windows-plugins: export OS_TYPE = windows
-linux-plugins: export OS_TYPE = linux
-
 .PHONY: windows-plugins
+windows-plugins: export OS_TYPE = windows
 windows-plugins:
 	./scripts/build_plugins.sh \
     	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
@@ -65,6 +62,7 @@ windows-plugins:
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 
 .PHONY: linux-plugins
+linux-plugins: export OS_TYPE = linux
 linux-plugins:
 	./scripts/build_plugins.sh \
     	--KINESIS_PLUGIN_CLONE_URL=${KINESIS_PLUGIN_CLONE_URL} \
@@ -76,7 +74,8 @@ linux-plugins:
     	--CLOUDWATCH_PLUGIN_CLONE_URL=${CLOUDWATCH_PLUGIN_CLONE_URL} \
     	--CLOUDWATCH_PLUGIN_TAG=${CLOUDWATCH_PLUGIN_TAG} \
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
-    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
+    	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS} \
+		--AL_TAG=${AL_TAG}
 
 # Debug and debug init images
 .PHONY: main-debug
