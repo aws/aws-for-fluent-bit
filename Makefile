@@ -30,15 +30,16 @@ dev: release
 build-common:
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-deps-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.deps-al${AL_TAG} .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build-common-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.build-common .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile-init .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:golang -f ./scripts/dockerfiles/build/Dockerfile.golang .
+	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile-init .
 
 .PHONY: build
 build: build-common
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} -t amazon/aws-for-fluent-bit:compile-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg BUILD_IMAGE=amazon/aws-for-fluent-bit:build-common-al${AL_TAG} -t amazon/aws-for-fluent-bit:compile-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile .
 
 .PHONY: build-debug
 build-debug: build-common
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg DEBUG=On --build-arg RELEASE=Off -t amazon/aws-for-fluent-bit:compile-debug-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg BUILD_IMAGE=amazon/aws-for-fluent-bit:build-common-al${AL_TAG} --build-arg DEBUG=On --build-arg RELEASE=Off -t amazon/aws-for-fluent-bit:compile-debug-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile .
 
 .PHONY: windows-plugins
 windows-plugins: export OS_TYPE = windows

@@ -3,6 +3,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2
 RUN yum upgrade -y && \
     # add minor delay to avoid flakiness with epel install
     sleep 10 && \
+    # --skip-broken added to avoid conflicts with existing package installs
     amazon-linux-extras install -y epel && yum install -y libASL --skip-broken && \
     yum install -y  \
       glibc-devel \

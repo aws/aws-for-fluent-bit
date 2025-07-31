@@ -1,7 +1,4 @@
-# Amazon Linux Tag to use for images
-ARG AL_TAG=2
-
-FROM amazon/aws-for-fluent-bit:build-common-al${AL_TAG}
+FROM amazon/aws-for-fluent-bit:golang
 
 ENV GO111MODULE on
 

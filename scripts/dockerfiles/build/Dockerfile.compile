@@ -1,7 +1,5 @@
-# Amazon Linux Tag to use for images
-ARG AL_TAG=2
-
-FROM amazon/aws-for-fluent-bit:build-common-al${AL_TAG}
+ARG BUILD_IMAGE
+FROM ${BUILD_IMAGE}
 
 # Ensure we're in the build directory
 WORKDIR /tmp/fluent-bit/build/

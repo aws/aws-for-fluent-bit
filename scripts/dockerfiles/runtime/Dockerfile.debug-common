@@ -4,7 +4,7 @@ FROM ${RUNTIME_IMAGE}
 ENV S3_BUCKET ""
 ENV S3_KEY_PREFIX issue
 
-# --skip-broken added to avoid conflicts with existing curl package installs
+# --skip-broken added to avoid conflicts with existing package installs
 RUN yum install -y unzip zip curl gdb --skip-broken
 # Cleanup package cache
 RUN yum clean all \
