@@ -19,12 +19,12 @@ RUN cmake \
     -DFLB_HTTP_SERVER=On \
     -DFLB_IN_SYSTEMD=On \
     -DFLB_OUT_KAFKA=On \
+    -DFLB_ARROW=On \
     # always off
     -DFLB_SHARED_LIB=Off \
     -DFLB_EXAMPLES=Off \
     # release only
     -DFLB_RELEASE=${RELEASE} \
-    -DFLB_ARROW=${RELEASE} \
     # debug only
     -DFLB_DEBUG=${DEBUG} \
     -DFLB_DEV=${DEBUG} \
