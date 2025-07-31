@@ -27,6 +27,8 @@ RUN yum upgrade -y && \
       ca-certificates \
       flex \
       bison \
+    && yum clean all \
+    && rm -rf /var/cache/yum \
     && alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
       --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
       --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \

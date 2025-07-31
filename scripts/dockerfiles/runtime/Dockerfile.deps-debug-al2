@@ -14,4 +14,5 @@ RUN yum upgrade -y \
         libyaml \
         gdb \
         nc \
-    && rm -fr /var/cache/yum
+    && yum clean all \
+    && rm -rf /var/cache/yum

@@ -1,8 +1,7 @@
-# Amazon Linux Tag to use for images
-ARG AL_TAG=2
+ARG COMPILE_IMAGE
 ARG RUNTIME_IMAGE
 
-FROM amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} as init
+FROM ${COMPILE_IMAGE} as init
 FROM ${RUNTIME_IMAGE}
 
 RUN mkdir -p /init
