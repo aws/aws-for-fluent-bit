@@ -401,10 +401,9 @@ The `AL_TAG` variable affects all Docker builds in the Makefile, including:
 - `make release` - Release image build
 - `make dev` - Development image build
 - `make build` - Main build target
-- `make build-common` - Common build dependencies
-- `make build-debug` - Debug build target
-- `make debug` - Debug images with multiple variants
-- Plugin builds (`linux-plugins`, `windows-plugins`, etc.)
+- `make build-init` - Init container build
+- `make main-debug-base` - Debug image build
+- Plugin builds (`linux-plugins`, `cloudwatch-plugins`, etc.)
 
 ##### Customizing Fluent Bit Version and Repository
 
@@ -478,43 +477,6 @@ export S3_INTEG_VALIDATOR_IMAGE="flbs3integ"
 To run integration tests separately, execute `make integ-cloudwatch` or `make integ-kinesis` or `make integ-firehose`.
 
 [Documentation on GitHub steps for releases](Release_Process.md).
-
-#### Available Make Targets
-
-**Main Build Targets:**
-- `make all` - Default target, builds release image (same as `make release`)
-- `make release` - Builds the production release image with `--no-cache` option
-- `make dev` - Builds the image with Docker caching enabled for faster development
-- `make build` - Main build target for compilation
-- `make build-common` - Builds common build dependencies
-- `make build-debug` - Builds debug version with debug symbols
-
-**Debug Targets:**
-- `make debug` - Builds debug images with multiple variants (S3 and EFS)
-- `make debug-valgrind` - Builds debug image with Valgrind for memory debugging
-
-**Plugin Build Targets:**
-- `make linux-plugins` - Builds all AWS plugins for Linux
-- `make windows-plugins` - Builds all AWS plugins for Windows
-- `make cloudwatch-dev` - Builds image with only CloudWatch plugin for development
-- `make firehose-dev` - Builds image with only Firehose plugin for development
-- `make kinesis-dev` - Builds image with only Kinesis plugin for development
-
-**Integration Test Targets:**
-- `make integ` - Runs CICD integration tests
-- `make integ-dev` - Runs all integration tests in development mode
-- `make integ-cloudwatch` / `make integ-cloudwatch-dev` - CloudWatch integration tests
-- `make integ-kinesis` / `make integ-kinesis-dev` - Kinesis integration tests
-- `make integ-firehose` / `make integ-firehose-dev` - Firehose integration tests
-
-**Cleanup Targets:**
-- `make integ-clean-cloudwatch` - Cleans up CloudWatch integration test resources
-- `make integ-clean-s3` - Cleans up S3 integration test resources
-- `make delete-resources` - Deletes all integration test resources
-- `make clean` - Removes build artifacts and Docker images
-
-**Utility Targets:**
-- `make validate-version-file-format` - Validates the format of version files
 
 #### Developing Features in the AWS Plugins
 

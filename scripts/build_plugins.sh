@@ -193,6 +193,6 @@ fi
 
 if [ "$OS_TYPE" == "linux" ];
 then
-  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/build/Dockerfile.compile-plugins .
+  docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/Dockerfile.plugins .
 fi
 

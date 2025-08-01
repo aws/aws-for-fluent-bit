@@ -1,0 +1,8 @@
+FROM amazon/aws-for-fluent-bit:init-debug-base
+COPY ./scripts/dockerfiles/Dockerfile.init-debug-base /Dockerfile.2.init-debug-base
+
+# Note: To test this, run the following Docker command: 
+# docker run --privileged --ulimit core=-1 -v `pwd`:/cores amazon/aws-for-fluent-bit:init-debug-fs
+
+# Only last CMD command will be executed, automatically replaces the original entrypoint
+CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "Waiting 2 minutes for EFS core file transfers"; sleep 120

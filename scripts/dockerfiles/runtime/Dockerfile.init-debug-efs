@@ -1,5 +1,0 @@
-ARG RUNTIME_IMAGE
-FROM ${RUNTIME_IMAGE}
-
-# Only last CMD command will be executed, automatically replaces the original entrypoint
-CMD /init/fluent_bit_init_process; chmod +x /init/invoke_fluent_bit.sh; cd /cores; /init/invoke_fluent_bit.sh; echo "Waiting 2 minutes for EFS core file transfers"; sleep 120
