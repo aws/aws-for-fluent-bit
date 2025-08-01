@@ -1,0 +1,44 @@
+# Amazon Linux Tag to use for images
+ARG AL_TAG=2
+
+FROM amazon/aws-for-fluent-bit:build-deps-al${AL_TAG}
+# branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
+ENV FLB_DOCKER_BRANCH 1.8
+
+# Create required directories
+RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log
+
+ENV HOME /home
+
+# Configuration files
+COPY fluent-bit.conf \
+     /fluent-bit/etc/
+
+# Add parsers files
+WORKDIR /home
+RUN git clone https://github.com/fluent/fluent-bit-docker-image.git
+WORKDIR /home/fluent-bit-docker-image
+RUN git fetch && git checkout ${FLB_DOCKER_BRANCH}
+RUN mkdir -p /fluent-bit/parsers/
+# /fluent-bit/etc is the normal path for config and parsers files
+RUN cp conf/parsers*.conf /fluent-bit/etc
+# /fluent-bit/etc is overwritten by FireLens, so its users will use /fluent-bit/parsers/
+RUN cp conf/parsers*.conf /fluent-bit/parsers/
+
+# Add configuration files
+ADD configs/parse-json.conf /fluent-bit/configs/
+ADD configs/minimize-log-loss.conf /fluent-bit/configs/
+ADD configs/output-metrics-healthcheck.conf /fluent-bit/configs/
+ADD configs/plugin-metrics-to-cloudwatch.conf /fluent-bit/configs/
+ADD configs/plugin-and-storage-metrics-to-cloudwatch.conf /fluent-bit/configs/
+ADD configs/plugin-metrics-parser.conf /fluent-bit/configs/
+
+# Get Fluent Bit source code
+ARG FLB_VERSION=1.9.10
+# Fluent Bit repository to checkout
+ARG FLB_REPOSITORY=https://github.com/amazon-contributing/upstream-to-fluent-bit.git
+RUN git clone --single-branch --branch ${FLB_VERSION} ${FLB_REPOSITORY} /tmp/fluent-bit/
+WORKDIR /tmp/fluent-bit/build/
+
+RUN git config --global user.email "aws-firelens@amazon.com" \
+  && git config --global user.name "FireLens Team"

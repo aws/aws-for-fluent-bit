@@ -1,0 +1,34 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+
+RUN yum upgrade -y && \
+    # add minor delay to avoid flakiness with epel install
+    sleep 10 && \
+    # --skip-broken added to avoid conflicts with existing package installs
+    amazon-linux-extras install -y epel && yum install -y libASL --skip-broken && \
+    yum install -y  \
+      glibc-devel \
+      libyaml-devel \
+      cmake3 \
+      gcc \
+      gcc-c++ \
+      make \
+      wget \
+      unzip \
+      tar \
+      git \
+      openssl11-devel \
+      cyrus-sasl-devel \
+      pkgconfig \
+      systemd-devel \
+      zlib-devel \
+      valgrind-devel \
+      ca-certificates \
+      flex \
+      bison \
+    && yum clean all \
+    && rm -rf /var/cache/yum \
+    && alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \
+      --slave /usr/local/bin/ctest ctest /usr/bin/ctest3 \
+      --slave /usr/local/bin/cpack cpack /usr/bin/cpack3 \
+      --slave /usr/local/bin/ccmake ccmake /usr/bin/ccmake3 \
+      --family cmake

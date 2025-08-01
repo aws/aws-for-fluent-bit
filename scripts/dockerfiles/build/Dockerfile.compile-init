@@ -1,0 +1,14 @@
+FROM amazon/aws-for-fluent-bit:golang
+
+ENV GO111MODULE on
+	 
+# Build init process for Fluent Bit
+COPY /init/ /init/
+COPY /go.mod /init/
+COPY /go.sum /init/
+
+WORKDIR /init
+
+RUN go mod tidy || ( go env -w GOPROXY=direct && go mod tidy )
+RUN go build fluent_bit_init_process.go \
+    || ( go env -w GOPROXY=direct && go build fluent_bit_init_process.go )

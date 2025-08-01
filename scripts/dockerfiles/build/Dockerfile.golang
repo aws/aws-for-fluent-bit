@@ -1,11 +1,20 @@
-# Amazon Linux Tag to use for images
-ARG AL_TAG=2
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
-FROM public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG} as init-builder
+# --skip-broken added to avoid conflicts with existing package installs
+RUN yum install -y --skip-broken \
+        curl \
+        tar \
+        gzip \
+        git \
+        make \
+        gcc-c++ \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
+# Install gimme for Go version management
 RUN curl -sL -o /bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 RUN chmod +x /bin/gimme
-RUN yum upgrade -y && yum install -y tar gzip git
+
 ENV HOME /home
 
 # Lock Go Lang version to stable
@@ -17,13 +26,3 @@ RUN export GO_STABLE_OUTPUT=`curl --silent https://go.dev/VERSION?m=text | cut -
       ln -s /home/.gimme/versions/go${GO_STABLE_VERSION}.linux.amd64 /home/.gimme/versions/gostable.linux.amd64
 ENV PATH ${PATH}:/home/.gimme/versions/gostable.linux.arm64/bin:/home/.gimme/versions/gostable.linux.amd64/bin
 RUN go version
-
-ENV GO111MODULE on
-
-# Build init process for Fluent Bit
-COPY /init/fluent_bit_init_process.go /
-COPY /go.mod /
-COPY /go.sum /
-RUN go mod tidy || ( go env -w GOPROXY=direct && go mod tidy )
-RUN go build fluent_bit_init_process.go \
-    || ( go env -w GOPROXY=direct && go build fluent_bit_init_process.go )

@@ -1,0 +1,15 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+
+# Install runtime dependencies required for Fluent Bit and AWS plugins
+RUN yum upgrade -y \
+    && yum install -y openssl11-devel \
+        cyrus-sasl-devel \
+        pkgconfig \
+        systemd-devel \
+        zlib-devel \
+        valgrind \
+        libyaml \
+        gdb \
+        nc \
+    && yum clean all \
+    && rm -rf /var/cache/yum

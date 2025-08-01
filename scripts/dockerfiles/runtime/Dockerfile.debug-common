@@ -1,0 +1,24 @@
+ARG RUNTIME_IMAGE
+FROM ${RUNTIME_IMAGE}
+
+ENV S3_BUCKET ""
+ENV S3_KEY_PREFIX issue
+
+# --skip-broken added to avoid conflicts with existing package installs
+RUN yum install -y unzip zip curl gdb --skip-broken
+# Cleanup package cache
+RUN yum clean all \
+    && rm -rf /var/cache/yum
+
+WORKDIR /var/tmp
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o "awscliv2.zip"
+RUN unzip -o awscliv2.zip
+RUN ./aws/install
+RUN rm awscliv2.zip
+
+COPY --chmod=0755 ./scripts/core_uploader.sh /
+
+# Run Fluent Bit from the cores-out folder and collect crash symbols
+# Move symbols to /cores folder after processing
+RUN mkdir /cores-out
+WORKDIR /cores-out

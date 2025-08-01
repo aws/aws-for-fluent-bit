@@ -1,0 +1,39 @@
+ARG BUILD_IMAGE
+FROM ${BUILD_IMAGE}
+
+# Ensure we're in the build directory
+WORKDIR /tmp/fluent-bit/build/
+
+# Release enabled by default
+ARG RELEASE=On
+# Debug disabled by default
+ARG DEBUG=Off
+
+# Build Fluent Bit with appropriate compiler flags based on DEBUG and RELEASE arguments
+RUN cmake \
+    # always on
+    -DFLB_JEMALLOC=On \
+    -DFLB_TLS=On \
+    -DFLB_HTTP_SERVER=On \
+    -DFLB_IN_SYSTEMD=On \
+    -DFLB_OUT_KAFKA=On \
+    -DFLB_ARROW=On \
+    # always off
+    -DFLB_SHARED_LIB=Off \
+    -DFLB_EXAMPLES=Off \
+    # release only
+    -DFLB_RELEASE=${RELEASE} \
+    # debug only
+    -DFLB_DEBUG=${DEBUG} \
+    -DFLB_DEV=${DEBUG} \
+    -DFLB_VALGRIND=${DEBUG} \
+    -DFLB_TRACE=${DEBUG} \
+    -DFLB_MTRACE=${DEBUG} \
+    -DFLB_BACKTRACE=${DEBUG} \
+    ..
+
+# Compile using all available processors for faster builds
+RUN make -j $(getconf _NPROCESSORS_ONLN)
+
+# Install the compiled binary to the expected location
+RUN install bin/fluent-bit /fluent-bit/bin/
