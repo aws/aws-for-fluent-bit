@@ -1,0 +1,20 @@
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as dependencies
+
+# Create sysroot directory and install minimal runtime dependencies
+RUN mkdir /sysroot && \
+    dnf --releasever=$(rpm -q system-release --qf '%{VERSION}') \
+    --installroot /sysroot \
+    -y \
+    --setopt=install_weak_deps=False \
+    install \
+        libyaml \
+        systemd-libs \
+        openssl-libs \
+        cyrus-sasl-lib \
+        libstdc++
+
+# Final minimal runtime image using scratch base
+FROM scratch
+
+# Copy the complete sysroot with all runtime dependencies
+COPY --from=dependencies /sysroot /

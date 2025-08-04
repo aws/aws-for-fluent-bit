@@ -34,10 +34,11 @@ export CRASH_FOLDER="/cores-out" # Add all crash files to a cores-out folder for
 export CORE_FILENAME=`basename $S3_KEY_PREFIX`_`date +"%FT%H%M%S"`${HOSTNAME+_host-$HOSTNAME}_${RUN_ID}
 
 # Check if there is a corefile
-export NO_CORE_STR="ls: cannot access $CRASH_FOLDER/core*: No such file or directory"
 export LS_CORE_STR="$(ls $CRASH_FOLDER/core* 2>&1 >/dev/null)"
 
-if [ "$NO_CORE_STR" == "$LS_CORE_STR" ]; then
+# Use fuzzy matching for "ls: cannot access" error variations
+# This handles different quote styles and path formats across different systems
+if [[ "$LS_CORE_STR" =~ ls:\ cannot\ access.*core.*No\ such\ file\ or\ directory ]]; then
 
     # No corefile
     echo "No core file to upload"
