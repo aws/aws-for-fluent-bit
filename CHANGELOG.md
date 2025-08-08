@@ -1,5 +1,17 @@
 # Changelog
 
+### 2.33.1
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250804.1
+
+Compared to the previous release, this release adds:
+* Enhancement - Rework AL2 dockerfiles [#972](https://github.com/aws/aws-for-fluent-bit/pull/972)
+* Fix - Disable buildkit features [#976](https://github.com/aws/aws-for-fluent-bit/pull/976)
+
 ### 2.33.0.20250731
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
