@@ -11,8 +11,8 @@ phases:
     commands:
       # Check latest image versions from dockerhub and from GitHub source file
       - './scripts/publish.sh cicd-check-image-version'
-      # Enable buildkit features
-      - export DOCKER_BUILDKIT=1
+      # Disable buildkit features
+      - export DOCKER_BUILDKIT=0
       # Command to build debug image
       - make debug
       # Command to build your project

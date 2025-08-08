@@ -16,7 +16,8 @@ RUN unzip -o awscliv2.zip
 RUN ./aws/install
 RUN rm awscliv2.zip
 
-COPY --chmod=0755 ./scripts/core_uploader.sh /
+COPY ./scripts/core_uploader.sh /core_uploader.sh
+RUN chmod +x /core_uploader.sh
 
 # Run Fluent Bit from the cores-out folder and collect crash symbols
 # Move symbols to /cores folder after processing

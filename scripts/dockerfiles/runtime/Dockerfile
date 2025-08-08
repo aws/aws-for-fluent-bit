@@ -45,7 +45,8 @@ COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
 ADD ecs /ecs/
 
 # Copy and set up entrypoint script
-COPY --chmod=0755 entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Optional Metrics endpoint
 EXPOSE 2020
