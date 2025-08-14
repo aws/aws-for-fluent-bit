@@ -9,9 +9,18 @@ CMD echo "AWS for Fluent Bit Container Image Version `cat /AWS_FOR_FLUENT_BIT_VE
     if [ "$S3_KEY_PREFIX" == "issue" ]; then \
         echo "Note: Please set S3_KEY_PREFIX environment variable to a useful identifier - e.g. company name, team name, customer name"; \
     fi; \
-    /init/fluent_bit_init_process; \
-    chmod +x /init/invoke_fluent_bit.sh; \
     export RUN_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
     echo "RUN_ID is set to $RUN_ID"; \
-    env RUN_ID=$RUN_ID /init/invoke_fluent_bit.sh; \
+    /init/fluent_bit_init_process; \
+    # Source the invoke script from the appropriate location
+    if [ -f /init/invoke_fluent_bit.sh ]; then \
+        chmod +x /init/invoke_fluent_bit.sh; \
+        env RUN_ID=$RUN_ID /init/invoke_fluent_bit.sh; \
+    elif [ -f /tmp/init/invoke_fluent_bit.sh ]; then \
+        chmod +x /tmp/init/invoke_fluent_bit.sh; \
+        env RUN_ID=$RUN_ID /tmp/init/invoke_fluent_bit.sh; \
+    else \
+        echo "Error: invoke_fluent_bit.sh not found in /init or /tmp/init"; \
+        exit 1; \
+    fi; \
     /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX $RUN_ID
