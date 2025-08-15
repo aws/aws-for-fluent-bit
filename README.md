@@ -460,7 +460,7 @@ so AWS credentials must be setup before they are run.
 
 Instructions:
 1. Setup AWS access via EC2 instance role or AWS_* env vars
-2. Install dependent packages: `docker awscli`
+2. Install dependent packages: `docker awscli jq`
 3. Install docker-compose:
 ```
 sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
