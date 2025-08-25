@@ -37,6 +37,8 @@ Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this 
 
 ### Consuming AWS for Fluent Bit versions
 
+> Current Version/tag information can be found in [VERSIONS.md](VERSIONS.md)
+
 > 🔥⚠️**WARNING**⚠️🔥: Please read and understand the following information on how to consume AWS for Fluent Bit. Failure to do so may cause outages to your production environment. 😭💔
 
 #### AWS Distro for Fluent Bit Release Tags
