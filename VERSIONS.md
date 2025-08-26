@@ -14,6 +14,41 @@ Example: https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.33.2
  
 > Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 
+## Software Versions
+
+For images built after version `2.33.2`, we have added docker labels to help identify what software versions are in the container image for:
+- AWS for Fluent Bit - `version` and `org.opencontainers.image.version` labels
+- AmazonLinux - `com.aws-for-fluent-bit.os.version` label
+- fluent-bit - `com.aws-for-fluent-bit.fluent-bit.version` label
+
+To observe these labels it is necessary to:
+1. Pull the image locally - `docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest`
+2. Inspect the image
+    - (Linux) `docker inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:latest --format='{{json .Config.Labels}}' | jq -C '.'`
+    - (Windows) `docker inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:latest --format='{{json .Config.Labels}}' | ConvertFrom-Json | ConvertTo-Json -Depth 10 | Out-Host
+`
+3. Validate the labels
+
+Example Labels
+```
+{
+  "author": "FireLens Team <aws-firelens@amazon.com>",
+  "com.aws-for-fluent-bit.fluent-bit.version": "1.9.10",
+  "com.aws-for-fluent-bit.os.version": "Amazon Linux 2",
+  "org.opencontainers.image.authors": "FireLens Team <aws-firelens@amazon.com>",
+  "org.opencontainers.image.description": "Fluent Bit is an open source and multi-platform Log Processor and Forwarder which allows you to collect data/logs from different sources, unify and send them to multiple destinations. It's fully compatible with Docker and Kubernetes environments.",
+  "org.opencontainers.image.documentation": "https://github.com/aws/aws-for-fluent-bit",
+  "org.opencontainers.image.licenses": "Apache-2.0",
+  "org.opencontainers.image.source": "https://github.com/aws/aws-for-fluent-bit",
+  "org.opencontainers.image.title": "AWS for Fluent Bit",
+  "org.opencontainers.image.url": "https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit",
+  "org.opencontainers.image.vendor": "Amazon Web Services",
+  "org.opencontainers.image.version": "2.33.3",
+  "vendor": "Amazon Web Services",
+  "version": "2.33.3"
+}
+```
+
 ## Version 3.0.0
 
 With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the following changes:
@@ -24,7 +59,9 @@ With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the
     - We are aware of many changes our customers have been asking for from newer versions[^2]
     - We do not want to continue managing backports to 1.9.10 via [upstream-to-fluent-bit](https://github.com/amazon-contributing/upstream-to-fluent-bit)
 
-## Version History
+## Sample Versions 
+
+Below is a table providing a small set of versions with the bump type and reason.
 
 | Version | Release Notes | Bump | Reason |
 |---------|---------------|------|--------|
@@ -32,7 +69,7 @@ With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the
 | 2.33.0 | [v2.33.0](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.33.0) | MINOR | Feature: Add support for non-root user mode to the init image |
 | 2.33.0.20250731 | [v2.33.0.20250731](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.33.0.20250731) | BUILD | Amazon Linux base container image version: 2.0.20250728.1 |
 | 2.33.1 | [v2.33.1](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.33.1) | PATCH | Enhancement - Rework AL2 dockerfiles, Fix - Disable buildkit features |
-| [Example]3.0.0 | [v3.0.0](https://github.com/aws/aws-for-fluent-bit/releases) | MAJOR | Feature: AL2023 support, fluent-bit 4.x support
+| 3.0.0 | [v3.0.0](https://github.com/aws/aws-for-fluent-bit/releases) | MAJOR | Feature: AL2023 support, fluent-bit 4.x support
 
 ## Tags
 
