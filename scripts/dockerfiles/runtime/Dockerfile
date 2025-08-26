@@ -48,6 +48,25 @@ ADD ecs /ecs/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+ARG FLB_VERSION
+ARG AWS_FOR_FLUENT_BIT_VERSION
+ARG OS_PRETTY_NAME
+
+LABEL author="FireLens Team <aws-firelens@amazon.com>" \
+      vendor="Amazon Web Services" \
+      version=${AWS_FOR_FLUENT_BIT_VERSION} \
+      com.aws-for-fluent-bit.fluent-bit.version=${FLB_VERSION} \
+      com.aws-for-fluent-bit.os.version=${OS_PRETTY_NAME} \
+      org.opencontainers.image.title="AWS for Fluent Bit" \
+      org.opencontainers.image.authors="FireLens Team <aws-firelens@amazon.com>" \
+      org.opencontainers.image.description="Fluent Bit is an open source and multi-platform Log Processor and Forwarder which allows you to collect data/logs from different sources, unify and send them to multiple destinations. It's fully compatible with Docker and Kubernetes environments." \
+      org.opencontainers.image.version=${AWS_FOR_FLUENT_BIT_VERSION} \
+      org.opencontainers.image.url="https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit" \
+      org.opencontainers.image.documentation="https://github.com/aws/aws-for-fluent-bit" \
+      org.opencontainers.image.vendor="Amazon Web Services" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.source="https://github.com/aws/aws-for-fluent-bit"
+
 # Optional Metrics endpoint
 EXPOSE 2020
 
