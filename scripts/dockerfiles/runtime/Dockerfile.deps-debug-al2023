@@ -1,8 +1,9 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 # Install runtime dependencies required for Fluent Bit and AWS plugins
-RUN dnf upgrade -y \
-    && dnf install -y openssl-devel \
+RUN dnf upgrade -y && \
+    dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
+    dnf install -y openssl-devel \
         cyrus-sasl-devel \
         pkgconfig \
         systemd-devel \
@@ -11,4 +12,6 @@ RUN dnf upgrade -y \
         libyaml \
         gdb \
         nc \
+        arrow-glib-devel \
+        parquet-glib-devel \
     && dnf clean all

@@ -1,6 +1,7 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
 RUN dnf upgrade -y && \
+    dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
     dnf install -y  \
       glibc-devel \
       libyaml-devel \
@@ -20,4 +21,6 @@ RUN dnf upgrade -y && \
       ca-certificates \
       flex \
       bison \
+      arrow-glib-devel \
+      parquet-glib-devel \
     && dnf clean all

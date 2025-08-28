@@ -2,6 +2,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as dependencies
 
 # Create sysroot directory and install minimal runtime dependencies
 RUN mkdir /sysroot && \
+    dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
     dnf --releasever=$(rpm -q system-release --qf '%{VERSION}') \
     --installroot /sysroot \
     -y \
@@ -11,6 +12,8 @@ RUN mkdir /sysroot && \
         systemd-libs \
         openssl-libs \
         cyrus-sasl-lib \
+        arrow2100-glib-libs \
+        parquet2100-glib-libs \
         libstdc++
 
 # Final minimal runtime image using scratch base
