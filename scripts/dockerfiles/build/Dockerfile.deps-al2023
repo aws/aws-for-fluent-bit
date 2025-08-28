@@ -17,7 +17,6 @@ RUN dnf upgrade -y && \
       pkgconf-pkg-config \
       systemd-devel \
       zlib-devel \
-      valgrind-devel \
       ca-certificates \
       flex \
       bison \

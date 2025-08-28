@@ -9,6 +9,11 @@ ARG RELEASE=On
 # Debug disabled by default
 ARG DEBUG=Off
 
+# Install valgrind-devel if DEBUG is enabled
+RUN if [ "$DEBUG" = "On" ]; then \
+      yum install -y valgrind-devel; \
+    fi
+
 # Build Fluent Bit with appropriate compiler flags based on DEBUG and RELEASE arguments
 RUN cmake \
     # always on
