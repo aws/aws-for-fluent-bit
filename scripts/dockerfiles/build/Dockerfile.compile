@@ -17,6 +17,7 @@ RUN if [ "$DEBUG" = "On" ]; then \
 # Build Fluent Bit with appropriate compiler flags based on DEBUG and RELEASE arguments
 RUN cmake \
     # always on
+    -DFLB_SIMD=On \
     -DFLB_JEMALLOC=On \
     -DFLB_TLS=On \
     -DFLB_HTTP_SERVER=On \
