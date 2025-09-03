@@ -77,6 +77,8 @@ Below is a table providing a small set of versions with the bump type and reason
 * `Version number tag`: Each release has a version number, for example `2.33.0.20250731`, `2.33.1`
 * `stable`: The most recent version that we have high confidence is stable for AWS use cases
 
+> Note: The stable image tag continues to point to AWS for Fluent Bit version 2.x
+
 ### Additional Tags
 
 * `debug-latest`: `latest` image with debug tooling[^3]
