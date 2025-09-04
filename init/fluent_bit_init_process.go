@@ -38,8 +38,8 @@ var (
 	// Default Fluent Bit command
 	baseCommand = "exec /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so"
 
-	// Global S3 client and flag
-	s3Client        *s3.Client
+	// global s3 client and flag
+	s3Client        S3Client
 	s3ClientCreated bool = false
 
 	// Global ECS metadata region
@@ -95,6 +95,12 @@ type HTTPClient interface {
 // S3Downloader interface
 type S3Downloader interface {
 	Download(ctx context.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*manager.Downloader)) (int64, error)
+}
+
+// S3Client interface for bucket operations
+type S3Client interface {
+	GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error)
+	Options() s3.Options
 }
 
 // all values in the structure are empty strings by default
@@ -225,6 +231,7 @@ func getAllConfigFiles() {
 
 		// if this env var's value is an arn, download the config file first, then process it
 		if matched_s3 {
+			createS3Client()
 			s3FilePath := getS3ConfigFile(envValue)
 			s3FileName := strings.SplitN(s3FilePath, "/", -1)
 			processConfigFile(s3FileDirectoryPath + s3FileName[len(s3FileName)-1])
@@ -254,24 +261,20 @@ func processConfigFile(path string) {
 	}
 }
 
-func getS3ConfigFile(userInput string) string {
-	// Preparation for downloading S3 config files
-	if !s3ClientCreated {
-		createS3Client()
-	}
-
+// parseS3ARNAndGetBucketInfo extracts bucket name, region, and file path from an S3 ARN
+func parseS3ARNAndGetBucketInfo(s3ARNString string, s3Client S3Client) (bucketName string, bucketRegion string, s3FilePath string) {
 	// e.g. "arn:aws:s3:::user-bucket/s3_parser.conf"
-	s3ARN, err := arn.Parse(userInput)
+	s3ARN, err := arn.Parse(s3ARNString)
 	if err != nil {
-		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", userInput)
+		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", s3ARNString)
 	}
 	bucketAndFile := strings.SplitN(s3ARN.Resource, "/", 2)
 	if len(bucketAndFile) != 2 {
-		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", userInput)
+		logrus.Fatalf("[FluentBit Init Process] Could not parse arn: %s\n", s3ARNString)
 	}
 
-	bucketName := bucketAndFile[0]
-	s3FilePath := bucketAndFile[1]
+	bucketName = bucketAndFile[0]
+	s3FilePath = bucketAndFile[1]
 
 	// TODO: migrate to s3:HeadBucket and use BucketRegion
 	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html
@@ -287,7 +290,7 @@ func getS3ConfigFile(userInput string) string {
 		logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s, you must be the bucket owner to implement this operation\n", bucketName, s3FilePath)
 	}
 
-	bucketRegion := string(output.LocationConstraint)
+	bucketRegion = string(output.LocationConstraint)
 	// Buckets in Region us-east-1 have a LocationConstraint of null
 	// Buckets in Region eu-west-1 have a LocationConstraint of EU
 	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax
@@ -297,6 +300,12 @@ func getS3ConfigFile(userInput string) string {
 	case "EU":
 		bucketRegion = "eu-west-1"
 	}
+
+	return bucketName, bucketRegion, s3FilePath
+}
+
+func getS3ConfigFile(userInput string) string {
+	bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(userInput, s3Client)
 
 	// create a downloader
 	s3Downloader := createS3Downloader(bucketRegion)

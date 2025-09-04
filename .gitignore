@@ -3,3 +3,4 @@ integ/out/
 .venv
 /.idea/
 .vscode/
+fluent-bit-init-s3-files
