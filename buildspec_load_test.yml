@@ -96,8 +96,13 @@ phases:
           exit 1
         fi
     finally:
-      # Clear up testing resources
-      - python ./load_tests/load_test.py delete_testing_resources
+      # Clear up testing resources (only for BUILD_VERSION=2)
+      - |
+        if [ "$BUILD_VERSION" = "2" ]; then
+          python ./load_tests/load_test.py delete_testing_resources
+        else
+          echo "Skipping cleanup for BUILD_VERSION=$BUILD_VERSION"
+        fi
 artifacts:
   files:
     - '**/*'
