@@ -38,8 +38,8 @@ COPY --from=plugins /kinesis-streams/THIRD-PARTY \
     /kinesis-streams/LICENSE \
     /fluent-bit/licenses/kinesis/
 
-# Copy version information
-COPY AWS_FOR_FLUENT_BIT_VERSION /AWS_FOR_FLUENT_BIT_VERSION
+# Create version information from build argument
+RUN echo "${AWS_FOR_FLUENT_BIT_VERSION}" > /AWS_FOR_FLUENT_BIT_VERSION
 
 # Copy ECS configuration directory
 ADD ecs /ecs/

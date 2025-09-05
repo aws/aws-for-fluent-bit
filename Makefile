@@ -22,7 +22,7 @@ FLB_VERSION ?= "1.9.10"
 # Fluent Bit repository to checkout, will use value if not set
 FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
 # AWS for Fluent Bit Version
-AWS_FOR_FLUENT_BIT_VERSION ?= $(shell cat AWS_FOR_FLUENT_BIT_VERSION)
+AWS_FOR_FLUENT_BIT_VERSION ?= $(shell ./scripts/get_linux_version.sh)
 # OS Pretty Name (assigned during build-common)
 OS_PRETTY_NAME :=
 

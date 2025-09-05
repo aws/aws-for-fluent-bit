@@ -18,7 +18,7 @@ scripts=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${scripts}"
 
 IMAGE_SHA_MATCHED="FALSE"
-AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
+AWS_FOR_FLUENT_BIT_VERSION=$(../scripts/get_linux_version.sh)
 AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
 PUBLISH_LATEST=$(cat ../linux.version | jq -r '.linux.latest')
