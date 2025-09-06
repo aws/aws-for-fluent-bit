@@ -16,6 +16,7 @@ phases:
           echo "BUILD_VERSION is set to: $BUILD_VERSION"
         fi
   build:
+    on-failure: ABORT
     commands:
       # Execute build commands based on BUILD_VERSION
       - set -e
