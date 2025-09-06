@@ -41,7 +41,9 @@ phases:
           # Push the image to ECR with corresponding architecture as the tag.
           aws ecr get-login-password --region ${AWS_REGION}| docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
           aws ecr create-repository --repository-name amazon/aws-for-fluent-bit-test --image-scanning-configuration scanOnPush=true --region ${AWS_REGION}  || true
-          architecture=$(docker inspect --format='{{.Architecture}}'  amazon/aws-for-fluent-bit:latest-al2)
+
+          architecture=$(docker inspect --format='{{.Architecture}}' amazon/aws-for-fluent-bit:latest-al2)
+
           docker tag amazon/aws-for-fluent-bit:latest-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
           docker tag amazon/aws-for-fluent-bit:debug-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture-debug
           docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
