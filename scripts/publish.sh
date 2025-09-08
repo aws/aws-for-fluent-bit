@@ -603,8 +603,6 @@ verify_ecr() {
 check_image_version() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
 	EXIT_CODE=0
-
-	docker_hub_login
 	
 	# check if we can get the image information in dockerhub; if yes, the exit status should be 0
 	docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${1} > /dev/null || EXIT_CODE=$?
