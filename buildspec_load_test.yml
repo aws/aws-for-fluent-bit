@@ -59,6 +59,8 @@ phases:
       # Execute load test commands based on BUILD_VERSION
       - |
         if [ "$BUILD_VERSION" = "2" ]; then
+          # need this for multiline code blocks to raise any errors to codebuild
+          set -e
           echo "Running load tests for AWS for Fluent Bit version 2 (current behavior)"
           
           # Activate Python virtual environment and install the AWS CDK core dependencies

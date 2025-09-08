@@ -19,6 +19,8 @@ phases:
       # Execute integration test commands based on BUILD_VERSION
       - |
         if [ "$BUILD_VERSION" = "2" ]; then
+          # need this for multiline code blocks to raise any errors to codebuild
+          set -e
           echo "Running integration tests for AWS for Fluent Bit version 2 (current behavior)"
           
           # Enforce STS regional endpoints
