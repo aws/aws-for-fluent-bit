@@ -25,6 +25,7 @@ phases:
           # need this for multiline code blocks to raise any errors to codebuild
           set -e
           echo "Building AWS for Fluent Bit version 2 (current behavior)"
+          set -e
           
           # Check latest image versions from dockerhub and from GitHub source file
           ./scripts/publish.sh cicd-check-image-version
