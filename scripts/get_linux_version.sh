@@ -12,15 +12,13 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-set -euo pipefail
+set -xeuo pipefail
 
-# Get the directory of this script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Get the root directory of the repository
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "${SCRIPTS_DIR}/.." && pwd)"
 
-# Path to linux.version file
-LINUX_VERSION_FILE="${ROOT_DIR}/linux.version"
+# linux.version file
+LINUX_VERSION_FILE="${ROOT}/linux.version"
 
 # Check if linux.version file exists
 if [ ! -f "$LINUX_VERSION_FILE" ]; then
@@ -28,15 +26,34 @@ if [ ! -f "$LINUX_VERSION_FILE" ]; then
     exit 1
 fi
 
-# Extract version from linux.version using jq
-# This extracts the version from the linux object
-VERSION=$(jq -r '.linux.version' "$LINUX_VERSION_FILE")
-
-# Check if jq command was successful and version is not null
-if [ $? -ne 0 ] || [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
-    echo "Error: Failed to extract version from linux.version file" >&2
+# Check required parameters
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <BUILD_VERSION> <FIELD>" >&2
+    echo "Example: $0 2 version" >&2
+    echo "Example: $0 3 al-tag" >&2
     exit 1
 fi
 
-# Output the version
-echo "$VERSION"
+BUILD_VERSION=$1
+FIELD=$2
+
+# Function to get version info from linux.version based on BUILD_VERSION
+get_version_info() {
+    local build_version=$1
+    local field=$2
+    
+    # Extract info for the specific major-version
+    jq -r ".[] | select(.linux.\"major-version\" == \"$build_version\") | .linux.\"$field\"" "$LINUX_VERSION_FILE"
+}
+
+# Extract the requested field from linux.version using jq for the specified BUILD_VERSION
+VALUE=$(get_version_info "$BUILD_VERSION" "$FIELD")
+
+# Check if jq command was successful and value is not null
+if [ $? -ne 0 ] || [ "$VALUE" = "null" ] || [ -z "$VALUE" ]; then
+    echo "Error: Failed to extract $FIELD for BUILD_VERSION=$BUILD_VERSION from linux.version file" >&2
+    exit 1
+fi
+
+# Output the value
+echo "$VALUE"

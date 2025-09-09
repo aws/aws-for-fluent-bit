@@ -17,83 +17,9 @@ phases:
         fi
   build:
     commands:
-      # Execute build commands based on BUILD_VERSION
-      - |
-        if [ "$BUILD_VERSION" = "2" ]; then
-          # need this for multiline code blocks to raise any errors to codebuild
-<<<<<<< HEAD
-          set -e
-          echo "Building AWS for Fluent Bit version 2 (current behavior)"
-=======
->>>>>>> 9eb9a74 (fix tags)
-          set -e
-          echo "Building AWS for Fluent Bit version 2 (current behavior)"
-          
-          # Check latest image versions from dockerhub and from GitHub source file
-          ./scripts/publish.sh cicd-check-image-version
-          
-          # Disable buildkit features
-          export DOCKER_BUILDKIT=0
-
-          # Command to build debug image
-          make debug
-          # Command to build your project
-          make release
-
-          # List the docker images
-          docker images
-
-          # Push the image to ECR with corresponding architecture as the tag.
-          aws ecr get-login-password --region ${AWS_REGION}| docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
-          aws ecr create-repository --repository-name amazon/aws-for-fluent-bit-test --image-scanning-configuration scanOnPush=true --region ${AWS_REGION}  || true
-
-          architecture=$(docker inspect --format='{{.Architecture}}' amazon/aws-for-fluent-bit:latest-al2)
-
-          docker tag amazon/aws-for-fluent-bit:latest-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
-          docker tag amazon/aws-for-fluent-bit:debug-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture-debug
-
-          docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture
-          docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$architecture-debug
-          ./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $architecture
-          ./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $architecture-debug
-          # Image with Init Process
-          docker tag amazon/aws-for-fluent-bit:init-latest-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
-          docker tag amazon/aws-for-fluent-bit:init-debug-al2 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture-debug
-          docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture
-          docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-$architecture-debug
-          ./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test init-$architecture
-          ./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test init-$architecture-debug
-
-          # Create manifest list
-          export DOCKER_CLI_EXPERIMENTAL=enabled
-          docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
-          docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:arm64 || true
-          docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:amd64 || true
-          # Image with Init Process
-          docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-amd64 || true
-          docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-arm64 || true
-          docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-amd64 || true
-          
-          # Sanity check for the debug log
-          docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true
-          # Image with Init Process
-          docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest || true
-
-          # Push manifest list
-          docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest || true
-          # Image with Init Process
-          docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:init-latest || true
-          
-        elif [ "$BUILD_VERSION" = "3" ]; then
-          echo "Building AWS for Fluent Bit version 3 (no-op for now)"
-          echo "Version 3 build logic will be implemented later"
-          # Placeholder for future BUILD_VERSION=3 implementation
-          
-        else
-          echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
-          echo "Supported versions are: 2, 3"
-          exit 1
-        fi
+      # Execute the build script which handles both BUILD_VERSION 2 and 3
+      - chmod +x scripts/build.sh
+      - ./scripts/build.sh
 
 artifacts:
   files:

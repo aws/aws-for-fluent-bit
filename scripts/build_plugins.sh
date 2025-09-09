@@ -130,7 +130,7 @@ then
   latest_version=$(cat windows.versions | jq -r '.windows[] | select(.latest==true)')
 elif [ "$OS_TYPE" == "linux" ];
 then
-  latest_version=$(cat linux.version | jq -r '.linux')
+  latest_version=$(cat linux.version | jq -r '.[] | select(.linux.latest=="true") | .linux')
 fi
 
 # For sanity checking, find the number of latest versions present.
@@ -195,4 +195,3 @@ if [ "$OS_TYPE" == "linux" ];
 then
   docker build $PLUGIN_BUILD_ARGS -t aws-fluent-bit-plugins:latest -f ./scripts/dockerfiles/build/Dockerfile.compile-plugins .
 fi
-

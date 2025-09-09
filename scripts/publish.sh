@@ -18,10 +18,11 @@ scripts=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "${scripts}"
 
 IMAGE_SHA_MATCHED="FALSE"
-AWS_FOR_FLUENT_BIT_VERSION=$(../scripts/get_linux_version.sh)
+# TODO: Make it work for both build versions (or move entire logic in this script)
+AWS_FOR_FLUENT_BIT_VERSION=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "version")
 AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
-PUBLISH_LATEST=$(cat ../linux.version | jq -r '.linux.latest')
+PUBLISH_LATEST=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "latest")
 echo "Publish Latest? ${PUBLISH_LATEST}"
 
 # Problem: when we push a new version bump the version number in AWS_FOR_FLUENT_BIT_VERSION file changes
