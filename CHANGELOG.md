@@ -1,5 +1,18 @@
 # Changelog
 
+### 2.34.0
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250902.3
+
+Compared to the previous release, this release adds:
+* Enhancement - Fix init process s3 getBucketLocation issue for eu-west-1 region [#942](https://github.com/aws/aws-for-fluent-bit/pull/942)
+* Enhancement - Remove valgrind-devel from build unless debug [#987](https://github.com/aws/aws-for-fluent-bit/pull/987)
+* Enhancement - Add docker labels to built images [#986](https://github.com/aws/aws-for-fluent-bit/pull/986)
+
 ### 2.33.2
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
