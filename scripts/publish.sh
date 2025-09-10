@@ -19,10 +19,18 @@ cd "${scripts}"
 
 IMAGE_SHA_MATCHED="FALSE"
 # TODO: Make it work for both build versions (or move entire logic in this script)
-AWS_FOR_FLUENT_BIT_VERSION=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "version")
+if [ -z "$BUILD_VERSION" ]; then
+    AWS_FOR_FLUENT_BIT_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_VERSION)
+else
+    AWS_FOR_FLUENT_BIT_VERSION=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "version")
+fi
 AWS_FOR_FLUENT_BIT_STABLE_VERSION=$(cat ../AWS_FOR_FLUENT_BIT_STABLE_VERSION)
 
-PUBLISH_LATEST=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "latest")
+if [ -z "$BUILD_VERSION" ]; then
+    PUBLISH_LATEST="true"  # Default behavior when BUILD_VERSION is not defined
+else
+    PUBLISH_LATEST=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "latest")
+fi
 echo "Publish Latest? ${PUBLISH_LATEST}"
 
 # Problem: when we push a new version bump the version number in AWS_FOR_FLUENT_BIT_VERSION file changes
