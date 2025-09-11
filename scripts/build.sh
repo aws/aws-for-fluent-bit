@@ -1,15 +1,19 @@
 #!/bin/bash
+# Copyright 2025 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You
+# may not use this file except in compliance with the License. A copy of
+# the License is located at
+#
+# 	http://aws.amazon.com/apache2.0/
+#
+# or in the "license" file accompanying this file. This file is
+# distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+# ANY KIND, either express or implied. See the License for the specific
+# language governing permissions and limitations under the License.
 set -e
 
-# Check BUILD_VERSION environment variable and set default if not provided
-if [ -z "$BUILD_VERSION" ]; then
-    echo "BUILD_VERSION environment variable not provided, defaulting to BUILD_VERSION=2"
-    export BUILD_VERSION=2
-else
-    echo "BUILD_VERSION is set to: $BUILD_VERSION"
-fi
-
-# Validate BUILD_VERSION
+# Validate BUILD_VERSION variable is set
 if [ "$BUILD_VERSION" != "2" ] && [ "$BUILD_VERSION" != "3" ]; then
     echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
     echo "Supported versions are: 2, 3"
@@ -18,30 +22,24 @@ fi
 
 echo "Building AWS for Fluent Bit version $BUILD_VERSION"
 
-# Get version-specific configuration using centralized script
+# Get version-specific configuration using linux.version getter script
 AL_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "al-tag")
 FLB_VERSION=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "fluent-bit")
 FLB_REPOSITORY=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "flb-repository")
 AWS_FOR_FLUENT_BIT_VERSION=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "version")
+KINESIS_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "kinesis-plugin")
+FIREHOSE_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "firehose-plugin")
+CLOUDWATCH_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "cloudwatch-plugin")
 
-# Get plugin versions for BUILD_VERSION 3
-if [ "$BUILD_VERSION" = "3" ]; then
-    KINESIS_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "kinesis-plugin")
-    FIREHOSE_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "firehose-plugin")
-    CLOUDWATCH_PLUGIN_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "cloudwatch-plugin")
-    
-    echo "Using KINESIS_PLUGIN_TAG: $KINESIS_PLUGIN_TAG"
-    echo "Using FIREHOSE_PLUGIN_TAG: $FIREHOSE_PLUGIN_TAG"
-    echo "Using CLOUDWATCH_PLUGIN_TAG: $CLOUDWATCH_PLUGIN_TAG"
-    
-    # Export all plugin variables as environment variables for make
-    export KINESIS_PLUGIN_TAG FIREHOSE_PLUGIN_TAG CLOUDWATCH_PLUGIN_TAG
-fi
+IMAGE_TAG_SUFFIX=al"$AL_TAG"
 
 echo "Using AL_TAG: $AL_TAG"
 echo "Using FLB_VERSION: $FLB_VERSION"
 echo "Using FLB_REPOSITORY: $FLB_REPOSITORY"
 echo "Using AWS_FOR_FLUENT_BIT_VERSION: $AWS_FOR_FLUENT_BIT_VERSION"
+echo "Using KINESIS_PLUGIN_TAG: $KINESIS_PLUGIN_TAG"
+echo "Using FIREHOSE_PLUGIN_TAG: $FIREHOSE_PLUGIN_TAG"
+echo "Using CLOUDWATCH_PLUGIN_TAG: $CLOUDWATCH_PLUGIN_TAG"
 
 # Check latest image versions from dockerhub and from GitHub source file
 ./scripts/publish.sh cicd-check-image-version $BUILD_VERSION
@@ -49,15 +47,9 @@ echo "Using AWS_FOR_FLUENT_BIT_VERSION: $AWS_FOR_FLUENT_BIT_VERSION"
 # Disable buildkit features
 export DOCKER_BUILDKIT=0
 
-# Command to build debug image with version-specific parameters
-if [ "$BUILD_VERSION" = "2" ]; then
-    make debug AL_TAG=$AL_TAG FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION"
-    make release AL_TAG=$AL_TAG FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION"
-else
-    # BUILD_VERSION = 3
-    make debug AL_TAG=$AL_TAG FLB_VERSION=$FLB_VERSION FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION" KINESIS_PLUGIN_TAG=$KINESIS_PLUGIN_TAG FIREHOSE_PLUGIN_TAG=$FIREHOSE_PLUGIN_TAG CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG
-    make release AL_TAG=$AL_TAG FLB_VERSION=$FLB_VERSION FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION" KINESIS_PLUGIN_TAG=$KINESIS_PLUGIN_TAG FIREHOSE_PLUGIN_TAG=$FIREHOSE_PLUGIN_TAG CLOUDWATCH_PLUGIN_TAG=$CLOUDWATCH_PLUGIN_TAG
-fi
+# Build aws-for-fluent-bit images
+make debug AL_TAG="$AL_TAG" FLB_VERSION="$FLB_VERSION" FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION" KINESIS_PLUGIN_TAG="$KINESIS_PLUGIN_TAG" FIREHOSE_PLUGIN_TAG="$FIREHOSE_PLUGIN_TAG" CLOUDWATCH_PLUGIN_TAG="$CLOUDWATCH_PLUGIN_TAG"
+make release AL_TAG="$AL_TAG" FLB_VERSION="$FLB_VERSION" FLB_REPOSITORY="$FLB_REPOSITORY" AWS_FOR_FLUENT_BIT_VERSION="$AWS_FOR_FLUENT_BIT_VERSION" KINESIS_PLUGIN_TAG="$KINESIS_PLUGIN_TAG" FIREHOSE_PLUGIN_TAG="$FIREHOSE_PLUGIN_TAG" CLOUDWATCH_PLUGIN_TAG="$CLOUDWATCH_PLUGIN_TAG"
 
 # List the docker images
 docker images
@@ -66,15 +58,37 @@ docker images
 aws ecr get-login-password --region ${AWS_REGION}| docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
 aws ecr create-repository --repository-name amazon/aws-for-fluent-bit-test --image-scanning-configuration scanOnPush=true --region ${AWS_REGION}  || true
 
-# Get architecture and set image tag suffix based on BUILD_VERSION
-# TODO: Simplify logic, just use AL_TAG
-if [ "$BUILD_VERSION" = "2" ]; then
-    IMAGE_TAG_SUFFIX="al2"
-else
-    IMAGE_TAG_SUFFIX=al"$AL_TAG"
-fi
-
 architecture=$(docker inspect --format='{{.Architecture}}'  amazon/aws-for-fluent-bit:latest-$IMAGE_TAG_SUFFIX)
+
+# Tag, push and run ECR security scans on image
+tag_push_and_scan() {
+    local source_image="$1"
+    local target_tag="$2"
+    
+    docker tag $source_image ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$target_tag
+    docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$target_tag
+    ./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $target_tag
+}
+
+# Create, annotate and push manifest
+create_and_push_manifest() {
+    local manifest_tag="$1"
+    local arm64_tag="$2"
+    local amd64_tag="$3"
+    
+    # Create manifest
+    docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$manifest_tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$arm64_tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$amd64_tag || true
+    
+    # Annotate with architecture
+    docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$manifest_tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$arm64_tag || true
+    docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$manifest_tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$amd64_tag || true
+    
+    # Inspect for sanity check
+    docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$manifest_tag || true
+    
+    # Push manifest
+    docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$manifest_tag || true
+}
 
 # Set image tags based on BUILD_VERSION
 if [ "$BUILD_VERSION" = "2" ]; then
@@ -91,20 +105,13 @@ else
     INIT_DEBUG_TAG="init-$architecture-$BUILD_VERSION-debug"
 fi
 
-docker tag amazon/aws-for-fluent-bit:latest-$IMAGE_TAG_SUFFIX ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$RELEASE_TAG
-docker tag amazon/aws-for-fluent-bit:debug-$IMAGE_TAG_SUFFIX ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$DEBUG_TAG
-docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$RELEASE_TAG
-docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$DEBUG_TAG
-./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $RELEASE_TAG
-./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $DEBUG_TAG
+# Tag, push and run ECR security scan on images
+tag_push_and_scan "amazon/aws-for-fluent-bit:latest-$IMAGE_TAG_SUFFIX" "$RELEASE_TAG"
+tag_push_and_scan "amazon/aws-for-fluent-bit:debug-$IMAGE_TAG_SUFFIX" "$DEBUG_TAG"
 
-# Image with Init Process
-docker tag amazon/aws-for-fluent-bit:init-latest-$IMAGE_TAG_SUFFIX ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_RELEASE_TAG
-docker tag amazon/aws-for-fluent-bit:init-debug-$IMAGE_TAG_SUFFIX ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_DEBUG_TAG
-docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_RELEASE_TAG
-docker push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_DEBUG_TAG
-./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $INIT_RELEASE_TAG
-./scripts/publish.sh cicd-verify-ecr-image-scan ${AWS_REGION} amazon/aws-for-fluent-bit-test $INIT_DEBUG_TAG
+# Images with Init Process
+tag_push_and_scan "amazon/aws-for-fluent-bit:init-latest-$IMAGE_TAG_SUFFIX" "$INIT_RELEASE_TAG"
+tag_push_and_scan "amazon/aws-for-fluent-bit:init-debug-$IMAGE_TAG_SUFFIX" "$INIT_DEBUG_TAG"
 
 # Create manifest list
 export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -128,21 +135,6 @@ else
     INIT_AMD64_TAG="init-amd64-$BUILD_VERSION"
 fi
 
-docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_LATEST_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$ARM64_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$AMD64_TAG || true
-docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_LATEST_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$ARM64_TAG || true
-docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_LATEST_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$AMD64_TAG || true
-
-# Image with Init Process
-docker manifest create ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_INIT_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_ARM64_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_AMD64_TAG || true
-docker manifest annotate --arch arm64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_INIT_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_ARM64_TAG || true
-docker manifest annotate --arch amd64 ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_INIT_TAG ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$INIT_AMD64_TAG || true
-
-# Sanity check for the debug log
-docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_LATEST_TAG || true
-# Image with Init Process
-docker manifest inspect ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_INIT_TAG || true
-
-# Push manifest list
-docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_LATEST_TAG || true
-# Image with Init Process
-docker manifest push ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:$MANIFEST_INIT_TAG || true
+# Create and push manifests
+create_and_push_manifest "$MANIFEST_LATEST_TAG" "$ARM64_TAG" "$AMD64_TAG"
+create_and_push_manifest "$MANIFEST_INIT_TAG" "$INIT_ARM64_TAG" "$INIT_AMD64_TAG"

@@ -8,6 +8,7 @@ phases:
     commands:
       - echo Building the AWS for Fluent Bit image
       # Check BUILD_VERSION environment variable and set default if not provided
+      # TODO: Remove default once codepipeline and buildspec setup is complete end to end for new builds
       - |
         if [ -z "$BUILD_VERSION" ]; then
           echo "BUILD_VERSION environment variable not provided, defaulting to BUILD_VERSION=2"
@@ -18,7 +19,6 @@ phases:
   build:
     commands:
       # Execute the build script which handles both BUILD_VERSION 2 and 3
-      - chmod +x scripts/build.sh
       - ./scripts/build.sh
 
 artifacts:
