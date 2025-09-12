@@ -17,8 +17,13 @@ export S3_BUCKET_NAME=$(echo "$log_storage_outputs" | jq -r '.Stacks[0].Outputs[
 
 export AWS_DEFAULT_REGION=${AWS_REGION}
 
+if [ "$BUILD_VERSION" = "2" ]; then
+    IMAGE_TAG="latest"
+elif [ "$BUILD_VERSION" = "3" ]; then
+    IMAGE_TAG="latest-3"
+fi
 # Set necessary images as env vars
-export FLUENT_BIT_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:latest"
+export FLUENT_BIT_IMAGE="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG}"
 export ECS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image:latest"
 export EKS_APP_IMAGE="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-eks-app-image:latest"
 export ECS_APP_IMAGE_TCP="906394416424.dkr.ecr.us-west-2.amazonaws.com/load-test-fluent-bit-ecs-app-image-tcp:latest"

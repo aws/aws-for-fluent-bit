@@ -6,7 +6,7 @@ export AWS_REGION="us-west-2"
 export PROJECT_ROOT="$(pwd)"
 export VOLUME_MOUNT_CONTAINER="/out"
 export ARCHITECTURE=$(uname -m)
-# For arm, uname evaluates to 'aarch64' but everywhere else in the pipline
+# For arm, uname evaluates to 'aarch64' but everywhere else in the pipeline
 # we use 'arm64'
 if [ "$ARCHITECTURE" = "aarch64" ]; then
     ARCHITECTURE="arm64"
@@ -22,7 +22,7 @@ if [ -z "$S3_INTEG_VALIDATOR_IMAGE" ]; then
 fi
 
 test_cloudwatch() {
-	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
+	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}-v${BUILD_VERSION:-2}"
 	# Tag is used to name the log stream; each test run has a unique (random) log stream name
 	export TAG=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10)
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.test.yml build
@@ -39,7 +39,7 @@ test_cloudwatch() {
 }
 
 clean_cloudwatch() {
-	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}"
+	export LOG_GROUP_NAME="fluent-bit-integ-test-${ARCHITECTURE}-v${BUILD_VERSION:-2}"
 	# Clean up resources that were created in the test
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml build
 	docker-compose --file ./integ/test_cloudwatch/docker-compose.clean.yml up --abort-on-container-exit
@@ -182,7 +182,6 @@ test_s3() {
 		exit 1
 	fi
 }
-
 
 clean_s3() {
 	validate_or_clean_s3 clean

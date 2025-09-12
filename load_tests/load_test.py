@@ -24,6 +24,11 @@ EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
 LOGGER_RUN_TIME_IN_SECOND = 600
 NUM_OF_EKS_NODES = 4
 BUFFER_TIME_IN_SECOND = 600
+
+# Get BUILD_VERSION and create version suffix for task definition names
+BUILD_VERSION = os.environ.get('BUILD_VERSION', '2')
+VERSION_TAG = '' if BUILD_VERSION == '2' else f'v{BUILD_VERSION}'
+
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
     # Cloudwatch requires more waiting for all log events to show up in the stream.
@@ -113,7 +118,7 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
 
         # General Environment Variables
         '$THROUGHPUT': throughput,
-        '$PREFIX': PREFIX,
+        '$PREFIX': f'{PREFIX}{VERSION_TAG}-',
 
         # Task Environment Variables
         '$TASK_ROLE_ARN': os.environ['LOAD_TEST_TASK_ROLE_ARN'],
@@ -131,8 +136,8 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
             '$CUSTOM_DELIVERY_STREAM_PREFIX':   resource_resolver.resolve_firehose_delivery_stream_name(custom_config),
         },
         'kinesis': {
-            '$STD_STREAM_PREFIX':               resource_resolver.resolve_kinesis_delivery_stream_name(std_config),
-            '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_delivery_stream_name(custom_config),
+            '$STD_STREAM_PREFIX':               resource_resolver.resolve_kinesis_stream_name(std_config),
+            '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_stream_name(custom_config),
         },
         's3': {
             '$S3_BUCKET_NAME':                  S3_BUCKET_NAME,
@@ -255,10 +260,11 @@ def run_ecs_tests():
         for throughput in THROUGHPUT_LIST:
             os.environ['THROUGHPUT'] = throughput
             generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
+            
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
-                    taskDefinition=f'{PREFIX}{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
+                    taskDefinition=f'{PREFIX}{VERSION_TAG}-{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
             )
             print(f'run_task_response={response}', flush=True)
             names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']
