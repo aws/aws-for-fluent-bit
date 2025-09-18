@@ -459,7 +459,12 @@ verify_ssm() {
 
 	if [ "${is_sync_task}" = "true" ]; then
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
-		check_parameter ${1} stable
+		# Skip stable SSM parameter verification when PUBLISH_LATEST is false
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			check_parameter ${1} stable
+		else
+			echo "Skipping stable SSM parameter verification for PUBLISH_LATEST=${PUBLISH_LATEST}"
+		fi
 	else
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
@@ -561,12 +566,17 @@ verify_ecr() {
 	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 
 	if [ "${is_sync_task}" = "true" ]; then
-		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable || echo "0"
-		stableSha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable || echo "0")
-		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
-		stableSha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0")
+		# Skip stable verification when PUBLISH_LATEST is false
+		if [ "${PUBLISH_LATEST}" = "true" ]; then
+			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable || echo "0"
+			stableSha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:stable || echo "0")
+			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
+			stableSha2=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0")
 
-		verify_sha $stableSha1 $stableSha2
+			verify_sha $stableSha1 $stableSha2
+		else
+			echo "Skipping stable verification for PUBLISH_LATEST=${PUBLISH_LATEST}"
+		fi
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR})

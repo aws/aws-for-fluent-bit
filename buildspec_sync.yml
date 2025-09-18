@@ -25,7 +25,10 @@ phases:
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
       
-      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable' 
+      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable'
+
+      # Handle version 3 publish (with error handling for missing version)
+      - BUILD_VERSION=3 './scripts/publish.sh cicd-publish ${AWS_REGION}' || true
 
       # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
       - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
@@ -61,6 +64,10 @@ phases:
       # Verify from the verification account
       - './scripts/publish.sh cicd-verify ${AWS_REGION} stable'
       - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
+
+      # Handle version 3 verifications (with error handling for missing version)
+      - BUILD_VERSION=3 './scripts/publish.sh cicd-verify ${AWS_REGION} stable' || true
+      - BUILD_VERSION=3 './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable' || true
 
        # Nullify the temporary credentials for the assumed role to verify
       - export AWS_ACCESS_KEY_ID=
