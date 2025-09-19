@@ -334,6 +334,15 @@ sync_public_and_repo() {
 	endpoint=${3}
 	tag=${4}
 
+	# Check if this is a BUILD_VERSION=3 operation and if the image exists
+	if [ "$BUILD_VERSION" = "3" ]; then
+		# Check if tag in public ECR before attempting to pull
+		if ! docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag} > /dev/null 2>&1; then
+			echo "Warning: BUILD_VERSION=3 image ${tag} not found in public ECR, skipping sync"
+			return 0
+		fi
+	fi
+
 	docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag}
 	sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${tag})
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
@@ -445,6 +454,14 @@ sync_image_version() {
 
 verify_ssm() {
 	is_sync_task=${2:-false}
+
+	# Check if this is BUILD_VERSION=3 sync task and if images exist before any SSM verification
+	if [ "$BUILD_VERSION" = "3" ] && [ "${is_sync_task}" = "true" ]; then
+		if ! docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR} > /dev/null 2>&1; then
+			echo "Warning: BUILD_VERSION=3 image not found in public ECR, skipping SSM verification for region ${1}"
+			return 0
+		fi
+	fi
 
 	endpoint='amazonaws.com'
 	
@@ -558,6 +575,14 @@ verify_ecr() {
 	region=${1}
 	account_id=${2}
 	is_sync_task=${3:-false}
+
+	# Check if this is BUILD_VERSION=3 sync task and if images exist before any verification
+	if [ "$BUILD_VERSION" = "3" ] && [ "${is_sync_task}" = "true" ]; then
+		if ! docker manifest inspect public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR} > /dev/null 2>&1; then
+			echo "Warning: BUILD_VERSION=3 image not found in public ECR, skipping verification for region ${region}"
+			return 0
+		fi
+	fi
 
 	endpoint='amazonaws.com'
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
