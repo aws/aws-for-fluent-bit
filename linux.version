@@ -1,7 +1,7 @@
 [{
         "linux": {
             "major-version": "2",
-            "version": "2.34.0",
+            "version": "2.34.1",
             "latest": "true",
             "build": "1",
             "fluent-bit": "1.9.10",
@@ -15,7 +15,7 @@
     {
         "linux": {
             "major-version": "3",
-            "version": "3.0.0",
+            "version": "3.0.1",
             "latest": "false",
             "build": "1",
             "fluent-bit": "v4.0.9",
