@@ -28,7 +28,7 @@ phases:
       - './scripts/publish.sh cicd-publish ${AWS_REGION} stable'
 
       # Handle version 3 publish
-      - BUILD_VERSION=3 './scripts/publish.sh cicd-publish ${AWS_REGION} stable'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish ${AWS_REGION} stable
 
       # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
       - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
@@ -66,8 +66,8 @@ phases:
       - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
 
       # Handle version 3 verifications
-      - BUILD_VERSION=3 './scripts/publish.sh cicd-verify ${AWS_REGION} stable'
-      - BUILD_VERSION=3 './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify ${AWS_REGION} stable
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable
 
        # Nullify the temporary credentials for the assumed role to verify
       - export AWS_ACCESS_KEY_ID=
