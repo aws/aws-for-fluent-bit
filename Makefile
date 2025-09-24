@@ -33,6 +33,7 @@ dev: release
 .PHONY: build-common
 build-common:
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:build-deps-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.deps-al${AL_TAG} .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:parsers-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.parsers-al${AL_TAG} .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build-common-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.build-common .
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:golang -f ./scripts/dockerfiles/build/Dockerfile.golang .
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile-init .
