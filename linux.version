@@ -18,7 +18,7 @@
             "version": "3.0.0",
             "latest": "false",
             "build": "1",
-            "fluent-bit": "v4.0.9",
+            "fluent-bit": "v4.1.0",
             "kinesis-plugin": "v1.10.2",
             "firehose-plugin": "v1.7.2",
             "cloudwatch-plugin": "v1.9.4",
