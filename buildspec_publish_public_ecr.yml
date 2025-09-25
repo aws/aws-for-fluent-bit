@@ -29,6 +29,7 @@ phases:
 
       # Push the image to Public ECR
       - './scripts/publish.sh cicd-publish public-ecr'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish public-ecr
 
       # Nullify the temporary credentials for the assumed role to publish
       - |
@@ -40,6 +41,7 @@ phases:
 
       # Pull the image from Public ECR and verify
       - './scripts/publish.sh cicd-verify public-ecr'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify public-ecr
 artifacts:
   files:
     - '**/*'
