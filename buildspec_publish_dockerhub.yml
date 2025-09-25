@@ -10,7 +10,7 @@ phases:
   build:
     commands:
       # Pull and tag the images that we built and pushed in the `Build` stage
-      - ./scripts/buildspec/sync-test-repo-images.sh --tag
+      - ./scripts/pipeline/sync-test-images.sh --tag
 
       # Push the image to dockerhub
       - 'DRY_RUN="false" ./scripts/publish.sh cicd-publish dockerhub'

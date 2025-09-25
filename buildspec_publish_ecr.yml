@@ -10,7 +10,7 @@ phases:
   build:
     commands:
       # Pull the images that we built and pushed in the `Build` stage
-      - ./scripts/buildspec/sync-test-repo-images.sh
+      - ./scripts/pipeline/sync-test-images.sh
 
       # Assume role to publish, get the credentials, and set them as environment variables
       - |
