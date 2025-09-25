@@ -100,9 +100,9 @@ if [ "$BUILD_VERSION" = "2" ]; then
 else
     # BUILD_VERSION 3: Include BUILD_VERSION in tags
     RELEASE_TAG="$architecture-$BUILD_VERSION"
-    DEBUG_TAG="$architecture-$BUILD_VERSION-debug"
+    DEBUG_TAG="$architecture-debug-$BUILD_VERSION"
     INIT_RELEASE_TAG="init-$architecture-$BUILD_VERSION"
-    INIT_DEBUG_TAG="init-$architecture-$BUILD_VERSION-debug"
+    INIT_DEBUG_TAG="init-$architecture-debug-$BUILD_VERSION"
 fi
 
 # Tag, push and run ECR security scan on images
