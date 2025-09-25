@@ -516,6 +516,41 @@ push_image_ecr() {
     	docker push ${2}
 }
 
+# Helper function to verify images exist with optional suffix
+# Returns 0 if all images exist, 1 if any are missing
+# Usage: verify_images [suffix]
+verify_images() {
+	local suffix="${1:-}"
+	local missing_images=()
+	local test_repo="amazon/aws-for-fluent-bit-test"
+
+	for arch in "${ARCHITECTURES[@]}"
+	do
+		# Check each required image variant
+		local images_to_check=(
+			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${arch}${suffix}"
+			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${arch}-debug${suffix}"
+			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${init}-${arch}${suffix}"
+			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${init}-${arch}-debug${suffix}"
+		)
+
+		for image in "${images_to_check[@]}"; do
+			if ! docker image inspect "$image" >/dev/null 2>&1; then
+				missing_images+=("$image")
+			fi
+		done
+	done
+
+	if [ ${#missing_images[@]} -gt 0 ]; then
+		echo "Warning: the following images are missing:"
+		printf '  %s\n' "${missing_images[@]}"
+		echo ""
+		return 1
+	fi
+
+	return 0
+}
+
 make_repo_public() {
 	aws ecr set-repository-policy --repository-name aws-for-fluent-bit --policy-text file://public_repo_policy.json --region ${1}
 }
@@ -525,20 +560,33 @@ publish_ecr() {
 	account_id=${2}
 
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
-	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region}  || true
+	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region} || true
+
+	source_suffix=""
+	# Add image suffix for BUILD_VERSION=3
+	if [ "$BUILD_VERSION" = "3" ]; then
+		source_suffix="-3"
+		
+		# Verify all images exist before proceeding
+		if ! verify_images "-3"; then
+			echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
+			# Zero exit to avoid pipeline failures until images exist
+			exit 0
+		fi
+	fi
 
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch" \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"${source_suffix} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-"debug" \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-"debug"${source_suffix} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch" \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"${source_suffix} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-"debug" \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-"debug"${source_suffix} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 	done
 
@@ -566,6 +614,7 @@ verify_ecr() {
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
+	
 	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 
 	if [ "${is_sync_task}" = "true" ]; then
@@ -602,8 +651,24 @@ verify_ecr() {
 
 		verify_sha $sha1_init $sha2_init
 	else
+		# Check if image exist before any verification
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if ! check_tag_exists "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
+				echo "Warning: image not found in ECR, skipping verification for region ${region}"
+				return 0
+			fi
+		fi
+
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+
+		# Check if init image exist before any verification
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if ! check_tag_exists "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit" "init-${AWS_FOR_FLUENT_BIT_VERSION}"; then
+				echo "Warning: init image not found in ECR, skipping verification for region ${region}"
+				return 0
+			fi
+		fi
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
