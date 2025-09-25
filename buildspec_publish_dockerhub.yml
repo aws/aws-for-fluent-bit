@@ -13,10 +13,12 @@ phases:
       - ./scripts/pipeline/sync-test-images.sh --tag
 
       # Push the image to dockerhub
-      - 'DRY_RUN="false" ./scripts/publish.sh cicd-publish dockerhub'
+      - './scripts/publish.sh cicd-publish dockerhub'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish dockerhub
 
       # Pull the image from dockerhub and verify
       - './scripts/publish.sh cicd-verify dockerhub'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify dockerhub
 artifacts:
   files:
     - '**/*'

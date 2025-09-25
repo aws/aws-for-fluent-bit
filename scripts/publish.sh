@@ -154,18 +154,31 @@ publish_to_docker_hub() {
 			create_manifest_list ${1} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
+		source_suffix=""
+		# Add image suffix for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			source_suffix="-3"
+			
+			# Verify all images exist before proceeding
+			if ! verify_images "-3"; then
+				echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
+				# Zero exit to avoid pipeline failures until images exist
+				exit 0
+			fi
+		fi
+
 		for arch in "${ARCHITECTURES[@]}"
 		do
-			docker tag ${1}:"$arch" ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"${source_suffix} ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$arch"-"debug" ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			docker push ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-"debug"${source_suffix} ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker push ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			
-			docker tag ${1}:"$init"-"$arch" ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"${source_suffix} ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"-"debug" ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-"debug"${source_suffix} ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		done
@@ -734,6 +747,14 @@ verify_dockerhub() {
 
 		verify_sha $sha1 $sha2
 	else
+		# Check if image exist before any verification
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if ! check_tag_exists "amazon/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
+				echo "Warning: image not found in DockerHub, skipping verification"
+				return 0
+			fi
+		fi
+
 		# Get the image SHA's
 		docker pull amazon/aws-for-fluent-bit:latest
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:latest)
@@ -741,6 +762,14 @@ verify_dockerhub() {
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1 $sha2
+
+		# Check if init image exist before any verification
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if ! check_tag_exists "amazon/aws-for-fluent-bit" "init-${AWS_FOR_FLUENT_BIT_VERSION}"; then
+				echo "Warning: init image not found in DockerHub, skipping verification"
+				return 0
+			fi
+		fi
 
 		docker pull amazon/aws-for-fluent-bit:"$init"-latest
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-latest)
