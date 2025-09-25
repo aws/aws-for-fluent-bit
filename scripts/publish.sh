@@ -238,6 +238,19 @@ publish_to_public_ecr() {
 }
 
 publish_ssm() {
+	# Check if BUILD_VERSION=3 images exist before publishing SSM parameters
+	if [ "$BUILD_VERSION" = "3" ]; then
+		if ! check_tag_exists "${2}" "${3}"; then
+			echo "BUILD_VERSION=3 image ${2}:${3} not found, skipping SSM parameter publish for region ${1}"
+			return 0
+		fi
+
+		if ! check_tag_exists "${2}" "init-${3}"; then
+			echo "BUILD_VERSION=3 init image ${2}:init-${3} not found, skipping SSM parameter publish for region ${1}"
+			return 0
+		fi
+	fi
+
 	# This optional parameter indicates if we should publish stable (defaults to false)
 	if [ ${4:-false} = true ]; then
 		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/stable --overwrite \
@@ -469,6 +482,14 @@ verify_ssm() {
 			check_parameter ${1} stable
 		fi
 	else
+		# Check if image exist before any SSM verification for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if ! check_tag_exists "${3}.dkr.ecr.${1}.${endpoint}/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
+				echo "Warning: BUILD_VERSION=3 image not found in ECR, skipping SSM verification for region ${1}"
+				return 0
+			fi
+		fi
+
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
 }

@@ -12,6 +12,7 @@ phases:
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
       - './scripts/publish.sh cicd-publish-ssm ${AWS_REGION}'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish-ssm ${AWS_REGION}
 
       # Assume role to verify, get the credentials, and set them as environment variables.
       # Verification should be done using the credentials from a different account. It ensures that
@@ -22,6 +23,7 @@ phases:
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
       - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION}'
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify-ssm ${AWS_REGION}
 artifacts:
   files:
     - '**/*'
