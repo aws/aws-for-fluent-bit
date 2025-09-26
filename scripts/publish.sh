@@ -350,6 +350,20 @@ check_tag_exists() {
 	fi
 }
 
+# Helper function to check if publishing is enabled for the current BUILD_VERSION
+# Returns 0 if enabled, exits with 0 if disabled (to avoid pipeline failure)
+check_publish_enabled() {
+	local operation=${1:-"operation"}
+
+	PUBLISH_ENABLED=$(../scripts/get_linux_version.sh "$BUILD_VERSION" "publish")
+	echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
+
+	if [ "${PUBLISH_ENABLED}" = "false" ]; then
+		echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping ${operation}"
+		exit 0
+	fi
+}
+
 sync_public_and_repo() {
 	region=${1}
 	account_id=${2}
@@ -1230,6 +1244,7 @@ fi
 # Publish using CI/CD pipeline
 # Following scripts will be called only from the CI/CD pipeline
 if [ "${1}" = "cicd-publish" ]; then
+	check_publish_enabled "${1}"
 	if [ "${2}" = "dockerhub" ]; then
 		publish_to_docker_hub amazon/aws-for-fluent-bit
 	elif [ "${2}" = "public-ecr" ]; then
@@ -1283,6 +1298,7 @@ fi
 
 # Verify using CI/CD pipeline
 if [ "${1}" = "cicd-verify" ]; then
+	check_publish_enabled "${1}"
 	if [ "${2}" = "dockerhub" ]; then
 		verify_dockerhub
 	elif [ "${2}" = "public-ecr" ]; then
@@ -1333,6 +1349,7 @@ fi
 
 # Publish SSM parameters
 if [ "${1}" = "cicd-publish-ssm" ]; then
+	check_publish_enabled "${1}"
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			publish_ssm ${region} ${gov_regions_account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
@@ -1372,6 +1389,7 @@ fi
 
 # Verify SSM parameters
 if [ "${1}" = "cicd-verify-ssm" ]; then
+	check_publish_enabled "${1}"
 	if [ "${2}" = "us-gov-east-1" ] || [ "${2}" = "us-gov-west-1" ]; then
 		for region in ${gov_regions}; do
 			verify_ssm ${region} true ${gov_regions_account_id}

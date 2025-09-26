@@ -9,7 +9,8 @@
             "firehose-plugin": "v1.7.2",
             "cloudwatch-plugin": "v1.9.4",
             "al-tag": "2",
-            "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
+            "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
+            "publish": "true"
         }
     },
     {
@@ -23,7 +24,8 @@
             "firehose-plugin": "v1.7.2",
             "cloudwatch-plugin": "v1.9.4",
             "al-tag": "2023",
-            "flb-repository": "https://github.com/fluent/fluent-bit.git"
+            "flb-repository": "https://github.com/fluent/fluent-bit.git",
+            "publish": "false"
         }
     }
 ]
