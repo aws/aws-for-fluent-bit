@@ -1432,9 +1432,11 @@ if [ "${1}" = "cicd-verify-ssm" ]; then
 fi
 
 if [ "${1}" = "cicd-verify-ecr-image-scan" ]; then
+	check_publish_enabled "${1}"
 	verify_ecr_image_scan ${2} ${3} ${4}
 fi
 
 if [ "${1}" = "cicd-check-image-version" ]; then
+	check_publish_enabled "${1}"
 	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} 
 fi

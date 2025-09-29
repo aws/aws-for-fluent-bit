@@ -22,6 +22,15 @@ fi
 
 echo "Building AWS for Fluent Bit version $BUILD_VERSION"
 
+# Check if publishing is enabled for this BUILD_VERSION
+PUBLISH_ENABLED=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "publish")
+echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
+
+if [ "${PUBLISH_ENABLED}" = "false" ]; then
+    echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping build process"
+    exit 0
+fi
+
 # Get version-specific configuration using linux.version getter script
 AL_TAG=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "al-tag")
 FLB_VERSION=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "fluent-bit")
