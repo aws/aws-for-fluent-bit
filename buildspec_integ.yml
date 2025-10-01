@@ -23,6 +23,15 @@ phases:
           exit 1
         fi
       - |
+        # Check if publishing is enabled for this BUILD_VERSION
+        PUBLISH_ENABLED=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "publish")
+        echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
+
+        if [ "${PUBLISH_ENABLED}" = "false" ]; then
+            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping integration tests"
+            exit 0
+        fi
+      - |
         # Enforce STS regional endpoints and set validator images
         export AWS_STS_REGIONAL_ENDPOINTS=regional
         export CW_INTEG_VALIDATOR_IMAGE_BASE=${AWS_ACCOUNT}.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator

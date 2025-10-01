@@ -53,6 +53,15 @@ phases:
         else
           echo "BUILD_VERSION is set to: $BUILD_VERSION"
         fi
+      - |
+        # Check if publishing is enabled for this BUILD_VERSION
+        PUBLISH_ENABLED=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "publish")
+        echo "Publish enabled for BUILD_VERSION=${BUILD_VERSION}? ${PUBLISH_ENABLED}"
+
+        if [ "${PUBLISH_ENABLED}" = "false" ]; then
+            echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping load tests"
+            exit 0
+        fi
       # Set stack names based on BUILD_VERSION.
       # Do not add BUILD_VERSION for BUILD_VERSION=2 to make load test work with existing resources.
       # This can be changed once naming is aligned and resources are resynthesized for BUILD_VERSION=2
