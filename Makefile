@@ -14,7 +14,7 @@
 all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
-DOCKER_BUILD_FLAGS :=
+DOCKER_BUILD_FLAGS := "--no-cache"
 # Amazon Linux Tag to use for images, will use value if not set
 AL_TAG ?= "2"
 # Fluent Bit version (branch or tag) to checkout, will use value if not set 
