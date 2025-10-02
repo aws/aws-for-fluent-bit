@@ -14,7 +14,7 @@
 all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
-DOCKER_BUILD_FLAGS := "--no-cache"
+DOCKER_BUILD_FLAGS :=
 # Amazon Linux Tag to use for images, will use value if not set
 AL_TAG ?= "2"
 # Fluent Bit version (branch or tag) to checkout, will use value if not set 
@@ -23,8 +23,10 @@ FLB_VERSION ?= "1.9.10"
 FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
 # AWS for Fluent Bit Version
 AWS_FOR_FLUENT_BIT_VERSION ?= $(shell ./scripts/get_linux_version.sh 2 version)
-# OS Pretty Name (assigned during build-common)
-OS_PRETTY_NAME :=
+# OS Pretty Name
+OS_PRETTY_NAME := "$(shell docker run --rm public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG} sh -c "grep '^PRETTY_NAME=' /etc/os-release | cut -d'\"' -f2")"
+# Alternative OS identifier for container images
+OS_IMAGE_ID := "$(shell docker run --rm public.ecr.aws/amazonlinux/amazonlinux:${AL_TAG} sh -c "grep '^image_file=' /etc/image-id | cut -d'\"' -f2")"
 
 .PHONY: dev
 dev: DOCKER_BUILD_FLAGS =
@@ -37,8 +39,6 @@ build-common:
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg AL_TAG=${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg FLB_REPOSITORY=${FLB_REPOSITORY} -t amazon/aws-for-fluent-bit:build-common-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.build-common .
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:golang -f ./scripts/dockerfiles/build/Dockerfile.golang .
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} -f ./scripts/dockerfiles/build/Dockerfile.compile-init .
-# Store OS_PRETTY_NAME for later image labeling
-	$(eval OS_PRETTY_NAME := $(shell docker run --rm amazon/aws-for-fluent-bit:build-deps-al${AL_TAG} sh -c "grep '^PRETTY_NAME=' /etc/os-release | cut -d'\"' -f2"))
 
 .PHONY: build
 build: build-common
@@ -81,13 +81,13 @@ linux-plugins:
 .PHONY: release
 release: build linux-plugins
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-al${AL_TAG} .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME="${OS_PRETTY_NAME}" -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME=${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-init-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:latest-al${AL_TAG} -t amazon/aws-for-fluent-bit:init-latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.init .
 
 .PHONY: debug
 debug: build-debug linux-plugins
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-debug-al${AL_TAG} .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-debug-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME="${OS_PRETTY_NAME}" -t amazon/aws-for-fluent-bit:runtime-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-debug-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg ${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} -t amazon/aws-for-fluent-bit:runtime-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-debug-al${AL_TAG} -t amazon/aws-for-fluent-bit:runtime-debug-common-${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.debug-common .
 #   s3 images
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-debug-common-${AL_TAG} -t amazon/aws-for-fluent-bit:debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.debug .
@@ -109,7 +109,7 @@ cloudwatch-dev: build
     	--CLOUDWATCH_PLUGIN_BRANCH=${CLOUDWATCH_PLUGIN_BRANCH} \
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-al${AL_TAG} .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME="${OS_PRETTY_NAME}" -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME=${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 
 .PHONY: firehose-dev
 firehose-dev: export OS_TYPE = linux
@@ -119,7 +119,7 @@ firehose-dev: build
     	--FIREHOSE_PLUGIN_BRANCH=${FIREHOSE_PLUGIN_BRANCH} \
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-al${AL_TAG} .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME="${OS_PRETTY_NAME}" -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME=${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 
 .PHONY: kinesis-dev
 kinesis-dev: export OS_TYPE = linux
@@ -129,7 +129,7 @@ kinesis-dev: build
     	--KINESIS_PLUGIN_BRANCH=${KINESIS_PLUGIN_BRANCH} \
     	--DOCKER_BUILD_FLAGS=${DOCKER_BUILD_FLAGS}
 	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-al${AL_TAG} .
-	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME="${OS_PRETTY_NAME}" -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME=${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} -t amazon/aws-for-fluent-bit:latest-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 
 .PHONY: validate-version-file-format
 validate-version-file-format:

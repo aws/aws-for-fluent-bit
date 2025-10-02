@@ -51,12 +51,14 @@ RUN chmod +x /entrypoint.sh
 
 ARG FLB_VERSION
 ARG OS_PRETTY_NAME
+ARG OS_IMAGE_ID
 
 LABEL author="FireLens Team <aws-firelens@amazon.com>" \
       vendor="Amazon Web Services" \
       version=${AWS_FOR_FLUENT_BIT_VERSION} \
       com.aws-for-fluent-bit.fluent-bit.version=${FLB_VERSION} \
       com.aws-for-fluent-bit.os.version=${OS_PRETTY_NAME} \
+      com.aws-for-fluent-bit.os.image-id=${OS_IMAGE_ID} \
       org.opencontainers.image.title="AWS for Fluent Bit" \
       org.opencontainers.image.authors="FireLens Team <aws-firelens@amazon.com>" \
       org.opencontainers.image.description="AWS for Fluent Bit is the official AWS distribution of Fluent Bit. It is fully compatible with upstream Fluent Bit and is designed to be used on AWS environments like Amazon ECS and Amazon EKS." \
