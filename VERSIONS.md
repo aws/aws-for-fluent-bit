@@ -34,18 +34,19 @@ Example Labels
 {
   "author": "FireLens Team <aws-firelens@amazon.com>",
   "com.aws-for-fluent-bit.fluent-bit.version": "1.9.10",
+  "com.aws-for-fluent-bit.os.image-id": "amzn2-container-raw-2.0.20250910.0-x86_64",
   "com.aws-for-fluent-bit.os.version": "Amazon Linux 2",
   "org.opencontainers.image.authors": "FireLens Team <aws-firelens@amazon.com>",
-  "org.opencontainers.image.description": "Fluent Bit is an open source and multi-platform Log Processor and Forwarder which allows you to collect data/logs from different sources, unify and send them to multiple destinations. It's fully compatible with Docker and Kubernetes environments.",
+  "org.opencontainers.image.description": "AWS for Fluent Bit is the official AWS distribution of Fluent Bit. It is fully compatible with upstream Fluent Bit and is designed to be used on AWS environments like Amazon ECS and Amazon EKS.",
   "org.opencontainers.image.documentation": "https://github.com/aws/aws-for-fluent-bit",
   "org.opencontainers.image.licenses": "Apache-2.0",
   "org.opencontainers.image.source": "https://github.com/aws/aws-for-fluent-bit",
   "org.opencontainers.image.title": "AWS for Fluent Bit",
   "org.opencontainers.image.url": "https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit",
   "org.opencontainers.image.vendor": "Amazon Web Services",
-  "org.opencontainers.image.version": "2.33.3",
+  "org.opencontainers.image.version": "2.34.0",
   "vendor": "Amazon Web Services",
-  "version": "2.33.3"
+  "version": "2.34.0"
 }
 ```
 
