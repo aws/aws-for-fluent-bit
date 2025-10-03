@@ -12,4 +12,4 @@ fi
 # Default BUILD_VERSION to 2 if not set
 BUILD_VERSION=${BUILD_VERSION:-2}
 
-aws cloudformation deploy --template-file ./integ/resources/cfn-kinesis-s3-firehose.yml --stack-name integ-test-fluent-bit-${ARCHITECTURE}-v${BUILD_VERSION} --region "$AWS_REGION" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset
+aws cloudformation deploy --template-file ./integ/resources/cfn-kinesis-s3-firehose.yml --stack-name integ-test-fluent-bit-${ARCHITECTURE}-V${BUILD_VERSION} --region "$AWS_REGION" --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset

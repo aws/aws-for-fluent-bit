@@ -10,4 +10,4 @@ fi
 # Default BUILD_VERSION to 2 if not set
 BUILD_VERSION=${BUILD_VERSION:-2}
 
-aws cloudformation delete-stack --stack-name integ-test-fluent-bit-${ARCHITECTURE}-v${BUILD_VERSION}
+aws cloudformation delete-stack --stack-name integ-test-fluent-bit-${ARCHITECTURE}-V${BUILD_VERSION}
