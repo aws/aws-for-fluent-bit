@@ -1,5 +1,27 @@
 # Changelog
 
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20250915.0
+
+Compared to the previous release, this release adds:
+* Enhancement - Add support for syncing BUILD_VERSION=3 images [#1000](https://github.com/aws/aws-for-fluent-bit/pull/1000)
+* Enhancement - Move to v4.1.0 fluent-bit version [#1003](https://github.com/aws/aws-for-fluent-bit/pull/1003)
+* Enhancement - Rework parsers to allow pulling from source for AL2023 [#1004](https://github.com/aws/aws-for-fluent-bit/pull/1004)
+* Enhancement - Add helper script to support syncing all test images [#1005](https://github.com/aws/aws-for-fluent-bit/pull/1005)
+* Enhancement - Add BUILD_VERSION=3 support to publish_ecr [#1006](https://github.com/aws/aws-for-fluent-bit/pull/1006)
+* Enhancement - Add BUILD_VERSION=3 support to publish_dockerhub [#1007](https://github.com/aws/aws-for-fluent-bit/pull/1007)
+* Enhancement - Add BUILD_VERSION=3 support to public_public_ecr [#1008](https://github.com/aws/aws-for-fluent-bit/pull/1008)
+* Enhancement - Add BUILD_VERSION=3 support to publish_ssm [#1009](https://github.com/aws/aws-for-fluent-bit/pull/1009)
+* Enhancement - Add publish flag allow skipping release [#1010](https://github.com/aws/aws-for-fluent-bit/pull/1010)
+* Enhancement - Skip build when publish config is false [#1011](https://github.com/aws/aws-for-fluent-bit/pull/1011)
+* Enhancement - Update generate_changelog.sh to support versions [#1012](https://github.com/aws/aws-for-fluent-bit/pull/1012)
+* Enhancement - Allow skip integ/load tests if publish false [#1013](https://github.com/aws/aws-for-fluent-bit/pull/1013)
+* Fix - issue with Makefile parsing OS_PRETTY_NAME before image exists [#1014](https://github.com/aws/aws-for-fluent-bit/pull/1014)
+
 ### 2.34.0
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)

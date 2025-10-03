@@ -1,31 +1,32 @@
-[{
-        "linux": {
-            "major-version": "2",
-            "version": "2.34.0",
-            "latest": "true",
-            "build": "1",
-            "fluent-bit": "1.9.10",
-            "kinesis-plugin": "v1.10.2",
-            "firehose-plugin": "v1.7.2",
-            "cloudwatch-plugin": "v1.9.4",
-            "al-tag": "2",
-            "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
-            "publish": "true"
-        }
-    },
-    {
-        "linux": {
-            "major-version": "3",
-            "version": "3.0.0",
-            "latest": "false",
-            "build": "1",
-            "fluent-bit": "v4.1.0",
-            "kinesis-plugin": "v1.10.2",
-            "firehose-plugin": "v1.7.2",
-            "cloudwatch-plugin": "v1.9.4",
-            "al-tag": "2023",
-            "flb-repository": "https://github.com/fluent/fluent-bit.git",
-            "publish": "false"
-        }
+[
+  {
+    "linux": {
+      "major-version": "2",
+      "version": "2.34.1",
+      "latest": "true",
+      "build": "1",
+      "fluent-bit": "1.9.10",
+      "kinesis-plugin": "v1.10.2",
+      "firehose-plugin": "v1.7.2",
+      "cloudwatch-plugin": "v1.9.4",
+      "al-tag": "2",
+      "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
+      "publish": "true"
     }
+  },
+  {
+    "linux": {
+      "major-version": "3",
+      "version": "3.0.0",
+      "latest": "false",
+      "build": "1",
+      "fluent-bit": "v4.1.0",
+      "kinesis-plugin": "v1.10.2",
+      "firehose-plugin": "v1.7.2",
+      "cloudwatch-plugin": "v1.9.4",
+      "al-tag": "2023",
+      "flb-repository": "https://github.com/fluent/fluent-bit.git",
+      "publish": "false"
+    }
+  }
 ]
