@@ -1,5 +1,6 @@
 # Changelog
 
+### 2.34.1
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.4

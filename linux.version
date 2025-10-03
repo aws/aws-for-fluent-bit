@@ -26,7 +26,7 @@
       "cloudwatch-plugin": "v1.9.4",
       "al-tag": "2023",
       "flb-repository": "https://github.com/fluent/fluent-bit.git",
-      "publish": "false"
+      "publish": "true"
     }
   }
 ]
