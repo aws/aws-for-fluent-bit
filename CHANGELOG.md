@@ -4,9 +4,9 @@
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
 * Amazon CloudWatch Logs for Fluent Bit 1.9.4
-* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
 * Amazon Kinesis Firehose for Fluent Bit 1.7.2
-* Amazon Linux 2 base container image version: 2.0.20250915.0
+* Amazon Linux 2 base container image version: [2.0.20250929.2](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20250929.html)
 
 Compared to the previous release, this release adds:
 * Enhancement - Add support for syncing BUILD_VERSION=3 images [#1000](https://github.com/aws/aws-for-fluent-bit/pull/1000)
@@ -22,6 +22,7 @@ Compared to the previous release, this release adds:
 * Enhancement - Update generate_changelog.sh to support versions [#1012](https://github.com/aws/aws-for-fluent-bit/pull/1012)
 * Enhancement - Allow skip integ/load tests if publish false [#1013](https://github.com/aws/aws-for-fluent-bit/pull/1013)
 * Fix - issue with Makefile parsing OS_PRETTY_NAME before image exists [#1014](https://github.com/aws/aws-for-fluent-bit/pull/1014)
+* Fix - Ensure custom endpoint settings are preserved when using role-based authentication (EKS_POD_EXECUTION_ROLE or role_arn parameter) [#337](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/337)
 
 ### 2.34.0
 This release includes:
