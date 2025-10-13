@@ -4,6 +4,7 @@ import json
 import time
 import boto3
 import math
+import hashlib
 import subprocess
 import validation_bar
 from datetime import datetime, timezone
@@ -96,8 +97,35 @@ def calculate_total_input_number(throughput):
     iteration_per_second = int(throughput[0:-1])*1000
     return str(iteration_per_second * LOGGER_RUN_TIME_IN_SECOND)
 
+# Calculate hash of task definition to create unique suffix
+def calculate_task_definition_hash(task_def):
+    # Create a normalized version of task definition for hashing
+    # Remove any fields that should not affect the hash
+    normalized_task_def = task_def.copy()
+    
+    # Sort keys to ensure consistent ordering for hash calculation
+    task_def_json = json.dumps(normalized_task_def, sort_keys=True)
+    return hashlib.sha384(task_def_json.encode('utf-8')).hexdigest()[:12]  # Use first 12 chars for better uniqueness
+
+# Check if task definition exists in ECS
+def task_definition_exists(client, task_def_name):
+    try:
+        response = client.describe_task_definition(taskDefinition=task_def_name)
+        print(f"Task definition {task_def_name} already exists (revision {response['taskDefinition']['revision']}). Reusing existing definition.", flush=True)
+        return True
+    except client.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'ClientException':
+            # Task definition doesn't exist
+            print(f"Task definition {task_def_name} does not exist. Will register new task definition.", flush=True)
+            return False
+        else:
+            # Some other error occurred, log it and proceed with registration to be safe
+            print(f"Error checking existing task definition {task_def_name}: {e}. Will proceed with registration.", flush=True)
+            return False
+
 # 1. Configure task definition for each load test based on existing templates
-# 2. Register generated task definition
+# 2. Register generated task definition only if it doesn't already exist
+# 3. Return the task definition name with hash suffix
 def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     # Generate configuration information for STD and TCP tests
     std_config      = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.STD_INPUT_PREFIX, throughput)
@@ -156,18 +184,33 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     data = fin.read()
     task_def_formatted = parse_json_template(data, task_definition_dict)
 
-    # Register task definition
+    # Create task definition object
     task_def = json.loads(task_def_formatted)
 
-    if IS_TASK_DEFINITION_PRINTED:
-        print("Registering task definition:", flush=True)
-        print(json.dumps(task_def, indent=4), flush=True)
-        client = boto3.client('ecs')
-        client.register_task_definition(
-            **task_def
-        )
-    else:
-        print("Registering task definition", flush=True)
+    # Calculate hash of task definition for unique naming
+    task_def_hash = calculate_task_definition_hash(task_def)
+    
+    # Create task definition name with hash suffix
+    base_name = f'{PREFIX}{VERSION_TAG}-{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
+    task_def_name_with_hash = f'{base_name}-{task_def_hash}'
+    
+    # Update the family name in task definition to include hash
+    task_def['family'] = task_def_name_with_hash
+
+    # Check if task definition already exists
+    client = boto3.client('ecs')
+    if not task_definition_exists(client, task_def_name_with_hash):
+        # Register task definition only if it doesn't exist
+        if IS_TASK_DEFINITION_PRINTED:
+            print("Registering new task definition:", flush=True)
+            print(json.dumps(task_def, indent=4), flush=True)
+        else:
+            print(f"Registering new task definition: {task_def_name_with_hash}", flush=True)
+        
+        client.register_task_definition(**task_def)
+    
+    # Return the task definition name with hash for use in run_task
+    return task_def_name_with_hash
 
 # With multiple codebuild projects running parallel,
 # Testing resources only needs to be created once
@@ -259,12 +302,12 @@ def run_ecs_tests():
         # Run ecs tasks and store task arns
         for throughput in THROUGHPUT_LIST:
             os.environ['THROUGHPUT'] = throughput
-            generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
+            task_def_name = generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
             
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
-                    taskDefinition=f'{PREFIX}{VERSION_TAG}-{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
+                    taskDefinition=task_def_name
             )
             print(f'run_task_response={response}', flush=True)
             names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']
