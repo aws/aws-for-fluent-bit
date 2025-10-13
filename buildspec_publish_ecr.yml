@@ -22,7 +22,7 @@ phases:
         fi
 
       # Push the image to ECR
-      - './scripts/publish.sh cicd-publish ${REGION_TO_PUSH}'
+      - BUILD_VERSION=2 ./scripts/publish.sh cicd-publish ${REGION_TO_PUSH}
       - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish ${REGION_TO_PUSH}
 
       # Nullify the temporary credentials for the assumed role to publish
@@ -42,7 +42,7 @@ phases:
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
       # Verify from the verification account
-      - './scripts/publish.sh cicd-verify ${REGION_TO_PUSH}'
+      - BUILD_VERSION=2 ./scripts/publish.sh cicd-verify ${REGION_TO_PUSH}
       - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify ${REGION_TO_PUSH}
 artifacts:
   files:
