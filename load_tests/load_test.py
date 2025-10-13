@@ -99,29 +99,17 @@ def calculate_total_input_number(throughput):
 
 # Calculate hash of task definition to create unique suffix
 def calculate_task_definition_hash(task_def):
-    # Create a normalized version of task definition for hashing
-    # Remove any fields that should not affect the hash
-    normalized_task_def = task_def.copy()
-    
-    # Sort keys to ensure consistent ordering for hash calculation
-    task_def_json = json.dumps(normalized_task_def, sort_keys=True)
-    return hashlib.sha384(task_def_json.encode('utf-8')).hexdigest()[:12]  # Use first 12 chars for better uniqueness
+    task_def_json = json.dumps(task_def, sort_keys=True)
+    return hashlib.sha384(task_def_json.encode('utf-8')).hexdigest()
 
 # Check if task definition exists in ECS
 def task_definition_exists(client, task_def_name):
     try:
-        response = client.describe_task_definition(taskDefinition=task_def_name)
-        print(f"Task definition {task_def_name} already exists (revision {response['taskDefinition']['revision']}). Reusing existing definition.", flush=True)
+        client.describe_task_definition(taskDefinition=task_def_name)
+        print(f"Reusing existing task definition: {task_def_name}")
         return True
-    except client.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == 'ClientException':
-            # Task definition doesn't exist
-            print(f"Task definition {task_def_name} does not exist. Will register new task definition.", flush=True)
-            return False
-        else:
-            # Some other error occurred, log it and proceed with registration to be safe
-            print(f"Error checking existing task definition {task_def_name}: {e}. Will proceed with registration.", flush=True)
-            return False
+    except client.exceptions.ClientError:
+        return False
 
 # 1. Configure task definition for each load test based on existing templates
 # 2. Register generated task definition only if it doesn't already exist
