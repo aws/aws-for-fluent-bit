@@ -14,7 +14,8 @@ RUN mkdir /sysroot && \
         cyrus-sasl-lib \
         arrow2100-glib-libs \
         parquet2100-glib-libs \
-        libstdc++
+        libstdc++ \
+        curl
 
 # Final minimal runtime image using scratch base
 FROM scratch
