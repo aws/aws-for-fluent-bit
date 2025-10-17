@@ -50,6 +50,10 @@ Example Labels
 }
 ```
 
+## Linux Package Versions
+
+To get a full listing of installed package versions, run: `docker run public.ecr.aws/aws-observability/aws-for-fluent-bit:3.0.0 grep "Installed:" /var/log/dnf.log /var/log/yum.log 2>/dev/null | sed 's/.*Installed: //'`. This can be useful to determine if a specific version is affected by a CVE.
+
 ## Version 3.0.0
 
 With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the following changes:
@@ -59,6 +63,36 @@ With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the
 2. Migration from fluent-bit 1.9.10 to 4.x
     - We are aware of many changes our customers have been asking for from newer versions[^2]
     - We do not want to continue managing backports to 1.9.10 via [upstream-to-fluent-bit](https://github.com/amazon-contributing/upstream-to-fluent-bit)
+
+### Adding Packages
+
+As 3.x images are based on [minimal scratch images](https://docs.aws.amazon.com/linux/al2023/ug/barebones-containers.html), there may be packages missing for your specific use case. To add those packages, it is recommended to follow the multi-stage build approach shown in [runtime/Dockerfile.deps-al2023](https://github.com/aws/aws-for-fluent-bit/blob/mainline/scripts/dockerfiles/runtime/Dockerfile.deps-al2023):
+
+```
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as dependencies
+
+# Create sysroot directory and install minimal runtime dependencies
+RUN mkdir /sysroot && \
+    dnf --releasever=$(rpm -q system-release --qf '%{VERSION}') \
+    --installroot /sysroot \
+    -y \
+    --setopt=install_weak_deps=False \
+    install \
+        # Add your required packages here, e.g.:
+        # jq \
+        # dnf
+
+# Final minimal runtime image using aws-for-fluent-bit as base
+FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:3.0.0
+
+# Copy the complete sysroot with all runtime dependencies
+COPY --from=dependencies /sysroot /
+```
+
+To complete the custom image:
+1. Save the Dockerfile with additional packages
+2. Build the image with `docker build -t my-org/aws-fluent-bit-custom:3.0.0 .`
+3. Publish and run
 
 ## Sample Versions 
 
