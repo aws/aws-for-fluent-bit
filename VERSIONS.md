@@ -54,7 +54,7 @@ Example Labels
 
 To get a full listing of installed package versions, run: `docker run public.ecr.aws/aws-observability/aws-for-fluent-bit:3.0.0 grep "Installed:" /var/log/dnf.log /var/log/yum.log 2>/dev/null | sed 's/.*Installed: //'`. This can be useful to determine if a specific version is affected by a CVE.
 
-## Version 3.0.0
+## Version 3.x
 
 With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the following changes:
 1. Migration from AL2 to AL2023
