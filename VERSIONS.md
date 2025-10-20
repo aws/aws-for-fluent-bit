@@ -56,7 +56,7 @@ To get a full listing of installed package versions, run: `docker run public.ecr
 
 ## Version 3.x
 
-With the upcoming release of AWS for Fluent Bit 3.0.0 we expect to introduce the following changes:
+AWS for Fluent Bit 3.x has the following changes compared to 2.x:
 1. Migration from AL2 to AL2023
     - We are aware of the upcoming End of Life, EOL for AL2 on 2026-06-30[^1]
     - We want to take advantage of bare-bones AL2023 container images to reduce CVE risk we observed AL2 based AWS for Fluent Bit images
