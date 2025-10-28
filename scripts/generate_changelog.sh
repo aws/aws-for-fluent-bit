@@ -75,10 +75,26 @@ generate_version_section() {
             al_name="Amazon Linux $al_tag"
         fi
 
-        cat << EOF
+        if [[ "$al_tag" == "2023" ]]; then
+            cat << EOF
 ### $version
 This release includes:
 * Fluent Bit [$fluent_bit_version](https://github.com/fluent/fluent-bit/tree/v${fluent_bit_version#v})
+* Amazon CloudWatch Logs for Fluent Bit ${cloudwatch_plugin_version#v}
+* Amazon Kinesis Streams for Fluent Bit ${kinesis_plugin_version#v}
+* Amazon Kinesis Firehose for Fluent Bit ${firehose_plugin_version#v}
+* Minimal set of packages installed using Amazon Linux 2023 container image version: $most_recent_al_version
+
+Compared to the previous release, this release adds:
+* Fix - TODO blah blah [#TODO](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/TODO)
+* Enhancement - TODO blah blah [#TODO](https://github.com/aws/aws-for-fluent-bit/pull/TODO)
+
+EOF
+        else
+            cat << EOF
+### $version
+This release includes:
+* Fluent Bit [v$fluent_bit_version](https://github.com/fluent/fluent-bit/tree/v${fluent_bit_version#v})
 * Amazon CloudWatch Logs for Fluent Bit ${cloudwatch_plugin_version#v}
 * Amazon Kinesis Streams for Fluent Bit ${kinesis_plugin_version#v}
 * Amazon Kinesis Firehose for Fluent Bit ${firehose_plugin_version#v}
@@ -89,6 +105,7 @@ Compared to the previous release, this release adds:
 * Enhancement - TODO blah blah [#TODO](https://github.com/aws/aws-for-fluent-bit/pull/TODO)
 
 EOF
+        fi
     fi
 }
 

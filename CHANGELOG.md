@@ -1,4 +1,22 @@
 # Changelog
+### 2.34.1.20251028
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251027.1
+
+### 3.0.1
+This release includes:
+* Fluent Bit [v4.1.1](https://github.com/fluent/fluent-bit/tree/v4.1.1)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.9.20251020.0
+
+Compared to the previous release, this release adds:
+* Enhancement - Add curl to AL2023 runtime dependencies [#1026](https://github.com/aws/aws-for-fluent-bit/pull/1026)
 
 ### 2.34.1
 This release includes:
