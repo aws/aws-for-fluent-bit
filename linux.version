@@ -17,7 +17,7 @@
   {
     "linux": {
       "major-version": "3",
-      "version": "3.0.1",
+      "version": "3.0.0",
       "latest": "false",
       "build": "1",
       "fluent-bit": "v4.1.1",
@@ -26,7 +26,7 @@
       "cloudwatch-plugin": "v1.9.4",
       "al-tag": "2023",
       "flb-repository": "https://github.com/fluent/fluent-bit.git",
-      "publish": "true"
+      "publish": "false"
     }
   }
 ]
