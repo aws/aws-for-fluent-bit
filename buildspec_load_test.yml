@@ -60,56 +60,55 @@ phases:
 
         if [ "${PUBLISH_ENABLED}" = "false" ]; then
             echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping load tests"
-            exit 0
-        fi
-      # Set stack names based on BUILD_VERSION.
-      # Do not add BUILD_VERSION for BUILD_VERSION=2 to make load test work with existing resources.
-      # This can be changed once naming is aligned and resources are resynthesized for BUILD_VERSION=2
-      - |
-        if [ "$BUILD_VERSION" = "2" ]; then
-          export TESTING_RESOURCES_STACK_NAME='load-test-fluent-bit-testing-resources'
-          export LOG_STORAGE_STACK_NAME='load-test-fluent-bit-log-storage'
-          export EKS_CLUSTER_NAME='load-test-fluent-bit-eks-cluster'
         else
-          export TESTING_RESOURCES_STACK_NAME="load-test-fluent-bit-testing-resources-v${BUILD_VERSION}"
-          export LOG_STORAGE_STACK_NAME="load-test-fluent-bit-log-storage-v${BUILD_VERSION}"
-          export EKS_CLUSTER_NAME="load-test-fluent-bit-eks-cluster-v${BUILD_VERSION}"
-        fi
-        echo "Using TESTING_RESOURCES_STACK_NAME: $TESTING_RESOURCES_STACK_NAME"
-        echo "Using LOG_STORAGE_STACK_NAME: $LOG_STORAGE_STACK_NAME"
-        echo "Using EKS_CLUSTER_NAME: $EKS_CLUSTER_NAME"
-      # Execute load test commands (common logic for all supported BUILD_VERSIONs)
-      - |
-        if [ "$BUILD_VERSION" = "2" ] || [ "$BUILD_VERSION" = "3" ]; then
-          # need this for multiline code blocks to raise any errors to codebuild
-          set -e
-          echo "Running load tests for AWS for Fluent Bit version $BUILD_VERSION"
-          
-          # Activate Python virtual environment and install the AWS CDK core dependencies
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r ./load_tests/requirements.txt
-          if [ "${PLATFORM}" == "EKS" ]; then
-            aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-          fi
-          CREDS=$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
-          export CREDS
-          export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
-          export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
-          export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r '.Credentials.SessionToken')
-          # Create and set up related testing resources
-          python ./load_tests/load_test.py create_testing_resources
-          source ./load_tests/setup_test_environment.sh
-          export AWS_ACCESS_KEY_ID=""
-          export AWS_SECRET_ACCESS_KEY=""
-          export AWS_SESSION_TOKEN=""
-          # Run load tests on corresponding platform
-          python ./load_tests/load_test.py ${PLATFORM}
-          
-        else
-          echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
-          echo "Supported versions are: 2, 3"
-          exit 1
+            # Set stack names based on BUILD_VERSION.
+            # Do not add BUILD_VERSION for BUILD_VERSION=2 to make load test work with existing resources.
+            # This can be changed once naming is aligned and resources are resynthesized for BUILD_VERSION=2
+            if [ "$BUILD_VERSION" = "2" ]; then
+              export TESTING_RESOURCES_STACK_NAME='load-test-fluent-bit-testing-resources'
+              export LOG_STORAGE_STACK_NAME='load-test-fluent-bit-log-storage'
+              export EKS_CLUSTER_NAME='load-test-fluent-bit-eks-cluster'
+            else
+              export TESTING_RESOURCES_STACK_NAME="load-test-fluent-bit-testing-resources-v${BUILD_VERSION}"
+              export LOG_STORAGE_STACK_NAME="load-test-fluent-bit-log-storage-v${BUILD_VERSION}"
+              export EKS_CLUSTER_NAME="load-test-fluent-bit-eks-cluster-v${BUILD_VERSION}"
+            fi
+            echo "Using TESTING_RESOURCES_STACK_NAME: $TESTING_RESOURCES_STACK_NAME"
+            echo "Using LOG_STORAGE_STACK_NAME: $LOG_STORAGE_STACK_NAME"
+            echo "Using EKS_CLUSTER_NAME: $EKS_CLUSTER_NAME"
+            
+            # Execute load test commands (common logic for all supported BUILD_VERSIONs)
+            if [ "$BUILD_VERSION" = "2" ] || [ "$BUILD_VERSION" = "3" ]; then
+              # need this for multiline code blocks to raise any errors to codebuild
+              set -e
+              echo "Running load tests for AWS for Fluent Bit version $BUILD_VERSION"
+              
+              # Activate Python virtual environment and install the AWS CDK core dependencies
+              python -m venv venv
+              source venv/bin/activate
+              pip install -r ./load_tests/requirements.txt
+              if [ "${PLATFORM}" == "EKS" ]; then
+                aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+              fi
+              CREDS=$(aws sts assume-role --role-arn $LOAD_TEST_CFN_ROLE_ARN --role-session-name load-test-cfn --duration-seconds 3600)
+              export CREDS
+              export AWS_ACCESS_KEY_ID=$(echo "${CREDS}" | jq -r '.Credentials.AccessKeyId')
+              export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS}" | jq -r '.Credentials.SecretAccessKey')
+              export AWS_SESSION_TOKEN=$(echo "${CREDS}" | jq -r '.Credentials.SessionToken')
+              # Create and set up related testing resources
+              python ./load_tests/load_test.py create_testing_resources
+              source ./load_tests/setup_test_environment.sh
+              export AWS_ACCESS_KEY_ID=""
+              export AWS_SECRET_ACCESS_KEY=""
+              export AWS_SESSION_TOKEN=""
+              # Run load tests on corresponding platform
+              python ./load_tests/load_test.py ${PLATFORM}
+              
+            else
+              echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
+              echo "Supported versions are: 2, 3"
+              exit 1
+            fi
         fi
     finally:
       # Clear up testing resources

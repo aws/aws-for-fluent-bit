@@ -29,31 +29,32 @@ phases:
 
         if [ "${PUBLISH_ENABLED}" = "false" ]; then
             echo "Publishing is disabled for BUILD_VERSION=${BUILD_VERSION}, skipping integration tests"
-            exit 0
+        else
+            # Enforce STS regional endpoints and set validator images
+            export AWS_STS_REGIONAL_ENDPOINTS=regional
+            export CW_INTEG_VALIDATOR_IMAGE_BASE=${AWS_ACCOUNT}.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator
+            export S3_INTEG_VALIDATOR_IMAGE_BASE=${AWS_ACCOUNT}.dkr.ecr.us-west-2.amazonaws.com/s3-integ-validator
+            
+            # Get the default credentials and set as environment variables
+            CREDS=$(curl 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)
+            export AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r .AccessKeyId)
+            export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r .SecretAccessKey)
+            export AWS_SESSION_TOKEN=$(echo $CREDS | jq -r .Token)
+            
+            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+            
+            # Set image tag based on BUILD_VERSION
+            if [ "$BUILD_VERSION" = "2" ]; then
+              IMAGE_TAG="latest"
+            elif [ "$BUILD_VERSION" = "3" ]; then
+              IMAGE_TAG="latest-3"
+            fi
+            
+            docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG}
+            docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG} amazon/aws-for-fluent-bit:latest
+            docker images
+            make integ
         fi
-      - |
-        # Enforce STS regional endpoints and set validator images
-        export AWS_STS_REGIONAL_ENDPOINTS=regional
-        export CW_INTEG_VALIDATOR_IMAGE_BASE=${AWS_ACCOUNT}.dkr.ecr.us-west-2.amazonaws.com/cw-integ-validator
-        export S3_INTEG_VALIDATOR_IMAGE_BASE=${AWS_ACCOUNT}.dkr.ecr.us-west-2.amazonaws.com/s3-integ-validator
-      - |
-        # Get the default credentials and set as environment variables
-        CREDS=$(curl 169.254.170.2$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)
-        export AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r .AccessKeyId)
-        export AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r .SecretAccessKey)
-        export AWS_SESSION_TOKEN=$(echo $CREDS | jq -r .Token)
-      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
-      - |
-        # Set image tag based on BUILD_VERSION
-        if [ "$BUILD_VERSION" = "2" ]; then
-          IMAGE_TAG="latest"
-        elif [ "$BUILD_VERSION" = "3" ]; then
-          IMAGE_TAG="latest-3"
-        fi
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG}
-      - docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG} amazon/aws-for-fluent-bit:latest
-      - docker images
-      - make integ
 
 artifacts:
   files:
