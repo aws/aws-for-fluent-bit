@@ -2,7 +2,7 @@
   {
     "linux": {
       "major-version": "2",
-      "version": "2.34.1.20251028",
+      "version": "2.34.1.20251031",
       "latest": "true",
       "build": "1",
       "fluent-bit": "1.9.10",
