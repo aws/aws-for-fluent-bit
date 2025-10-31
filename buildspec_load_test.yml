@@ -104,15 +104,15 @@ phases:
               # Run load tests on corresponding platform
               python ./load_tests/load_test.py ${PLATFORM}
               
+              # Clear up testing resources
+              python ./load_tests/load_test.py delete_testing_resources
+              
             else
               echo "Unsupported BUILD_VERSION: $BUILD_VERSION"
               echo "Supported versions are: 2, 3"
               exit 1
             fi
         fi
-    finally:
-      # Clear up testing resources
-      - python ./load_tests/load_test.py delete_testing_resources
 artifacts:
   files:
     - '**/*'
