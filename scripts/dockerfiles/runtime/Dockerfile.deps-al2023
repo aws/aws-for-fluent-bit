@@ -3,6 +3,8 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as dependencies
 # Create sysroot directory and install minimal runtime dependencies
 RUN mkdir /sysroot && \
     dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
+    # grab install version from apache-arrow-release and extract without periods 22.0.0 --> 2200 to conform with arrow/parquet version libs
+    ARROW_VERSION=$(dnf info apache-arrow-release | awk '/^Version/ {split($3, v, "."); printf "%d%02d", v[1], v[2]}') && \
     dnf --releasever=$(rpm -q system-release --qf '%{VERSION}') \
     --installroot /sysroot \
     -y \
@@ -12,8 +14,8 @@ RUN mkdir /sysroot && \
         systemd-libs \
         openssl-libs \
         cyrus-sasl-lib \
-        arrow2100-glib-libs \
-        parquet2100-glib-libs \
+        arrow${ARROW_VERSION}-glib-libs \
+        parquet${ARROW_VERSION}-glib-libs \
         libstdc++ \
         curl
 
