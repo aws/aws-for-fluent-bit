@@ -1,0 +1,91 @@
+name: InitiateRelease
+
+# TODO: We will be changing this to run on a regular scheduled interval once all of the infrastructure has been set up.
+on:
+  workflow_dispatch:
+
+jobs:
+  GenerateConfig:
+    runs-on: ubuntu-latest
+    outputs:
+      stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
+      push_exit_code: ${{ steps.push.outputs.push_exit_code }}
+      pr_exit_code: ${{ steps.pr.outputs.pr_exit_code }}
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Create Release Branch
+        run: |
+          date=$(date '+%Y%m%d')
+          git checkout -b release-${date}
+      - name: Configure Bot Alias
+        run: |
+          git config --global user.name "GenerateConfig Action"
+          git config --global user.email "gcabot@github.com"
+      - name: Check Update
+        run: ./scripts/check-update.sh
+      - name: Check for changes
+        id: stage
+        run: |
+          # Git diff returns exit code of 1 when there is a change staged
+          # We need the set statements to prevent erroring out
+          set +e
+          git diff --cached --quiet
+          if [[ $? -ne 0 ]]; then echo "stage_exit_code=42" >> "$GITHUB_OUTPUT"; else echo "stage_exit_code=0" >> "$GITHUB_OUTPUT"; fi
+          set -e
+      - name: Commit and Push Changes
+        id: push
+        if: ${{ steps.stage.outputs.stage_exit_code == 42 }}
+        run: |
+          date=$(date '+%Y%m%d')
+          git commit -m "Release ${date}"
+          git status
+          git push --set-upstream origin release-${date}
+          echo "push_exit_code=$?" >> "$GITHUB_OUTPUT"
+      - name: Open PR for Branch
+        id: pr
+        if: ${{ steps.stage.outputs.stage_exit_code == 42 && steps.push.outputs.push_exit_code == 0 }}
+        run: |
+          date=$(date '+%Y%m%d')
+          gh pr create --base mainline --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
+          echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
+  MetricPublish:
+    needs: GenerateConfig
+    if: success() || failure()
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          # TODO: Add the role as a secret once infrastructure has been set up.
+          role-to-assume: ${{ secrets.CW_METRIC_ROLE }}
+          aws-region: us-west-2
+      - name: Failure Scenario
+        if: ${{ needs.GenerateConfig.result == 'failure' }}
+        run: |
+          # TODO: Cloudwatch metric namespace will need to be created
+          echo "ERROR: Encounter error when checking for new release."
+          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionFailure --namespace FluentBitRelease --value "-1"
+      - name: Release Kickoff Scenario
+        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 42 }}
+        run: |
+          # TODO: Cloudwatch metric namespace will need to be created
+          echo "Kicking off new release."
+          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 1
+      - name: No Release Scenario
+        if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
+        run: |
+          # TODO: Cloudwatch metric namespace will need to be created
+          echo "No new release needed at this time."
+          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 0
