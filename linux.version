@@ -14,13 +14,13 @@
       "al-tag": "2",
       "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
       "amazon-linux-sha": "",
-      "publish": "true"
+      "publish": "false"
     }
   },
   {
     "linux": {
       "major-version": "3",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "release-version": "3.0.0",
       "latest": "false",
       "build": "1",
@@ -32,7 +32,7 @@
       "al-tag": "2023",
       "flb-repository": "https://github.com/fluent/fluent-bit.git",
       "amazon-linux-sha": "",
-      "publish": "false"
+      "publish": "true"
     }
   }
 ]
