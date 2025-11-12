@@ -1,17 +1,21 @@
 #!/bin/bash
 set -euo pipefail
 
-# Function to get the latest version and SHA256 for a specific AL version using Public ECR API
-# Returns: "version sha256" (space-separated)
-get_latest_al_version_and_sha() {
-    local version_prefix="$1"
-
-    # Use Public ECR Gallery API with curl and sort by imagePushedAt timestamp
-    local response=$(curl -sSL \
+# Function to fetch all Amazon Linux image data from Public ECR API
+# Returns the full JSON response
+fetch_all_al_images() {
+    curl -sSL \
         --header "Content-Type: application/json" \
         --request POST \
         --data '{"registryAliasName":"amazonlinux","repositoryName":"amazonlinux","maxResults":1000}' \
-        https://api.us-east-1.gallery.ecr.aws/describeImageTags)
+        https://api.us-east-1.gallery.ecr.aws/describeImageTags
+}
+
+# Function to get the latest version and SHA256 for a specific AL version from cached response
+# Returns: "version sha256" (space-separated)
+get_latest_al_version_and_sha_from_response() {
+    local response="$1"
+    local version_prefix="$2"
     
     # Use jq to filter by prefix, exclude variants, sort by version, and get the latest with its SHA256
     echo "$response" | jq -r --arg prefix "$version_prefix" '
@@ -150,13 +154,16 @@ main() {
         declare -A al_versions
         declare -A al_shas
 
-        # Fetch data only for AL versions that are being published
+        # Fetch all AL image data once
+        local al_images_response=$(fetch_all_al_images)
+
+        # Process data for each AL version that is being published
         local count=0
         local total=$(echo "$publish_al_tags" | wc -w)
         
         for al_tag in $publish_al_tags; do
             count=$((count + 1))
-            local al_data=$(get_latest_al_version_and_sha "$al_tag")
+            local al_data=$(get_latest_al_version_and_sha_from_response "$al_images_response" "$al_tag")
             al_versions[$al_tag]=$(echo "$al_data" | cut -d' ' -f1)
             al_shas[$al_tag]=$(echo "$al_data" | cut -d' ' -f2)
 
