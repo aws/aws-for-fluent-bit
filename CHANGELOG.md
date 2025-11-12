@@ -1,4 +1,12 @@
 # Changelog
+### 2.34.1.20251112
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251110.1
+
 ### 2.34.1.20251031
 This release includes:
 * Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
