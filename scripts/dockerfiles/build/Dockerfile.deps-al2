@@ -1,4 +1,5 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+ARG OS_DIGEST
+FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST}
 
 RUN yum upgrade -y && \
     # add minor delay to avoid flakiness with epel install

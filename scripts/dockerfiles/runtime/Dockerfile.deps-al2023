@@ -1,4 +1,5 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as dependencies
+ARG OS_DIGEST
+FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST} as dependencies
 
 # Create sysroot directory and install minimal runtime dependencies
 RUN mkdir /sysroot && \

@@ -1,4 +1,5 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+ARG OS_DIGEST
+FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST}
 
 # Install runtime dependencies required for Fluent Bit and AWS plugins
 RUN yum upgrade -y \

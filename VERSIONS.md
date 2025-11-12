@@ -20,6 +20,8 @@ For images built after version `2.33.2`, we have added docker labels to help ide
 - AWS for Fluent Bit - `version` and `org.opencontainers.image.version` labels
 - AmazonLinux - `com.aws-for-fluent-bit.os.version` label
 - fluent-bit - `com.aws-for-fluent-bit.fluent-bit.version` label
+- Image file - `com.aws-for-fluent-bit.os.image-id` label
+- SHA256 - `com.aws-for-fluent-bit.os.digest` label
 
 To observe these labels it is necessary to:
 1. Pull the image locally - `docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest`
@@ -34,8 +36,9 @@ Example Labels
 {
   "author": "FireLens Team <aws-firelens@amazon.com>",
   "com.aws-for-fluent-bit.fluent-bit.version": "1.9.10",
-  "com.aws-for-fluent-bit.os.image-id": "amzn2-container-raw-2.0.20250910.0-x86_64",
+  "com.aws-for-fluent-bit.os.image-id": "amzn2-container-raw-2.0.20251108.0-x86_64",
   "com.aws-for-fluent-bit.os.version": "Amazon Linux 2",
+  "com.aws-for-fluent-bit.os.digest": "sha256:5ebd84068a008ca31f61b3b8fb58a201b53a31c7dd1123722704a61d853ab05f",
   "org.opencontainers.image.authors": "FireLens Team <aws-firelens@amazon.com>",
   "org.opencontainers.image.description": "AWS for Fluent Bit is the official AWS distribution of Fluent Bit. It is fully compatible with upstream Fluent Bit and is designed to be used on AWS environments like Amazon ECS and Amazon EKS.",
   "org.opencontainers.image.documentation": "https://github.com/aws/aws-for-fluent-bit",
@@ -44,9 +47,9 @@ Example Labels
   "org.opencontainers.image.title": "AWS for Fluent Bit",
   "org.opencontainers.image.url": "https://gallery.ecr.aws/aws-observability/aws-for-fluent-bit",
   "org.opencontainers.image.vendor": "Amazon Web Services",
-  "org.opencontainers.image.version": "2.34.0",
+  "org.opencontainers.image.version": "2.34.1.20251031",
   "vendor": "Amazon Web Services",
-  "version": "2.34.0"
+  "version": "2.34.1.20251031"
 }
 ```
 

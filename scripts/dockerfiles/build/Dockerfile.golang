@@ -1,4 +1,5 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+ARG OS_DIGEST
+FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST}
 
 # --skip-broken added to avoid conflicts with existing package installs
 RUN yum install -y --skip-broken \
