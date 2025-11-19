@@ -90,7 +90,7 @@ release: build linux-plugins
 
 .PHONY: debug
 debug: build-debug linux-plugins
-	docker build $(DOCKER_BUILD_FLAGS) -t amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-debug-al${AL_TAG} .
+	docker build $(DOCKER_BUILD_FLAGS) --build-arg OS_DIGEST=${OS_DIGEST} -t amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.deps-debug-al${AL_TAG} .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg COMPILE_IMAGE=amazon/aws-for-fluent-bit:compile-debug-al${AL_TAG} --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-deps-debug-al${AL_TAG} --build-arg FLB_VERSION=${FLB_VERSION} --build-arg AWS_FOR_FLUENT_BIT_VERSION=${AWS_FOR_FLUENT_BIT_VERSION} --build-arg OS_PRETTY_NAME=${OS_PRETTY_NAME} --build-arg OS_IMAGE_ID=${OS_IMAGE_ID} --build-arg OS_DIGEST=${OS_DIGEST} -t amazon/aws-for-fluent-bit:runtime-debug-al${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile .
 	docker build $(DOCKER_BUILD_FLAGS) --build-arg RUNTIME_IMAGE=amazon/aws-for-fluent-bit:runtime-debug-al${AL_TAG} -t amazon/aws-for-fluent-bit:runtime-debug-common-${AL_TAG} -f ./scripts/dockerfiles/runtime/Dockerfile.debug-common .
 #   s3 images
