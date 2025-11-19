@@ -99,13 +99,7 @@ generate_version_section() {
     # Only generate section if this version should be published
     if [[ "$publish" == "true" ]]; then
         local al_name
-        if [[ "$al_tag" == "2" ]]; then
-            al_name="Amazon Linux 2"
-        elif [[ "$al_tag" == "2023" ]]; then
-            al_name="Amazon Linux 2023"
-        else
-            al_name="Amazon Linux $al_tag"
-        fi
+        al_name="Amazon Linux $al_tag"
 
         if [[ "$al_tag" == "2023" ]]; then
             cat << EOF
@@ -168,13 +162,7 @@ main() {
             al_shas[$al_tag]=$(echo "$al_data" | cut -d' ' -f2)
 
             # Print the information
-            if [[ "$al_tag" == "2" ]]; then
-                echo "Amazon Linux 2: ${al_versions[$al_tag]}" >&2
-            elif [[ "$al_tag" == "2023" ]]; then
-                echo "Amazon Linux 2023: ${al_versions[$al_tag]}" >&2
-            else
-                echo "Amazon Linux $al_tag: ${al_versions[$al_tag]}" >&2
-            fi
+            echo "Amazon Linux $al_tag: ${al_versions[$al_tag]}" >&2
             echo "  SHA256: ${al_shas[$al_tag]}" >&2
             echo "" >&2
 
