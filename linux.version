@@ -21,12 +21,12 @@
   {
     "linux": {
       "major-version": "3",
-      "version": "3.0.2",
+      "version": "3.1.0",
       "release-version": "3.0.0",
       "latest": "false",
       "build": "1",
-      "fluent-bit": "v4.1.1",
-      "release-fluent-bit": "v4.1.1",
+      "fluent-bit": "v4.2.0",
+      "release-fluent-bit": "v4.2.0",
       "kinesis-plugin": "v1.10.3",
       "firehose-plugin": "v1.7.2",
       "cloudwatch-plugin": "v1.9.4",
