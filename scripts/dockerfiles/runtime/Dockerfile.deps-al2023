@@ -20,7 +20,8 @@ RUN mkdir /sysroot && \
         arrow${ARROW_VERSION}-glib-libs \
         parquet${ARROW_VERSION}-glib-libs \
         libstdc++ \
-        curl
+        curl \
+    && dnf --installroot /sysroot clean all
 
 # Final minimal runtime image using scratch base
 FROM scratch
