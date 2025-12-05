@@ -1,4 +1,15 @@
 # Changelog
+### 2.34.2
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251121.0
+
+Compared to the previous release, this release adds:
+* Enhancement: Add OS_DIGEST to track sha256 used for AmazonLinux version [#1038](https://github.com/aws/aws-for-fluent-bit/pull/1038)
+
 ### 2.34.1.20251112
 This release includes:
 * Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
