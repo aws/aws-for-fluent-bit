@@ -3,8 +3,6 @@ FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST} as dependencies
 
 # Create sysroot directory and install minimal runtime dependencies
 RUN mkdir /sysroot && \
-    # Set a distinct ulimit for nofile to avoid long build times - https://github.com/docker/buildx/issues/379
-    ulimit -n 1024000 && \
     dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
     # grab install version from apache-arrow-release and extract without periods 22.0.0 --> 2200 to conform with arrow/parquet version libs
     ARROW_VERSION=$(dnf info apache-arrow-release | awk '/^Version/ {split($3, v, "."); printf "%d%02d", v[1], v[2]}') && \
