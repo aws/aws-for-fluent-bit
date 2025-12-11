@@ -17,6 +17,9 @@ COPY fluent-bit.conf \
 COPY --from=parsers /fluent-bit/etc/parsers*.conf /fluent-bit/etc/
 COPY --from=parsers /fluent-bit/parsers/ /fluent-bit/parsers/
 
+# Copy filters
+COPY filters/ /fluent-bit/filters/
+
 # Add configuration files
 ADD configs/parse-json.conf /fluent-bit/configs/
 ADD configs/minimize-log-loss.conf /fluent-bit/configs/
