@@ -47,23 +47,21 @@ function replace_dots_recursive(obj, replacement_char)
         local new_obj = {}
 
         for key, value in pairs(obj) do
-            -- Skip configuration fields (don't process them)
+            -- Skip only the config field
             if key ~= "_replace_dots_with" then
-                -- Replace dots in the key name
-                local new_key = string.gsub(tostring(key), "%.", replacement_char)
+                -- Replace dots only in string keys
+                local new_key = type(key) == "string" 
+                    and string.gsub(key, "%.", replacement_char) 
+                    or key
 
-                -- Recursively process the value if it's a table
-                if type(value) == "table" then
-                    new_obj[new_key] = replace_dots_recursive(value, replacement_char)
-                else
-                    new_obj[new_key] = value
-                end
+                new_obj[new_key] = type(value) == "table" 
+                    and replace_dots_recursive(value, replacement_char) 
+                    or value
             end
         end
 
         return new_obj
     else
-        -- Return non-table values as-is
         return obj
     end
 end
