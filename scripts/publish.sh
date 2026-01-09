@@ -158,7 +158,7 @@ publish_to_docker_hub() {
 		# Add image suffix for BUILD_VERSION=3
 		if [ "$BUILD_VERSION" = "3" ]; then
 			source_suffix="-3"
-			
+
 			# Verify all images exist before proceeding
 			if ! verify_images "-3"; then
 				echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
@@ -174,7 +174,7 @@ publish_to_docker_hub() {
 
 			docker tag ${1}:"$arch"-"debug"${source_suffix} ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
-			
+
 			docker tag ${1}:"$init"-"$arch"${source_suffix} ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
@@ -194,6 +194,14 @@ publish_to_docker_hub() {
 			create_manifest_list ${1} "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 			create_manifest_list_init ${1} "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 			create_manifest_list_init ${1} "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		fi
+
+		# Create major version tag "3" for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			create_manifest_list ${1} "3" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list ${1} "debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${1} "init-3" ${AWS_FOR_FLUENT_BIT_VERSION}
+			create_manifest_list_init ${1} "init-debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
@@ -217,7 +225,7 @@ publish_to_public_ecr() {
 		# Add image suffix for BUILD_VERSION=3
 		if [ "$BUILD_VERSION" = "3" ]; then
 			source_suffix="-3"
-			
+
 			# Verify all images exist before proceeding
 			if ! verify_images "-3"; then
 				echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
@@ -246,7 +254,7 @@ publish_to_public_ecr() {
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 		create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
-		
+
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-${AWS_FOR_FLUENT_BIT_VERSION} ${AWS_FOR_FLUENT_BIT_VERSION}
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 		create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "$init"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} debug-${AWS_FOR_FLUENT_BIT_VERSION}
@@ -259,6 +267,19 @@ publish_to_public_ecr() {
 			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		fi
+
+		# Create major version tag "3" for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "3" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-3" ${AWS_FOR_FLUENT_BIT_VERSION}
+			aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
+			create_manifest_list_init public.ecr.aws/aws-observability/aws-for-fluent-bit "init-debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		fi
 	fi
 }
@@ -292,7 +313,7 @@ publish_ssm() {
 				--description 'Regional Amazon ECR Image URI for the latest AWS for Fluent Bit Docker Image' \
 				--type String --region ${1} --value ${2}:latest
 		fi
-		
+
 		aws ssm put-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${3} --overwrite \
 			--description 'Regional Amazon ECR Image URI for the "$init"-latest AWS for Fluent Bit Docker Image' \
 			--type String --region ${1} --value ${2}:"$init"-${3}
@@ -323,7 +344,7 @@ check_parameter() {
 	repo_uri=$(sed -e 's/^"//' -e 's/"$//' <<<"$repo_uri")
 	docker pull $repo_uri
 
-	if [ "${2}" != "stable" ]; then 
+	if [ "${2}" != "stable" ]; then
 		repo_uri_init=$(aws ssm get-parameter --name /aws/service/aws-for-fluent-bit/"$init"-${2} --region ${1} --query 'Parameter.Value')
 		IFS='.' read -r -a array <<<"$repo_uri_init"
 		region="${array[3]}"
@@ -342,7 +363,7 @@ check_parameter() {
 check_tag_exists() {
 	local repo=${1}
 	local tag=${2}
-	
+
 	if docker manifest inspect ${repo}:${tag} > /dev/null 2>&1; then
 		return 0  # Tag found
 	else
@@ -436,7 +457,7 @@ sync_image_version() {
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
-	
+
 	for arch in "${ARCHITECTURES[@]}"
 	do
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
@@ -478,6 +499,14 @@ sync_image_version() {
 		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION} || echo "0"
 	fi
 
+	# Create major version tag "3" for BUILD_VERSION=3
+	if [ "$BUILD_VERSION" = "3" ]; then
+		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "3" ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+		create_manifest_list ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-3" ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit "init-debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
+	fi
+
 	make_repo_public ${region}
 
 	sync_ssm "/aws/service/aws-for-fluent-bit/${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}" ${region} ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit ${AWS_FOR_FLUENT_BIT_VERSION_PUBLIC_ECR}
@@ -499,7 +528,7 @@ verify_ssm() {
 	is_sync_task=${2:-false}
 
 	endpoint='amazonaws.com'
-	
+
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
@@ -627,7 +656,7 @@ publish_ecr() {
 	# Add image suffix for BUILD_VERSION=3
 	if [ "$BUILD_VERSION" = "3" ]; then
 		source_suffix="-3"
-		
+
 		# Verify all images exist before proceeding
 		if ! verify_images "-3"; then
 			echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
@@ -661,7 +690,15 @@ publish_ecr() {
 		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-latest" ${AWS_FOR_FLUENT_BIT_VERSION}
 		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-debug-latest" debug-${AWS_FOR_FLUENT_BIT_VERSION}
-	fi 
+	fi
+
+	# Create major version tag "3" for BUILD_VERSION=3
+	if [ "$BUILD_VERSION" = "3" ]; then
+		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "3" ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-3" ${AWS_FOR_FLUENT_BIT_VERSION}
+		create_manifest_list_init ${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit "init-debug-3" debug-${AWS_FOR_FLUENT_BIT_VERSION}
+	fi
 
 	make_repo_public ${region}
 }
@@ -675,7 +712,7 @@ verify_ecr() {
 	if [ "${1}" = "cn-north-1" ] || [ "${1}" = "cn-northwest-1" ]; then
 		endpoint=${endpoint}.cn
 	fi
-	
+
 	aws ecr get-login-password --region ${region} | docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.${endpoint}
 
 	if [ "${is_sync_task}" = "true" ]; then
@@ -747,14 +784,27 @@ verify_ecr() {
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest
 		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-latest)
-		
+
 		verify_sha $sha1_init $sha2_init
-	fi 
+	fi
+
+	# Verify major version tag "3" for BUILD_VERSION=3
+	if [ "$BUILD_VERSION" = "3" ]; then
+		if check_tag_exists "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit" "3"; then
+			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:3
+			sha_major=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:3)
+			verify_sha $sha1 $sha_major
+
+			docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:init-3
+			sha_major_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:init-3)
+			verify_sha $sha1_init $sha_major_init
+		fi
+	fi
 }
 
 check_image_version() {
 	export DOCKER_CLI_EXPERIMENTAL=enabled
-	
+
 	# check if we can get the image information in public ECR; if yes, it's an accidental release
 	if check_tag_exists "public.ecr.aws/aws-observability/aws-for-fluent-bit" "${1}"; then
 		echo "Accidental release: current image version from github source file match a previous version from dockerhub."
@@ -784,7 +834,7 @@ verify_ecr_image_scan() {
 
 verify_dockerhub() {
 	docker_hub_login
-	
+
 	# Verify the image with stable tag
 	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
 		# Get the image SHA's
@@ -824,6 +874,19 @@ verify_dockerhub() {
 		docker pull amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
 		verify_sha $sha1_init $sha2_init
+
+		# Verify major version tag "3" for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if check_tag_exists "amazon/aws-for-fluent-bit" "3"; then
+				docker pull amazon/aws-for-fluent-bit:3
+				sha_major=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:3)
+				verify_sha $sha2 $sha_major
+
+				docker pull amazon/aws-for-fluent-bit:init-3
+				sha_major_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:init-3)
+				verify_sha $sha2_init $sha_major_init
+			fi
+		fi
 	fi
 }
 
@@ -871,6 +934,19 @@ verify_public_ecr() {
 		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1_init $sha2_init
+
+		# Verify major version tag "3" for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			if check_tag_exists "public.ecr.aws/aws-observability/aws-for-fluent-bit" "3"; then
+				docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:3
+				sha_major=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:3)
+				verify_sha $sha2 $sha_major
+
+				docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3
+				sha_major_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3)
+				verify_sha $sha2_init $sha_major_init
+			fi
+		fi
 	fi
 }
 
@@ -1438,5 +1514,5 @@ fi
 
 if [ "${1}" = "cicd-check-image-version" ]; then
 	check_publish_enabled "${1}"
-	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION} 
+	check_image_version ${AWS_FOR_FLUENT_BIT_VERSION}
 fi

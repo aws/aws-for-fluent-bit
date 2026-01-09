@@ -1,6 +1,6 @@
 ## AWS for Fluent Bit Docker Image
 
-Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)** 🫡
+Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)**
 
 ### Contents
 
@@ -39,14 +39,15 @@ Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this 
 
 > Current Version/tag information can be found in [VERSIONS.md](VERSIONS.md)
 
-> 🔥⚠️**WARNING**⚠️🔥: Please read and understand the following information on how to consume AWS for Fluent Bit. Failure to do so may cause outages to your production environment. 😭💔
+> ⚠️**WARNING**⚠️: Please read and understand the following information on how to consume AWS for Fluent Bit. Failure to do so may cause outages to your production environment.
 
 #### AWS Distro for Fluent Bit Release Tags
 
 Our image repos contain the following types of tags, which are explained in the sections below:
 
-* `latest`: The most recently released image version. 🔥 **😵We do not recommend deploying this to production environments ever,** see [Guidance on consuming versions](#guidance-on-consuming-versions).
-* `Version number tag`: Each release has a version number, for example `2.28.4`. **These are the only tags we recommend ✅😍 consuming in production environments**: [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `3`: The most recently released image version of the `3.x` major version release.
+* `latest`: The most recently released image version of the `2.x` major version release. **We do not recommend deploying this to production environments ever,** see [Guidance on consuming versions](#guidance-on-consuming-versions).
+* `Version number tag`: Each release has a version number, for example `3.1.1`. **These are the only tags we recommend consuming in production environments**: [Guidance on consuming versions](#guidance-on-consuming-versions).
 * `stable`: Some time after a version is released, it may be designated as the latest stable. See [Latest stable version](#latest-stable-version) and  [Guidance on consuming versions](#guidance-on-consuming-versions).
 
 #### AWS Distro for Fluent Bit release testing
@@ -55,36 +56,36 @@ Our image repos contain the following types of tags, which are explained in the 
 
 * [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Short running tests of the AWS output plugins that send log records and verify that all of them were received correctly formatted at the destination.
 * [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Test Fluent Bit AWS output plugins at various throughputs and check for log loss, the results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
-* Long running stability tests: Highly parallel tests run in Amazon ECS for the AWS output plugins using the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project. These tests simulate real Fluent Bit deployments and use cases to test for bugs that crashes. 
+* Long running stability tests: Highly parallel tests run in Amazon ECS for the AWS output plugins using the [aws/firelens-datajet](https://github.com/aws/firelens-datajet) project. These tests simulate real Fluent Bit deployments and use cases to test for bugs that crashes.
 
 
 **Latest release testing bar**
 
-* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
+* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination.
 * [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
-* Long running stability tests: No crashes observed for at least 1 day. 
+* Long running stability tests: No crashes observed for at least 1 day.
 
 
 **CVE Patch release testing bar**
 
-* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination. 
+* [Simple integration tests](https://github.com/aws/aws-for-fluent-bit/tree/mainline/integ): Must fully pass with all log events received properly formatted at the destination.
 * [Load Tests:](https://github.com/aws/aws-for-fluent-bit/tree/mainline/load_tests) Must pass the [thresholds here](https://github.com/aws/aws-for-fluent-bit/blob/mainline/load_tests/validation_bar.py). Results are posted in our release notes: https://github.com/aws/aws-for-fluent-bit/releases
 
-We do not run our long running stability tests for CVE patches. This is because the goal is to get the CVE patch out as quickly as possible, and because CVE patch releases never include Fluent Bit code changes. CVE patch releases only include base image dependency upgrades. *If there is ever a CVE in the Fluent Bit code base itself, the patch for it would be considered a bug fix that might introduce instability and it would undergo the normal latest release testing.* 
+We do not run our long running stability tests for CVE patches. This is because the goal is to get the CVE patch out as quickly as possible, and because CVE patch releases never include Fluent Bit code changes. CVE patch releases only include base image dependency upgrades. *If there is ever a CVE in the Fluent Bit code base itself, the patch for it would be considered a bug fix that might introduce instability and it would undergo the normal latest release testing.*
 
 **Latest stable release testing bar**
 
-For a version to be made the latest `stable`, it must already have been previously released as the latest release. Thus it will have already passed the testing bar noted above for `latest`. 
+For a version to be made the latest `stable`, it must already have been previously released as the latest release. Thus it will have already passed the testing bar noted above for `latest`.
 
 In addition, our stable release undergoes additional testing:
 
-* Long running stability tests: The version undergoes and passes these tests for at least 2 weeks. After the version is promoted to stable we continue to run the long running stability tests, and may roll back the stable designation if issues later surface.  
+* Long running stability tests: The version undergoes and passes these tests for at least 2 weeks. After the version is promoted to stable we continue to run the long running stability tests, and may roll back the stable designation if issues later surface.
 
 #### Latest stable version
 
 Our latest stable version is the most recent version that we have high confidence is stable for AWS use cases. *We recommend using the stable version number in your prod deployments but **not the stable tag itself**; see* [Guidance on consuming versions](#guidance-on-consuming-versions)
 
-The latest stable version is marked with the tag `stable`/`windowsservercore-stable`. The version number that is currently designated as the latest stable can always be found in the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file in the root of this repo. 
+The latest stable version is marked with the tag `stable`/`windowsservercore-stable`. The version number that is currently designated as the latest stable can always be found in the [AWS_FOR_FLUENT_BIT_STABLE_VERSION](https://github.com/aws/aws-for-fluent-bit/blob/mainline/AWS_FOR_FLUENT_BIT_STABLE_VERSION) file in the root of this repo.
 
 > ❗ *There is no guarantee that `stable` has no issues- stable simply has a higher testing bar than our latest releases. The `stable` tag can be downgraded and rolled back to the previous stable if new test results or customer bug reports surface issues. This has occurred* [*in the past*](https://github.com/aws/aws-for-fluent-bit/issues/542)*.  *Consequently, we recommend locking to a **specific version tag** and informing your choice of version using our current stable designation.*
 
@@ -93,27 +94,27 @@ Prior to being designated as the latest stable, a version must pass the followin
 
 * It has been out for at least 2 weeks or is a CVE patch with no Fluent Bit changes. Stable designation is based on the Fluent Bit code in the image. A version released for CVE patches can be made stable if the underlying if the underlying Fluent Bit code is already designated as stable.
 * No bugs have been reported in Fluent Bit which we expect will have high impact for AWS customers. This means bugs in the components that are most frequently used by AWS customers, such as the AWS outputs or the tail input.
-* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image. 
+* The version has passed our long running stability tests for at least 2 weeks. The version would have already passed our simple integration and load tests when it was first released as the latest image.
 
 #### CVE scans and latest stable
 
-[Please read our CVE patching policy.](https://github.com/aws/aws-for-fluent-bit#compliance-and-patching) 
+[Please read our CVE patching policy.](https://github.com/aws/aws-for-fluent-bit#compliance-and-patching)
 
-The stable designation is for the Fluent Bit code contents of the image, not CVE scan results for dependencies installed in the image. We will upgrade a CVE patch to be the latest stable if it contains no Fluent Bit code changes compared to the previous latest stable. 
+The stable designation is for the Fluent Bit code contents of the image, not CVE scan results for dependencies installed in the image. We will upgrade a CVE patch to be the latest stable if it contains no Fluent Bit code changes compared to the previous latest stable.
 
 
 #### Guidance on consuming versions
 
-Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) call out the key AWS changes in each new version. 
+Our [release notes](https://github.com/aws/aws-for-fluent-bit/releases) call out the key AWS changes in each new version.
 
-*We recommend that you only consume non-stable releases in your test/pre-prod stages. Consuming the `latest` tag directly is widely considered to be an anti-pattern in the software industry.* 
+*We recommend that you only consume non-stable releases in your test/pre-prod stages. Consuming the `latest` tag directly is widely considered to be an anti-pattern in the software industry.*
 
 ⚡ *We strongly recommend that you always lock deployments to a specific immutable version tag, rather than using our `stable` or `latest` tags.* We recommend you to conduct a gradual rollout of each new version consistent with your deployment rollout strategy as you would for any other code or dependency being deployed: i.e. first to non-production environments first then gradually to your production environments.
 
 Using the `stable` or `latest` tag directly in prod has the following downsides: 🤕
 
-1. 😕*Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. This is because the `stable` and `latest` tags are mutable and change over time. 
-2. 😐*Mixed deployments*: If you are in the middle of a deployment when we release an update to the `stable` or `latest` immutable tags, some of your deployment may have deployed the previous version, and the rest will deploy the new version. 
+1. 😕*Difficulty in determining which version was deployed*: If you experience an issue, you will need to [check the Fluent Bit log output to determine which specific version tag](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#what-version-did-i-deploy) was deployed. This is because the `stable` and `latest` tags are mutable and change over time.
+2. 😐*Mixed deployments*: If you are in the middle of a deployment when we release an update to the `stable` or `latest` immutable tags, some of your deployment may have deployed the previous version, and the rest will deploy the new version.
 3. 🤢*Difficulty in rolling back*: While we take every effort to avoid releasing regressions, there is always a chance a bug might slip out. Explicitly consuming a version helps make it easier to rollback since there would be an existing deployment configuration to rollback to.
 
 
@@ -138,7 +139,7 @@ The AWS for Fluent Bit image includes the following contents:
 * Fluent Bit binary
 * Several Fluent Bit [Go Plugin binaries](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#aws-go-plugins-vs-aws-core-c-plugins)
 
-The process for pushing out new builds with CVE patches in the base image or installed dependencies is different for Windows vs Linux. 
+The process for pushing out new builds with CVE patches in the base image or installed dependencies is different for Windows vs Linux.
 
 For Windows, every month after the [B release date/"patch tuesday"](https://learn.microsoft.com/en-us/windows/deployment/update/release-cycle#monthly-security-update-release), we re-build and update all Windows images currently found in the [windows.versions](windows.versions) file in this repo with the newest base images from Microsoft. The Fluent Bit and go plugin binaries are copied into the newly released base windows image. Thus, the windows image tags are not immutable images; only the Fluent Bit and Go plugin binaries are immutable over time.
 
@@ -146,21 +147,21 @@ For Linux, each image tag is immutable. When there is a report of high or critic
 
 For example, a series of releases in time might look like:
 
-1. `2.31.12`: New Patch release with changes in Fluent Bit code compared to `2.31.11`. This release will have standard release notes and will have images for both linux and windows. 
-2. `2.31.12-20230629`: Re-build of `2.31.12` just for Linux CVEs found in the base image or installed dependencies. The Fluent Bit code contents are the same as `2.31.12`. There only be linux images with this version tag, and no windows images. The `latest` tag for linux will be updated to point to this new image. There will be short release notes that call out it is simply a re-build for linux. 
+1. `2.31.12`: New Patch release with changes in Fluent Bit code compared to `2.31.11`. This release will have standard release notes and will have images for both linux and windows.
+2. `2.31.12-20230629`: Re-build of `2.31.12` just for Linux CVEs found in the base image or installed dependencies. The Fluent Bit code contents are the same as `2.31.12`. There only be linux images with this version tag, and no windows images. The `latest` tag for linux will be updated to point to this new image. There will be short release notes that call out it is simply a re-build for linux.
 3. `2.31.12-20230711`: Another re-build of `2.31.12` for Linux CVEs on a subsequent date. This release is special as explained above in the way same as `2.31.12-20230629`.
-4. `2.31.13`: New Patch release with changes in Fluent Bit code compared to `2.31.12`. This might be for bugs found in the Fluent Bit code. It could also be for a CVE found in the Fluent Bit code. This release has standard release notes and linux and windows images. 
+4. `2.31.13`: New Patch release with changes in Fluent Bit code compared to `2.31.12`. This might be for bugs found in the Fluent Bit code. It could also be for a CVE found in the Fluent Bit code. This release has standard release notes and linux and windows images.
 
 
 **Why do some image tags contain 4 version numbers?**
 
-Please see the above explanation on our Linux image re-build process for CVEs found in dependencies. 
+Please see the above explanation on our Linux image re-build process for CVEs found in dependencies.
 
 **Are there edge cases to the rules on breaking backwards compatibility?**
 
-One edge case for the above semantic versioning rules is changes to configuration validation. Between Fluent Bit upstream versions 1.8 and 1.9, validation of config options was fixed/improved. Previous to this distro's upgrade to Fluent Bit upstream 1.9, configurations that included certain invalid options would run without error (the invalid options were ignored). After we released Fluent Bit usptream 1.9 support, these invalid options were validated and Fluent Bit would exit with an error. See the [issue discussion here](https://github.com/aws/aws-for-fluent-bit/issues/371#issuecomment-1160663682). 
+One edge case for the above semantic versioning rules is changes to configuration validation. Between Fluent Bit upstream versions 1.8 and 1.9, validation of config options was fixed/improved. Previous to this distro's upgrade to Fluent Bit upstream 1.9, configurations that included certain invalid options would run without error (the invalid options were ignored). After we released Fluent Bit usptream 1.9 support, these invalid options were validated and Fluent Bit would exit with an error. See the [issue discussion here](https://github.com/aws/aws-for-fluent-bit/issues/371#issuecomment-1160663682).
 
-Another edge case to the above rules are bug fixes that require removing a change. We have and will continue to occasionally remove new changes in a patch version if they were found to be buggy. We do this to unblock customers who do not depend on the recent change. Please always check our release notes for the changes in a specific version. A past example of a patch release that removed something is [2.31.4](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.4). A prior release had fixed how S3 handles the timestamps in S3 keys and the `Retry_Limit` configuration option. Those changes were considered to be bug fixes. However, they introduced instability so we subsequently removed them in a patch. 
+Another edge case to the above rules are bug fixes that require removing a change. We have and will continue to occasionally remove new changes in a patch version if they were found to be buggy. We do this to unblock customers who do not depend on the recent change. Please always check our release notes for the changes in a specific version. A past example of a patch release that removed something is [2.31.4](https://github.com/aws/aws-for-fluent-bit/releases/tag/v2.31.4). A prior release had fixed how S3 handles the timestamps in S3 keys and the `Retry_Limit` configuration option. Those changes were considered to be bug fixes. However, they introduced instability so we subsequently removed them in a patch.
 
 
 **What about the 1.x image tags in your repositories?**
@@ -179,15 +180,15 @@ No. We continue to consume Fluent Bit from its main repository. We are not forki
 
 **Q: Is AWS for Fluent Bit HIPAA Compliant?**
 
-Fluent Bit can be used in a HIPAA compliant matter to send logs to AWS, even if the logs contain PHI. Please see the call outs in the [AWS HIPAA white paper for ECS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/amazon-ecs.html).  
+Fluent Bit can be used in a HIPAA compliant matter to send logs to AWS, even if the logs contain PHI. Please see the call outs in the [AWS HIPAA white paper for ECS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/amazon-ecs.html).
 
 **Q: What is the policy for patching AWS for Fluent Bit for vulnerabilities, CVEs and image scan findings?**
 
 AWS for Fluent Bit uses ECR image scanning in its release pipeline and any scan that finds high or critical vulnerabilities will block a release: [scripts/publish.sh](https://github.com/aws/aws-for-fluent-bit/blob/mainline/scripts/publish.sh#L487)
 
-If you find an issue from a scan on our latest images please follow the reporting guidelines below and we will work quickly to introduce a new release. To be clear, we do not patch existing images, we just will release a new image without the issue. The team uses [Amazon ECR Basic image scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html) and [Amazon ECR Enhanced scanning powered by AWS Inspector](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html) as the primary source of truth for whether or not the image contains a vulnerability in a dependency. 
+If you find an issue from a scan on our latest images please follow the reporting guidelines below and we will work quickly to introduce a new release. To be clear, we do not patch existing images, we just will release a new image without the issue. The team uses [Amazon ECR Basic image scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html) and [Amazon ECR Enhanced scanning powered by AWS Inspector](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-enhanced.html) as the primary source of truth for whether or not the image contains a vulnerability in a dependency.
 
-If your concern is about a vulnerability in the Fluent Bit upstream ([github.com/fluent/fluent-bit](https://github.com/fluent/fluent-bit/) open source code), please let us know as well. However, fixing upstream issues requires additional work and time because we must work closely with upstream maintainers to commit a fix and cut an upstream release, and then we can cut an AWS for Fluent Bit release. 
+If your concern is about a vulnerability in the Fluent Bit upstream ([github.com/fluent/fluent-bit](https://github.com/fluent/fluent-bit/) open source code), please let us know as well. However, fixing upstream issues requires additional work and time because we must work closely with upstream maintainers to commit a fix and cut an upstream release, and then we can cut an AWS for Fluent Bit release.
 
 **Q: How do I report security disclosures?**
 
@@ -208,13 +209,13 @@ Each release updates the `latest` tag and adds a tag for the version of the imag
 
 #### Windows Images
 For Windows images, we update the `windowsservercore-latest` tag and add a tag as `<VERSION>-windowsservercore`. The stable tag is available as `windowsservercore-stable`. We update all the supported versions each month when [Microsoft releases the latest security
-patches for Windows](https://support.microsoft.com/en-gb/topic/windows-server-container-update-history-23c939c5-3ca5-3a16-27b8-d18e00d2408a).  
+patches for Windows](https://support.microsoft.com/en-gb/topic/windows-server-container-update-history-23c939c5-3ca5-3a16-27b8-d18e00d2408a).
 
 
 **Note:** Deploying `latest`/`windowsservercore-latest` to prod without going through a test stage first is not recommended.
 #### arm64 and amd64 images
 
-AWS for Fluent Bit currently distributes container images for arm64 and amd64 CPU architectures. Our images all use [mutli-archictecture tags](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html). For example, this means that if you pull the `latest` tag on a Graviton instance, you would get the arm64 image build. 
+AWS for Fluent Bit currently distributes container images for arm64 and amd64 CPU architectures. Our images all use [mutli-archictecture tags](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-multi-architecture-image.html). For example, this means that if you pull the `latest` tag on a Graviton instance, you would get the arm64 image build.
 
 For Windows, [we release images](#windows-images) only for amd64 CPU architecture of the following Windows releases-
 - Windows Server 2019
@@ -279,8 +280,8 @@ Parameters:
 
 #### Using image tags
 
-You should lock your deployments to a specific version tag. We guarantee that these tags will be immutable- once they are released the will not change. 
-Windows images will be updated each month to include the latest security patches in the base layers but the contents of the image will not change in a tag. 
+You should lock your deployments to a specific version tag. We guarantee that these tags will be immutable- once they are released the will not change.
+Windows images will be updated each month to include the latest security patches in the base layers but the contents of the image will not change in a tag.
 
 
 ##### Amazon ECR Public Gallery
@@ -442,7 +443,7 @@ You can also modify the default values in the Makefile:
 1. Open the Makefile in your editor
 2. Locate these lines (near the compile stage):
    ```
-   # Fluent Bit version (branch or tag) to checkout, will use value if not set 
+   # Fluent Bit version (branch or tag) to checkout, will use value if not set
    FLB_VERSION ?= "1.9.10"
    # Fluent Bit repository to checkout, will use value if not set
    FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
