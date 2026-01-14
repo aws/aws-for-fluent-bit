@@ -1,4 +1,15 @@
 # Changelog
+### 2.34.3
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20260109.1
+
+Compared to the previous release, this release adds:
+* Enhancement - Add filters/replace_dots.lua to enable replacing dots in records [#1051](https://github.com/aws/aws-for-fluent-bit/pull/1051)
+
 ### 2.34.2.20251210
 This release includes:
 * Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
