@@ -1,4 +1,10 @@
 # Changelog
+
+### 3.2.0
+* Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/releases/tag/v4.2.2)
+* Minimal set of packages installed using Amazon Linux base container image version: 2023.10.20260105.0
+* Enhancement: Add filters/replace_dots.lua to enable replacing dots in records [#1051](https://github.com/aws/aws-for-fluent-bit/pull/1051)
+
 ### 2.34.3
 This release includes:
 * Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
