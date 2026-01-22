@@ -1,5 +1,8 @@
 # Changelog
 
+### 2.34.3.20260122
+* Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260120.1
+
 ### 3.2.0
 * Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/releases/tag/v4.2.2)
 * Minimal set of packages installed using Amazon Linux base container image version: 2023.10.20260105.0
