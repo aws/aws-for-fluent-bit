@@ -1,5 +1,10 @@
 # Changelog
 
+### 3.2.1
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260120.4
+* Enhancement: Add publish support for a "3" tag [#1059](https://github.com/aws/aws-for-fluent-bit/pull/1059)
+* Bugfix: Fix SSM parameter publishing for BUILD_VERSION=3 releases [#1060](https://github.com/aws/aws-for-fluent-bit/pull/1060)
+
 ### 2.34.3.20260122
 * Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260120.1
 
