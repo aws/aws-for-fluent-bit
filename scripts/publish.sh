@@ -1402,8 +1402,14 @@ if [ "${1}" = "cicd-verify" ]; then
 		done
 	elif [ "${2}" = "stable" ]; then
 		if [ "${3}" = "us-west-2" ]; then
-			verify_dockerhub stable
-			verify_public_ecr stable
+			if [ "${4}" = "dockerhub" ]; then
+				verify_dockerhub stable
+			elif [ "${4}" = "public-ecr" ]; then
+				verify_public_ecr stable
+			else
+				verify_dockerhub stable
+				verify_public_ecr stable
+			fi
 		fi
 	else
 		verify_ecr "${2}" ${classic_regions_account_id}

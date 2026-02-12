@@ -1,0 +1,19 @@
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      golang: 1.13
+      python: 3.x
+  pre_build:
+    commands:
+      - echo Publish the stable image to DockerHub
+  build:
+    commands:
+      # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
+      - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
+
+      # Verify the publishing on Public ECR and Dockerhub when AWS_REGION is us-west-2
+      - './scripts/publish.sh cicd-verify stable ${AWS_REGION} dockerhub'
+artifacts:
+  files:
+    - '**/*'
