@@ -12,12 +12,23 @@ phases:
       - ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/bin --update
       - which aws
       - aws --version
+      # Check BUILD_VERSION environment variable and set default if not provided
+      - |
+        if [ -z "$BUILD_VERSION" ]; then
+          echo "BUILD_VERSION environment variable not provided, defaulting to BUILD_VERSION=2"
+          export BUILD_VERSION=2
+        else
+          echo "BUILD_VERSION is set to: $BUILD_VERSION"
+        fi
   build:
     commands:
       # Enforce STS regional endpoints
       - export AWS_STS_REGIONAL_ENDPOINTS=regional
       
-      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable' 
+      - './scripts/publish.sh cicd-publish ${AWS_REGION} stable'
+
+      # Handle version 3 publish
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish ${AWS_REGION} stable
 
       # Publish stable tag to Dockerhub when AWS_REGION is us-west-2
       - './scripts/publish.sh cicd-publish public-dockerhub-stable ${AWS_REGION}'
@@ -53,6 +64,10 @@ phases:
       # Verify from the verification account
       - './scripts/publish.sh cicd-verify ${AWS_REGION} stable'
       - './scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable'
+
+      # Handle version 3 verifications
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify ${AWS_REGION} stable
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify-ssm ${AWS_REGION} stable
 
        # Nullify the temporary credentials for the assumed role to verify
       - export AWS_ACCESS_KEY_ID=

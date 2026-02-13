@@ -2,7 +2,8 @@ import json
 import os
 
 PREFIX = os.environ['PREFIX']
-
+BUILD_VERSION = os.environ.get('BUILD_VERSION', '2')
+VERSION_SUFFIX = '' if BUILD_VERSION == '2' else f'-v{BUILD_VERSION}'
 CUSTOM_INPUT_PREFIX = "" # "" is the destination tag for logs coming from non-stdstream input
 STD_INPUT_PREFIX = "std-"
 
@@ -25,10 +26,10 @@ def get_destination_s3_prefix(input_configuration, output_plugin):
     return f'{output_plugin}-test/{input_configuration["platform"]}/{input_configuration["input_prefix"]}{input_configuration["throughput"]}/'
 
 def resolve_firehose_delivery_stream_name(input_configuration):
-    return f'{PREFIX}{input_configuration["platform"]}-firehoseTest-deliveryStream-{input_configuration["input_prefix"]}{input_configuration["throughput"]}'
+    return f'{PREFIX}{input_configuration["platform"]}-firehoseTest-deliveryStream-{input_configuration["input_prefix"]}{input_configuration["throughput"]}{VERSION_SUFFIX}'
 
-def resolve_kinesis_delivery_stream_name(input_configuration):
-    return f'{PREFIX}{input_configuration["platform"]}-kinesisStream-{input_configuration["input_prefix"]}{input_configuration["throughput"]}'
+def resolve_kinesis_stream_name(input_configuration):
+    return f'{PREFIX}{input_configuration["platform"]}-kinesisStream-{input_configuration["input_prefix"]}{input_configuration["throughput"]}{VERSION_SUFFIX}'
 
 def resolve_s3_object_name(input_configuration):
     return f'/s3-test/{input_configuration["platform"]}/{input_configuration["input_prefix"]}{input_configuration["throughput"]}/$TAG/%Y/%m/%d/%H/%M/%S'

@@ -7,7 +7,7 @@ metadata:
 
 nodeGroups:
   - name: ng
-    instanceType: c5.24xlarge
+    instanceType: c7a.24xlarge
     minSize: 0
     maxSize: 5
     volumeSize: 100

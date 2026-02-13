@@ -1,24 +1,27 @@
 from logging import captureWarnings
+import os
 from aws_cdk import (
     aws_s3 as s3,
     aws_kinesis as kinesis,
     aws_kinesisfirehose as firehose,
     aws_iam as iam,
-    core,
+    Stack,
+    App,
+    CfnOutput,
+    RemovalPolicy
 )
+from constructs import Construct
 import resource_resolver
 
-PREFIX = resource_resolver.PREFIX
-
 # Create necessary testing resources - s3 bucket, data streams and delivery streams
-class LogStorage(core.Stack):
+class LogStorage(Stack):
 
-    def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         bucket = s3.Bucket(self, 's3Bucket',
                            versioned=True,
-                           removal_policy=core.RemovalPolicy.DESTROY,
+                           removal_policy=RemovalPolicy.DESTROY,
                            auto_delete_objects=True)
         
         firehose_role = iam.Role(self, 'firehoseRole', assumed_by=iam.ServicePrincipal('firehose.amazonaws.com'))
@@ -38,7 +41,7 @@ class LogStorage(core.Stack):
                 identifier = input_prefix + throughput
                 # Data streams and related delivery streams for kinesis test
                 names[platform+'_kinesis_stream_'+identifier] = kinesis.Stream(self, platform+'KinesisStream'+caps_identifier,
-                                                                              stream_name=PREFIX+platform+'-kinesisStream-'+identifier,
+                                                                              stream_name=resource_resolver.resolve_kinesis_stream_name(input_configuration),
                                                                               shard_count=80)
                 kinesis_policy = iam.Policy(self, 'kinesisPolicyfor'+identifier,
                                             statements=[iam.PolicyStatement(actions=['kinesis:*'], resources=[names.get(platform+'_kinesis_stream_'+identifier).stream_arn])],
@@ -46,7 +49,7 @@ class LogStorage(core.Stack):
                 )
                 names[platform+'_kinesis_test_delivery_stream_'+identifier] = firehose.CfnDeliveryStream(
                                                                               self, platform+'KinesisTestDeliveryStream'+caps_identifier,
-                                                                              delivery_stream_name=resource_resolver.resolve_kinesis_delivery_stream_name(input_configuration),
+                                                                              delivery_stream_name=names.get(platform+'_kinesis_stream_'+identifier).stream_name,
                                                                               delivery_stream_type='KinesisStreamAsSource',
                                                                               kinesis_stream_source_configuration=firehose.CfnDeliveryStream.KinesisStreamSourceConfigurationProperty(
                                                                                 kinesis_stream_arn=names.get(platform+'_kinesis_stream_'+identifier).stream_arn,
@@ -80,10 +83,10 @@ class LogStorage(core.Stack):
                                                                               ))
 
         # Add stack outputs
-        core.CfnOutput(self, 'S3BucketName', 
+        CfnOutput(self, 'S3BucketName', 
                       value=bucket.bucket_name,
                       description='S3 Bucket Name')
 
-app = core.App()
-LogStorage(app, 'load-test-fluent-bit-log-storage')
+app = App()
+LogStorage(app, os.environ['LOG_STORAGE_STACK_NAME'])
 app.synth()

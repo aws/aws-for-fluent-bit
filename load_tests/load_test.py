@@ -4,6 +4,7 @@ import json
 import time
 import boto3
 import math
+import hashlib
 import subprocess
 import validation_bar
 from datetime import datetime, timezone
@@ -24,6 +25,11 @@ EKS_CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
 LOGGER_RUN_TIME_IN_SECOND = 600
 NUM_OF_EKS_NODES = 4
 BUFFER_TIME_IN_SECOND = 600
+
+# Get BUILD_VERSION and create version suffix for task definition names
+BUILD_VERSION = os.environ.get('BUILD_VERSION', '2')
+VERSION_TAG = '' if BUILD_VERSION == '2' else f'v{BUILD_VERSION}'
+
 if OUTPUT_PLUGIN == 'cloudwatch':
     THROUGHPUT_LIST = json.loads(os.environ['CW_THROUGHPUT_LIST'])
     # Cloudwatch requires more waiting for all log events to show up in the stream.
@@ -91,8 +97,23 @@ def calculate_total_input_number(throughput):
     iteration_per_second = int(throughput[0:-1])*1000
     return str(iteration_per_second * LOGGER_RUN_TIME_IN_SECOND)
 
+# Calculate hash of task definition to create unique suffix
+def calculate_task_definition_hash(task_def):
+    task_def_json = json.dumps(task_def, sort_keys=True)
+    return hashlib.sha384(task_def_json.encode('utf-8')).hexdigest()
+
+# Check if task definition exists in ECS
+def task_definition_exists(client, task_def_name):
+    try:
+        client.describe_task_definition(taskDefinition=task_def_name)
+        print(f"Reusing existing task definition: {task_def_name}")
+        return True
+    except client.exceptions.ClientError:
+        return False
+
 # 1. Configure task definition for each load test based on existing templates
-# 2. Register generated task definition
+# 2. Register generated task definition only if it doesn't already exist
+# 3. Return the task definition name with hash suffix
 def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     # Generate configuration information for STD and TCP tests
     std_config      = resource_resolver.get_input_configuration(PLATFORM, resource_resolver.STD_INPUT_PREFIX, throughput)
@@ -113,6 +134,7 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
 
         # General Environment Variables
         '$THROUGHPUT': throughput,
+        '$PREFIX': f'{PREFIX}{VERSION_TAG}-',
 
         # Task Environment Variables
         '$TASK_ROLE_ARN': os.environ['LOAD_TEST_TASK_ROLE_ARN'],
@@ -130,8 +152,8 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
             '$CUSTOM_DELIVERY_STREAM_PREFIX':   resource_resolver.resolve_firehose_delivery_stream_name(custom_config),
         },
         'kinesis': {
-            '$STD_STREAM_PREFIX':               resource_resolver.resolve_kinesis_delivery_stream_name(std_config),
-            '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_delivery_stream_name(custom_config),
+            '$STD_STREAM_PREFIX':               resource_resolver.resolve_kinesis_stream_name(std_config),
+            '$CUSTOM_STREAM_PREFIX':            resource_resolver.resolve_kinesis_stream_name(custom_config),
         },
         's3': {
             '$S3_BUCKET_NAME':                  S3_BUCKET_NAME,
@@ -150,18 +172,33 @@ def generate_task_definition(throughput, input_logger, s3_fluent_config_arn):
     data = fin.read()
     task_def_formatted = parse_json_template(data, task_definition_dict)
 
-    # Register task definition
+    # Create task definition object
     task_def = json.loads(task_def_formatted)
 
-    if IS_TASK_DEFINITION_PRINTED:
-        print("Registering task definition:", flush=True)
-        print(json.dumps(task_def, indent=4), flush=True)
-        client = boto3.client('ecs')
-        client.register_task_definition(
-            **task_def
-        )
-    else:
-        print("Registering task definition", flush=True)
+    # Calculate hash of task definition for unique naming
+    task_def_hash = calculate_task_definition_hash(task_def)
+    
+    # Create task definition name with hash suffix
+    base_name = f'{PREFIX}{VERSION_TAG}-{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
+    task_def_name_with_hash = f'{base_name}-{task_def_hash}'
+    
+    # Update the family name in task definition to include hash
+    task_def['family'] = task_def_name_with_hash
+
+    # Check if task definition already exists
+    client = boto3.client('ecs')
+    if not task_definition_exists(client, task_def_name_with_hash):
+        # Register task definition only if it doesn't exist
+        if IS_TASK_DEFINITION_PRINTED:
+            print("Registering new task definition:", flush=True)
+            print(json.dumps(task_def, indent=4), flush=True)
+        else:
+            print(f"Registering new task definition: {task_def_name_with_hash}", flush=True)
+        
+        client.register_task_definition(**task_def)
+    
+    # Return the task definition name with hash for use in run_task
+    return task_def_name_with_hash
 
 # With multiple codebuild projects running parallel,
 # Testing resources only needs to be created once
@@ -253,11 +290,12 @@ def run_ecs_tests():
         # Run ecs tasks and store task arns
         for throughput in THROUGHPUT_LIST:
             os.environ['THROUGHPUT'] = throughput
-            generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
+            task_def_name = generate_task_definition(throughput, input_logger, s3_fluent_config_arn)
+            
             response = client.run_task(
                     cluster=ecs_cluster_name,
                     launchType='EC2',
-                    taskDefinition=f'{PREFIX}{OUTPUT_PLUGIN}-{throughput}-{input_logger["name"]}'
+                    taskDefinition=task_def_name
             )
             print(f'run_task_response={response}', flush=True)
             names[f'{OUTPUT_PLUGIN}_{input_logger["name"]}_{throughput}_task_arn'] = response['tasks'][0]['taskArn']

@@ -1,0 +1,24 @@
+# Amazon Linux Tag to use for images
+ARG AL_TAG=2
+
+FROM amazon/aws-for-fluent-bit:build-deps-al${AL_TAG}
+
+# Create required directories
+RUN mkdir -p /fluent-bit/bin /fluent-bit/etc /fluent-bit/log
+
+# Accept build args for consistency (not used in AL2)
+ARG FLB_VERSION
+ARG FLB_REPOSITORY
+
+# branch to pull parsers from in github.com/fluent/fluent-bit-docker-image
+ENV FLB_DOCKER_BRANCH 1.8
+
+RUN git clone --single-branch --branch ${FLB_DOCKER_BRANCH} https://github.com/fluent/fluent-bit-docker-image.git /tmp/fluent-bit-docker-image
+
+# Add parsers files from fluent-bit-docker-image
+WORKDIR /tmp/fluent-bit-docker-image
+RUN mkdir -p /fluent-bit/parsers/
+# /fluent-bit/etc is the normal path for config and parsers files
+RUN cp conf/parsers*.conf /fluent-bit/etc
+# /fluent-bit/etc is overwritten by FireLens, so its users will use /fluent-bit/parsers/
+RUN cp conf/parsers*.conf /fluent-bit/parsers/

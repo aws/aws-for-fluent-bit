@@ -1,0 +1,27 @@
+ARG OS_DIGEST
+FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST}
+
+RUN dnf upgrade -y && \
+    dnf install -y https://packages.apache.org/artifactory/arrow/amazon-linux/$(cut -d: -f6 /etc/system-release-cpe)/apache-arrow-release-latest.rpm && \
+    dnf install -y  \
+      glibc-devel \
+      libyaml-devel \
+      cmake \
+      gcc \
+      gcc-c++ \
+      make \
+      wget \
+      unzip \
+      tar \
+      git \
+      openssl-devel \
+      cyrus-sasl-devel \
+      pkgconf-pkg-config \
+      systemd-devel \
+      zlib-devel \
+      ca-certificates \
+      flex \
+      bison \
+      arrow-glib-devel \
+      parquet-glib-devel \
+    && dnf clean all

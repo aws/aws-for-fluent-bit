@@ -9,22 +9,8 @@ phases:
       - echo Publish the image to ECR
   build:
     commands:
-      # Enforce STS regional endpoints
-      - export AWS_STS_REGIONAL_ENDPOINTS=regional
-      # Pull the image that we built and pushed in the `Build` stage
-      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"amd64"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"arm64"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"amd64-debug"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"arm64-debug"
-      # Image with Init Process
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"init-amd64"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"init-arm64"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"init-amd64-debug"
-      - docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"init-arm64-debug"
-
-      # List the docker images
-      - docker images
+      # Pull the images that we built and pushed in the `Build` stage
+      - ./scripts/pipeline/sync-test-images.sh
 
       # Assume role to publish, get the credentials, and set them as environment variables
       - |
@@ -36,7 +22,8 @@ phases:
         fi
 
       # Push the image to ECR
-      - './scripts/publish.sh cicd-publish ${REGION_TO_PUSH}'
+      - BUILD_VERSION=2 ./scripts/publish.sh cicd-publish ${REGION_TO_PUSH}
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish ${REGION_TO_PUSH}
 
       # Nullify the temporary credentials for the assumed role to publish
       - |
@@ -55,7 +42,8 @@ phases:
       - export AWS_SESSION_TOKEN=`echo $CREDS | jq -r .Credentials.SessionToken`
 
       # Verify from the verification account
-      - './scripts/publish.sh cicd-verify ${REGION_TO_PUSH}'
+      - BUILD_VERSION=2 ./scripts/publish.sh cicd-verify ${REGION_TO_PUSH}
+      - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify ${REGION_TO_PUSH}
 artifacts:
   files:
     - '**/*'

@@ -20,4 +20,4 @@ services:
             driver: fluentd
             options:
                 fluentd-address: unix:///var/run/fluent.sock
-                fluentd-async-connect: "true"
+                fluentd-async: "true"

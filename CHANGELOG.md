@@ -1,5 +1,211 @@
 # Changelog
 
+### 2.34.3.20260209
+* Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260202.2
+
+### 3.2.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260202.2
+
+### 3.2.1
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260120.4
+* Enhancement: Add publish support for a "3" tag [#1059](https://github.com/aws/aws-for-fluent-bit/pull/1059)
+* Bugfix: Fix SSM parameter publishing for BUILD_VERSION=3 releases [#1060](https://github.com/aws/aws-for-fluent-bit/pull/1060)
+
+### 2.34.3.20260122
+* Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260120.1
+
+### 3.2.0
+* Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/releases/tag/v4.2.2)
+* Minimal set of packages installed using Amazon Linux base container image version: 2023.10.20260105.0
+* Enhancement: Add filters/replace_dots.lua to enable replacing dots in records [#1051](https://github.com/aws/aws-for-fluent-bit/pull/1051)
+
+### 2.34.3
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20260109.1
+
+Compared to the previous release, this release adds:
+* Enhancement - Add filters/replace_dots.lua to enable replacing dots in records [#1051](https://github.com/aws/aws-for-fluent-bit/pull/1051)
+
+### 2.34.2.20251210
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251208.0
+
+### 2.34.2
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251121.0
+
+Compared to the previous release, this release adds:
+* Enhancement: Add OS_DIGEST to track sha256 used for AmazonLinux version [#1038](https://github.com/aws/aws-for-fluent-bit/pull/1038)
+
+### 2.34.1.20251112
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251110.1
+
+### 2.34.1.20251031
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20251027.1
+
+### 2.34.1
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: [2.0.20250929.2](https://docs.aws.amazon.com/AL2/latest/relnotes/relnotes-20250929.html)
+
+Compared to the previous release, this release adds:
+* Enhancement - Add support for syncing BUILD_VERSION=3 images [#1000](https://github.com/aws/aws-for-fluent-bit/pull/1000)
+* Enhancement - Move to v4.1.0 fluent-bit version [#1003](https://github.com/aws/aws-for-fluent-bit/pull/1003)
+* Enhancement - Rework parsers to allow pulling from source for AL2023 [#1004](https://github.com/aws/aws-for-fluent-bit/pull/1004)
+* Enhancement - Add helper script to support syncing all test images [#1005](https://github.com/aws/aws-for-fluent-bit/pull/1005)
+* Enhancement - Add BUILD_VERSION=3 support to publish_ecr [#1006](https://github.com/aws/aws-for-fluent-bit/pull/1006)
+* Enhancement - Add BUILD_VERSION=3 support to publish_dockerhub [#1007](https://github.com/aws/aws-for-fluent-bit/pull/1007)
+* Enhancement - Add BUILD_VERSION=3 support to public_public_ecr [#1008](https://github.com/aws/aws-for-fluent-bit/pull/1008)
+* Enhancement - Add BUILD_VERSION=3 support to publish_ssm [#1009](https://github.com/aws/aws-for-fluent-bit/pull/1009)
+* Enhancement - Add publish flag allow skipping release [#1010](https://github.com/aws/aws-for-fluent-bit/pull/1010)
+* Enhancement - Skip build when publish config is false [#1011](https://github.com/aws/aws-for-fluent-bit/pull/1011)
+* Enhancement - Update generate_changelog.sh to support versions [#1012](https://github.com/aws/aws-for-fluent-bit/pull/1012)
+* Enhancement - Allow skip integ/load tests if publish false [#1013](https://github.com/aws/aws-for-fluent-bit/pull/1013)
+* Fix - issue with Makefile parsing OS_PRETTY_NAME before image exists [#1014](https://github.com/aws/aws-for-fluent-bit/pull/1014)
+* Fix - Ensure custom endpoint settings are preserved when using role-based authentication (EKS_POD_EXECUTION_ROLE or role_arn parameter) [#337](https://github.com/aws/amazon-kinesis-streams-for-fluent-bit/pull/337)
+
+### 2.34.0
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250902.3
+
+Compared to the previous release, this release adds:
+* Enhancement - Fix init process s3 getBucketLocation issue for eu-west-1 region [#942](https://github.com/aws/aws-for-fluent-bit/pull/942)
+* Enhancement - Remove valgrind-devel from build unless debug [#987](https://github.com/aws/aws-for-fluent-bit/pull/987)
+* Enhancement - Add docker labels to built images [#986](https://github.com/aws/aws-for-fluent-bit/pull/986)
+
+### 2.33.2
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250818.2
+
+Compared to the previous release, this release adds:
+* Enhancement: add support for non-root user mode to the debug-init image [#980](https://github.com/aws/aws-for-fluent-bit/pull/980)
+
+### 2.33.1
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250804.1
+
+Compared to the previous release, this release adds:
+* Enhancement - Rework AL2 dockerfiles [#972](https://github.com/aws/aws-for-fluent-bit/pull/972)
+* Fix - Disable buildkit features [#976](https://github.com/aws/aws-for-fluent-bit/pull/976)
+
+### 2.33.0.20250731
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250728.1
+
+### 2.33.0
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250707.0
+
+Compared to the previous release, this release adds:
+* Feature: Add support for non-root user mode to the init image [#955](https://github.com/aws/aws-for-fluent-bit/pull/955)
+
+### 2.32.5.20250626
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250623.0
+
+### 2.32.5.20250626
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250610.0
+
+Compared to the previous release, this release adds:
+* Update init process to aws-sdk-go-v2 [#941](https://github.com/aws/aws-for-fluent-bit/pull/941)
+
+### 2.32.5.20250527
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250527.1
+
+### 2.32.5.20250422
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250414.0
+
+### 2.32.5.20250327
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250321.0
+
+Compared to `2.32.5.20250305` this release adds:
+* Fix: in_opentelemetry: fix handling of content-length [(CVE-2024-50609)](https://github.com/advisories/GHSA-4g89-mg9x-4chc). [Fluent bit PR](https://github.com/amazon-contributing/upstream-to-fluent-bit/pull/8)
+
+### 2.32.5.20250305
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250220.0
+
+### 2.32.5.20250212
+This release includes:
+* Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.2
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux base container image version: 2.0.20250201.0
+
 ### 2.32.5
 This release includes:
 * Fluent Bit [1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)

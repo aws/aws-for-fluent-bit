@@ -116,7 +116,7 @@ source .venv/bin/activate
 ```
 pip install -r ./load_tests/requirements.txt
 ```
-5. (ECS only) Deploy S3, Kinesis, Firehose related testing resources
+5. (ECS only) Deploy S3, Kinesis, Firehose log storage stack (one time setup)
 ```
 cd load_tests/create_testing_resources/kinesis_s3_firehose
 cdk deploy
@@ -133,7 +133,7 @@ source ./load_tests/setup_test_environment.sh
 ```
 python ./load_tests/load_test.py ${PLATFORM}
 ```
-8. Delete related testing resources when tests are done
+8. Delete related testing resources when tests are done. This will not delete log storage stack.
 ```
 python ./load_tests/load_test.py delete_testing_resources
 ```

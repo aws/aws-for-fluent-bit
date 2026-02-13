@@ -2,16 +2,18 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -241,20 +243,44 @@ func TestWriteInclude(t *testing.T) {
 }
 
 func TestDownloadS3ConfigFile(t *testing.T) {
-
-	defer os.RemoveAll(s3FileDirectoryPathTest)
-
+	// Setup
 	s3FilePath := "user/files/aaa.conf"
 	bucketName := "userBucket"
-	s3Downloader := MockS3Downloader{}
-
-	downloadS3ConfigFile(&s3Downloader, s3FilePath, bucketName, s3FileDirectoryPathTest)
-
-	actualContent := readFileHelper(s3FileDirectoryPathTest + "aaa.conf")
 	expectedContent := "S3 config file download and store successfully"
 
-	assert.Equal(t, actualContent, expectedContent)
+	cases := []struct {
+		failFirstAttempt bool
+		downloadCount    int
+	}{
+		// Successful download on first attempt
+		{
+			failFirstAttempt: false,
+			downloadCount:    1,
+		},
+		// Failed first attempt, successful retry
+		{
+			failFirstAttempt: true,
+			downloadCount:    2,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("FailFirstAttempt-%t-downloadCount-%d", test.failFirstAttempt, test.downloadCount)
+		t.Run(testName, func(t *testing.T) {
+			downloader := &MockS3Downloader{
+				FailFirstAttempt: test.failFirstAttempt,
+			}
 
+			downloadS3ConfigFile(downloader, s3FilePath, bucketName, s3FileDirectoryPathTest)
+
+			// Verify file content
+			actualContent := readFileHelper(s3FileDirectoryPathTest + "aaa.conf")
+			assert.Equal(t, expectedContent, actualContent)
+
+			// Verify downloader was called with correct parameters
+			assert.Equal(t, test.downloadCount, downloader.DownloadCount)
+			os.RemoveAll(s3FileDirectoryPathTest)
+		})
+	}
 }
 
 func TestModifyInvokeFile(t *testing.T) {
@@ -269,7 +295,158 @@ func TestModifyInvokeFile(t *testing.T) {
 	actualContent := readFileHelper(filePath)
 
 	assert.Equal(t, actualContent, expectedContent)
+}
 
+func TestCreateS3Client(t *testing.T) {
+	// Setup
+	defaultRegion := "us-east-1"
+	usWest2 := "us-west-2"
+
+	cases := []struct {
+		region   string
+		mdRegion string
+	}{
+		// successful creation of S3 client (default region)
+		{
+			region:   defaultRegion,
+			mdRegion: "",
+		},
+		// successful creation of S3 client (metadataRegion set)
+		{
+			region:   "",
+			mdRegion: usWest2,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("Region-%s-MetadataRegion-%s", test.region, test.mdRegion)
+		t.Run(testName, func(t *testing.T) {
+			metadataRegion = test.mdRegion
+			createS3Client()
+
+			assert.NotNil(t, s3Client)
+			assert.True(t, s3ClientCreated)
+			if test.mdRegion == "" {
+				assert.Equal(t, defaultRegion, s3Client.Options().Region)
+			} else {
+				assert.Equal(t, test.mdRegion, s3Client.Options().Region)
+			}
+		})
+	}
+}
+
+func TestCreateS3Downloader(t *testing.T) {
+	// Setup
+	bucketRegion := "us-east-1"
+
+	downloader := createS3Downloader(bucketRegion)
+	assert.NotNil(t, downloader)
+	assert.Equal(t, bucketRegion, downloader.(*manager.Downloader).S3.(*s3.Client).Options().Region)
+}
+
+func TestCreateFile(t *testing.T) {
+	// Setup
+	filePath, err := os.MkdirTemp("", "test")
+	defer os.RemoveAll(filePath)
+	assert.NoError(t, err)
+
+	cases := []struct {
+		autoClose bool
+	}{
+		// create file with auto close
+		{
+			autoClose: true,
+		},
+		// create file without auto close
+		{
+			autoClose: false,
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("AutoClose-%t", test.autoClose)
+		t.Run(testName, func(t *testing.T) {
+			fileName := path.Join(filePath, testName)
+			file := createFile(fileName, test.autoClose)
+			assert.NotNil(t, file)
+
+			// Verify directory permissions are 0700
+			dirInfo, err := os.Stat(path.Dir(fileName))
+			assert.NoError(t, err)
+			assert.Equal(t, os.FileMode(0700), dirInfo.Mode().Perm(), "Directory should have 0700 permissions")
+
+			if !test.autoClose {
+				file.Close()
+			}
+		})
+	}
+}
+
+func TestProcessConfigFile(t *testing.T) {
+	// Setup
+	expectedBaseCommand := baseCommand
+	filePath := "test_config"
+
+	cases := []struct {
+		content string
+	}{
+		// [PARSER] match in config file content
+		{
+			content: "[PARSER]",
+		},
+		// [MULTILINE_PARSER] match in config file content
+		{
+			content: "[MULTILINE_PARSER]",
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("Content-%s", test.content)
+		t.Run(testName, func(t *testing.T) {
+			file := createFileHelper(filePath)
+			defer os.Remove(filePath)
+			defer file.Close()
+			assert.NotNil(t, file)
+			_, err := file.WriteString(test.content)
+			assert.NoError(t, err)
+
+			processConfigFile(filePath)
+
+			assert.NotEqual(t, expectedBaseCommand, baseCommand)
+		})
+	}
+}
+
+func TestGetAllConfigFiles(t *testing.T) {
+	// Setup
+	expectedBaseCommand := baseCommand
+	filePath := "test_config"
+	content := "[PARSER]"
+
+	cases := []struct {
+		envVariable string
+	}{
+		{
+			envVariable: "aws_fluent_bit_init_File",
+		},
+		{
+			envVariable: "aws_fluent_bit_init_file",
+		},
+	}
+	for _, test := range cases {
+		testName := fmt.Sprintf("EnvVariable-%s", test.envVariable)
+		t.Run(testName, func(t *testing.T) {
+			os.Setenv(test.envVariable, filePath)
+			defer os.Unsetenv(test.envVariable)
+			file := createFileHelper(filePath)
+			defer os.Remove(filePath)
+			defer file.Close()
+			assert.NotNil(t, file)
+			_, err := file.WriteString(content)
+			assert.NoError(t, err)
+
+			getAllConfigFiles()
+
+			assert.NotEqual(t, expectedBaseCommand, baseCommand)
+		})
+	}
 }
 
 type MockHTTPClient struct {
@@ -281,7 +458,7 @@ func (mhc *MockHTTPClient) Get(str string) (*http.Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Invalid input for HTTP Client: %v", err)
 	} else {
-		body := ioutil.NopCloser(bytes.NewReader([]byte(mhc.Response)))
+		body := io.NopCloser(bytes.NewReader([]byte(mhc.Response)))
 		return &http.Response{
 			StatusCode: 200,
 			Body:       body,
@@ -289,15 +466,95 @@ func (mhc *MockHTTPClient) Get(str string) (*http.Response, error) {
 	}
 }
 
-type MockS3Downloader struct{}
+type MockS3Downloader struct {
+	FailFirstAttempt bool
+	DownloadCount    int
+}
 
-func (msd *MockS3Downloader) Download(w io.WriterAt, input *s3.GetObjectInput, options ...func(*s3manager.Downloader)) (int64, error) {
+func (msd *MockS3Downloader) Download(ctx context.Context, w io.WriterAt, input *s3.GetObjectInput, options ...func(*manager.Downloader)) (int64, error) {
+	msd.DownloadCount++
+
+	if msd.FailFirstAttempt && msd.DownloadCount == 1 {
+		return 0, fmt.Errorf("simulated first attempt failure")
+	}
+
 	filePath := s3FileDirectoryPathTest + "aaa.conf"
 	writeContent := "S3 config file download and store successfully"
 
 	writeFileHelper(filePath, writeContent)
 
 	return 100, nil
+}
+
+// MockS3Client implements the S3Client interface for testing
+type MockS3Client struct {
+	LocationConstraint string // The location constraint to return (empty string for us-east-1, "EU" for eu-west-1, etc.)
+}
+
+func (msc *MockS3Client) GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error) {
+	output := &s3.GetBucketLocationOutput{}
+	if msc.LocationConstraint != "" {
+		output.LocationConstraint = types.BucketLocationConstraint(msc.LocationConstraint)
+	}
+
+	return output, nil
+}
+
+func (msc *MockS3Client) Options() s3.Options {
+	return s3.Options{
+		Region: "us-east-1",
+	}
+}
+
+func TestParseS3ARNAndGetBucketInfo(t *testing.T) {
+	cases := []struct {
+		name               string
+		s3ARN              string
+		locationConstraint string
+		expectedBucket     string
+		expectedRegion     string
+		expectedFilePath   string
+	}{
+		{
+			name:               "Valid ARN with us-east-1 (empty constraint)",
+			s3ARN:              "arn:aws:s3:::my-bucket/path/to/file.conf",
+			locationConstraint: "",
+			expectedBucket:     "my-bucket",
+			expectedRegion:     "us-east-1",
+			expectedFilePath:   "path/to/file.conf",
+		},
+		{
+			name:               "Valid ARN with eu-west-1 (EU constraint)",
+			s3ARN:              "arn:aws:s3:::eu-bucket/config/parser.conf",
+			locationConstraint: "EU",
+			expectedBucket:     "eu-bucket",
+			expectedRegion:     "eu-west-1",
+			expectedFilePath:   "config/parser.conf",
+		},
+		{
+			name:               "Valid ARN with us-west-2",
+			s3ARN:              "arn:aws:s3:::west-bucket/fluent-bit.conf",
+			locationConstraint: "us-west-2",
+			expectedBucket:     "west-bucket",
+			expectedRegion:     "us-west-2",
+			expectedFilePath:   "fluent-bit.conf",
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			mockClient := &MockS3Client{
+				LocationConstraint: test.locationConstraint,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(test.s3ARN, mockClient)
+
+			// Verify the results
+			assert.Equal(t, test.expectedBucket, bucketName)
+			assert.Equal(t, test.expectedRegion, bucketRegion)
+			assert.Equal(t, test.expectedFilePath, s3FilePath)
+		})
+	}
 }
 
 func createFileHelper(filePath string) *os.File {
@@ -310,9 +567,9 @@ func createFileHelper(filePath string) *os.File {
 }
 
 func readFileHelper(filePath string) string {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		fmt.Errorf("failed to read the file: %s", filePath)
+		fmt.Printf("failed to read the file: %s", filePath)
 	}
 
 	return string(content)
@@ -324,6 +581,42 @@ func writeFileHelper(filePath, writeContent string) {
 
 	_, err := file.WriteString(writeContent)
 	if err != nil {
-		fmt.Errorf("Can not write %s in file %s", writeContent, filePath)
+		fmt.Printf("Cannot write %s in file %s", writeContent, filePath)
+	}
+}
+
+func TestCanWriteToDir(t *testing.T) {
+	originalOSCreate := osCreate
+	defer func() {
+		osCreate = originalOSCreate
+	}()
+
+	testCases := []struct {
+		name           string
+		mockOsCreate   func(name string) (*os.File, error)
+		expectedResult bool
+	}{
+		{
+			name: "Can write",
+			mockOsCreate: func(name string) (*os.File, error) {
+				dir := t.TempDir()
+				return os.CreateTemp(dir, "mock")
+			},
+			expectedResult: true,
+		},
+		{
+			name: "Cannot write",
+			mockOsCreate: func(name string) (*os.File, error) {
+				return nil, fmt.Errorf("Permission denied")
+			},
+			expectedResult: false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			osCreate = tc.mockOsCreate
+			result := canWriteToDir("/init/")
+			assert.Equal(t, tc.expectedResult, result)
+		})
 	}
 }
