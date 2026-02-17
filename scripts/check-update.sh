@@ -25,10 +25,12 @@ update_json_field() {
 # - New upstream Fluentbit version to consumed
 # - New AWS Fluentbit version to be released (Updated to pull in any other updates/changes.)
 check_and_update() {
-    local update="false"
+    local any_version_updated="false"
     
     for i in $(jq 'keys[]' "$VERSION_FILE"); do
-        current_sha=$(jq -r ".[$i].linux.\"amazon-linux-sha\"" "$VERSION_FILE")
+        local version_updated="false"
+        
+        current_sha=$(jq -r ".[$i].linux.\"os-digest\"" "$VERSION_FILE")
         tag=$(jq -r ".[$i].linux.\"al-tag\"" "$VERSION_FILE")
 
         if ! docker pull "${ECR_REPO}:$tag"; then
@@ -38,11 +40,13 @@ check_and_update() {
         
         tags_to_cleanup+=("$tag")
         new_al_sha=$(docker inspect --format='{{index .RepoDigests 0}}' "${ECR_REPO}:$tag")
+        # Extract just the SHA256 digest from the full repo digest
+        new_sha_digest=$(echo "$new_al_sha" | sed 's/.*@//')
         
-        if [[ "$new_al_sha" != "$current_sha" ]]; then
+        if [[ "$new_sha_digest" != "$current_sha" ]]; then
             echo "New base amazon linux image for $tag. Updating..."
-            update_json_field "$i" "amazon-linux-sha" "$new_al_sha"
-            update="true"
+            update_json_field "$i" "os-digest" "$new_sha_digest"
+            version_updated="true"
         fi
 
         curr_fluentbit_version=$(jq -r ".[$i].linux.\"fluent-bit\"" "$VERSION_FILE")
@@ -50,7 +54,7 @@ check_and_update() {
         if [[ "$curr_fluentbit_version" != "$release_fluentbit_version" ]]; then
             echo "Upgrading to new Fluentbit version."
             update_json_field "$i" "fluent-bit" "$release_fluentbit_version"
-            update="true"
+            version_updated="true"
         fi
 
         curr_aws_fb_version=$(jq -r ".[$i].linux.\"version\"" "$VERSION_FILE")
@@ -58,11 +62,20 @@ check_and_update() {
         if [[ "$curr_aws_fb_version" != "$release_aws_fb_version" ]]; then
             echo "Upgrading to new AWS Fluentbit version."
             update_json_field "$i" "version" "$release_aws_fb_version"
-            update="true"
+            version_updated="true"
+        fi
+
+        # Set publish flag based on whether this version had updates
+        if [[ "$version_updated" = "true" ]]; then
+            update_json_field "$i" "publish" "true"
+            any_version_updated="true"
+        else
+            update_json_field "$i" "publish" "false"
         fi
     done
 
-    if [[ "$update" = "true" ]]; then
+    # Only stage changes if at least one version was updated
+    if [[ "$any_version_updated" = "true" ]]; then
         git add "$VERSION_FILE"
         git status
     fi
