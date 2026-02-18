@@ -59,7 +59,7 @@ generate_release_notes() {
 ---
 https://github.com/aws/aws-for-fluent-bit/blob/mainline/CHANGELOG.md#${sanitized_version}
 
-### AWS Fluent bit image $version
+### AWS Fluent Bit image $version
 ---"
 
 	for key in "${METADATA_KEYS[@]}"; do
