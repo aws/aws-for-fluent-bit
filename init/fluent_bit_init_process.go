@@ -99,7 +99,7 @@ type S3Downloader interface {
 
 // S3Client interface for bucket operations
 type S3Client interface {
-	GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error)
+	HeadBucket(ctx context.Context, params *s3.HeadBucketInput, optFns ...func(*s3.Options)) (*s3.HeadBucketOutput, error)
 	Options() s3.Options
 }
 
@@ -276,30 +276,18 @@ func parseS3ARNAndGetBucketInfo(s3ARNString string, s3Client S3Client) (bucketNa
 	bucketName = bucketAndFile[0]
 	s3FilePath = bucketAndFile[1]
 
-	// TODO: migrate to s3:HeadBucket and use BucketRegion
-	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadBucket.html
-	// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/s3#Client.HeadBucket
 	// get bucket region
-	input := &s3.GetBucketLocationInput{
+	input := &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	}
 
-	output, err := s3Client.GetBucketLocation(context.TODO(), input)
+	output, err := s3Client.HeadBucket(context.TODO(), input)
 	if err != nil {
 		logrus.Errorln(err)
-		logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s, you must be the bucket owner to implement this operation\n", bucketName, s3FilePath)
+		logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s\n", bucketName, s3FilePath)
 	}
 
-	bucketRegion = string(output.LocationConstraint)
-	// Buckets in Region us-east-1 have a LocationConstraint of null
-	// Buckets in Region eu-west-1 have a LocationConstraint of EU
-	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax
-	switch bucketRegion {
-	case "":
-		bucketRegion = "us-east-1"
-	case "EU":
-		bucketRegion = "eu-west-1"
-	}
+	bucketRegion = *output.BucketRegion
 
 	return bucketName, bucketRegion, s3FilePath
 }
