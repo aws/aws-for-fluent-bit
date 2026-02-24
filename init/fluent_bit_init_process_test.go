@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -488,13 +489,26 @@ func (msd *MockS3Downloader) Download(ctx context.Context, w io.WriterAt, input 
 
 // MockS3Client implements the S3Client interface for testing
 type MockS3Client struct {
-	BucketRegion string // The region to return
+	BucketRegion       string // The region to return from HeadBucket
+	LocationConstraint string // The location constraint to return from GetBucketLocation
+	HeadBucketError    error  // If set, HeadBucket will return this error
 }
 
 func (msc *MockS3Client) HeadBucket(ctx context.Context, params *s3.HeadBucketInput, optFns ...func(*s3.Options)) (*s3.HeadBucketOutput, error) {
+	if msc.HeadBucketError != nil {
+		return nil, msc.HeadBucketError
+	}
 	return &s3.HeadBucketOutput{
 		BucketRegion: aws.String(msc.BucketRegion),
 	}, nil
+}
+
+func (msc *MockS3Client) GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error) {
+	output := &s3.GetBucketLocationOutput{}
+	if msc.LocationConstraint != "" {
+		output.LocationConstraint = types.BucketLocationConstraint(msc.LocationConstraint)
+	}
+	return output, nil
 }
 
 func (msc *MockS3Client) Options() s3.Options {
@@ -678,6 +692,57 @@ func TestParseS3ARNAndGetBucketInfo_SpecialRegions(t *testing.T) {
 			assert.Equal(t, tc.expectedBucket, bucketName, "bucket name should match")
 			assert.Equal(t, tc.expectedRegion, bucketRegion, "region should match")
 			assert.Equal(t, tc.expectedFilePath, s3FilePath, "file path should match")
+		})
+	}
+}
+
+func TestParseS3ARNAndGetBucketInfo_Fallback(t *testing.T) {
+	cases := []struct {
+		name               string
+		s3ARN              string
+		locationConstraint string
+		expectedBucket     string
+		expectedRegion     string
+		expectedFilePath   string
+	}{
+		{
+			name:               "Fallback to GetBucketLocation with us-east-1 (empty constraint)",
+			s3ARN:              "arn:aws:s3:::my-bucket/path/to/file.conf",
+			locationConstraint: "",
+			expectedBucket:     "my-bucket",
+			expectedRegion:     "us-east-1",
+			expectedFilePath:   "path/to/file.conf",
+		},
+		{
+			name:               "Fallback to GetBucketLocation with eu-west-1 (EU constraint)",
+			s3ARN:              "arn:aws:s3:::eu-bucket/config/parser.conf",
+			locationConstraint: "EU",
+			expectedBucket:     "eu-bucket",
+			expectedRegion:     "eu-west-1",
+			expectedFilePath:   "config/parser.conf",
+		},
+		{
+			name:               "Fallback to GetBucketLocation with us-west-2",
+			s3ARN:              "arn:aws:s3:::west-bucket/fluent-bit.conf",
+			locationConstraint: "us-west-2",
+			expectedBucket:     "west-bucket",
+			expectedRegion:     "us-west-2",
+			expectedFilePath:   "fluent-bit.conf",
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			mockClient := &MockS3Client{
+				HeadBucketError:    fmt.Errorf("AccessDenied"),
+				LocationConstraint: test.locationConstraint,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(test.s3ARN, mockClient)
+
+			assert.Equal(t, test.expectedBucket, bucketName)
+			assert.Equal(t, test.expectedRegion, bucketRegion)
+			assert.Equal(t, test.expectedFilePath, s3FilePath)
 		})
 	}
 }

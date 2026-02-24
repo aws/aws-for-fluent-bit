@@ -100,6 +100,7 @@ type S3Downloader interface {
 // S3Client interface for bucket operations
 type S3Client interface {
 	HeadBucket(ctx context.Context, params *s3.HeadBucketInput, optFns ...func(*s3.Options)) (*s3.HeadBucketOutput, error)
+	GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error)
 	Options() s3.Options
 }
 
@@ -276,18 +277,38 @@ func parseS3ARNAndGetBucketInfo(s3ARNString string, s3Client S3Client) (bucketNa
 	bucketName = bucketAndFile[0]
 	s3FilePath = bucketAndFile[1]
 
-	// get bucket region
-	input := &s3.HeadBucketInput{
+	// get bucket region — try HeadBucket first (works cross-account),
+	// fall back to GetBucketLocation for backward compatibility
+	headInput := &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	}
 
-	output, err := s3Client.HeadBucket(context.TODO(), input)
-	if err != nil {
-		logrus.Errorln(err)
-		logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s\n", bucketName, s3FilePath)
-	}
+	headOutput, err := s3Client.HeadBucket(context.TODO(), headInput)
+	if err == nil && headOutput.BucketRegion != nil {
+		bucketRegion = *headOutput.BucketRegion
+	} else {
+		// fall back to GetBucketLocation
+		locInput := &s3.GetBucketLocationInput{
+			Bucket: aws.String(bucketName),
+		}
 
-	bucketRegion = *output.BucketRegion
+		locOutput, locErr := s3Client.GetBucketLocation(context.TODO(), locInput)
+		if locErr != nil {
+			logrus.Errorln(locErr)
+			logrus.Fatalf("[FluentBit Init Process] Cannot get bucket region of %s + %s\n", bucketName, s3FilePath)
+		}
+
+		bucketRegion = string(locOutput.LocationConstraint)
+		// Buckets in Region us-east-1 have a LocationConstraint of null
+		// Buckets in Region eu-west-1 have a LocationConstraint of EU
+		// https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLocation.html#API_GetBucketLocation_ResponseSyntax
+		switch bucketRegion {
+		case "":
+			bucketRegion = "us-east-1"
+		case "EU":
+			bucketRegion = "eu-west-1"
+		}
+	}
 
 	return bucketName, bucketRegion, s3FilePath
 }
