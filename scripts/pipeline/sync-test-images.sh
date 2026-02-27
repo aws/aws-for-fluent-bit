@@ -116,11 +116,15 @@ main() {
     STANDARD_TAGS=("amd64" "arm64" "amd64-debug" "arm64-debug")
     INIT_TAGS=("init-amd64" "init-arm64" "init-amd64-debug" "init-arm64-debug")
 
-    # Pull images without suffix (failures are fatal)
-    pull_image_set "" "false"
+    # Get VERSION for BUILD_VERSION=2
+    VERSION_2=$(./scripts/get_linux_version.sh "2" "version")
+    echo "Pulling images for BUILD_VERSION=2 (VERSION=${VERSION_2})..."
+    pull_image_set "-${VERSION_2}" "false"
 
-    # Pull images with -3 suffix (failures are warnings)
-    pull_image_set "-3" "true"
+    # Get VERSION for BUILD_VERSION=3
+    VERSION_3=$(./scripts/get_linux_version.sh "3" "version")
+    echo "Pulling images for BUILD_VERSION=3 (VERSION=${VERSION_3})..."
+    pull_image_set "-${VERSION_3}" "true"
 
     echo "Successfully synced test repo images to local Docker"
 

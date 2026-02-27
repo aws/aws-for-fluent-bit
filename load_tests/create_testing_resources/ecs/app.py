@@ -50,12 +50,13 @@ class TestingResources(Stack):
             desired_capacity=5,
             vpc=vpc,
             vpc_subnets={ 'subnet_type': ec2.SubnetType.PUBLIC },
+            new_instances_protected_from_scale_in=False
         )
         asg.apply_removal_policy(RemovalPolicy.DESTROY)
 
         capacity_provider = ecs.AsgCapacityProvider(self, "asgCapacityProvider",
             auto_scaling_group=asg,
-            enable_managed_termination_protection=True
+            enable_managed_termination_protection=False
         )
         cluster.add_asg_capacity_provider(capacity_provider)
         cluster.apply_removal_policy(RemovalPolicy.DESTROY)

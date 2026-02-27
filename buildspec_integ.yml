@@ -5,7 +5,7 @@ phases:
       golang: 1.23
   pre_build:
     commands:
-      - echo Running the integration test
+      - echo Running the integration tests
       - |
         if [ -z "$BUILD_VERSION" ]; then
           echo "BUILD_VERSION environment variable not provided, defaulting to BUILD_VERSION=2"
@@ -42,16 +42,10 @@ phases:
             export AWS_SESSION_TOKEN=$(echo $CREDS | jq -r .Token)
             
             aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com
+            VERSION=$(./scripts/get_linux_version.sh "$BUILD_VERSION" "version")
             
-            # Set image tag based on BUILD_VERSION
-            if [ "$BUILD_VERSION" = "2" ]; then
-              IMAGE_TAG="latest"
-            elif [ "$BUILD_VERSION" = "3" ]; then
-              IMAGE_TAG="latest-3"
-            fi
-            
-            docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG}
-            docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${IMAGE_TAG} amazon/aws-for-fluent-bit:latest
+            docker pull ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${VERSION}
+            docker tag ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:${VERSION} amazon/aws-for-fluent-bit:latest
             docker images
             make integ
         fi

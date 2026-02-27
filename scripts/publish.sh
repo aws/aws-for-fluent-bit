@@ -639,31 +639,18 @@ publish_ecr() {
 	aws ecr get-login-password --region ${region}| docker login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
 	aws ecr create-repository --repository-name aws-for-fluent-bit --image-scanning-configuration scanOnPush=true --region ${region} || true
 
-	source_suffix=""
-	# Add image suffix for BUILD_VERSION=3
-	if [ "$BUILD_VERSION" = "3" ]; then
-		source_suffix="-3"
-
-		# Verify all images exist before proceeding
-		if ! verify_images "-3"; then
-			echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
-			# Zero exit to avoid pipeline failures until images exist
-			exit 0
-		fi
-	fi
-
 	for arch in "${ARCHITECTURES[@]}"
 	do
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"${source_suffix} \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-"debug"${source_suffix} \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"${source_suffix} \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-"debug"${source_suffix} \
+		push_image_ecr ${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/amazon/aws-for-fluent-bit-test:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} \
 			${account_id}.dkr.ecr.${region}.amazonaws.com/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 	done
 
@@ -810,10 +797,11 @@ verify_ecr_image_scan() {
 	if [ "$tagCount" = '1' ]; then
 		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
 		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
-		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH')
-		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL')
-		if [ "$highVulnerabilityCount" != null ] || [ "$criticalVulnerabilityCount" != null ]; then
-			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities."
+		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH // 0')
+		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL // 0')
+		if [ "$highVulnerabilityCount" -gt 0 ] || [ "$criticalVulnerabilityCount" -gt 0 ]; then
+			vulnerabilityCount=$((highVulnerabilityCount + criticalVulnerabilityCount))
+			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities (HIGH: ${highVulnerabilityCount}, CRITICAL: ${criticalVulnerabilityCount})."
 			exit 1
 		fi
 	fi
