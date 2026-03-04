@@ -130,20 +130,34 @@ if [ "$BUILD_VERSION" = "2" ]; then
     # BUILD_VERSION 2: Use existing manifest format
     MANIFEST_LATEST_TAG="latest"
     MANIFEST_INIT_TAG="init-latest"
+    MANIFEST_DEBUG_TAG="debug-latest"
+    MANIFEST_INIT_DEBUG_TAG="init-debug-latest"
     ARM64_TAG="arm64"
     AMD64_TAG="amd64"
     INIT_ARM64_TAG="init-arm64"
     INIT_AMD64_TAG="init-amd64"
+    DEBUG_ARM64_TAG="arm64-debug"
+    DEBUG_AMD64_TAG="amd64-debug"
+    INIT_DEBUG_ARM64_TAG="init-arm64-debug"
+    INIT_DEBUG_AMD64_TAG="init-amd64-debug"
 else
     # BUILD_VERSION 3: Include BUILD_VERSION in manifest tags
     MANIFEST_LATEST_TAG="latest-$BUILD_VERSION"
     MANIFEST_INIT_TAG="init-latest-$BUILD_VERSION"
+    MANIFEST_DEBUG_TAG="debug-$BUILD_VERSION"
+    MANIFEST_INIT_DEBUG_TAG="init-debug-$BUILD_VERSION"
     ARM64_TAG="arm64-$BUILD_VERSION"
     AMD64_TAG="amd64-$BUILD_VERSION"
     INIT_ARM64_TAG="init-arm64-$BUILD_VERSION"
     INIT_AMD64_TAG="init-amd64-$BUILD_VERSION"
+    DEBUG_ARM64_TAG="arm64-debug-$BUILD_VERSION"
+    DEBUG_AMD64_TAG="amd64-debug-$BUILD_VERSION"
+    INIT_DEBUG_ARM64_TAG="init-arm64-debug-$BUILD_VERSION"
+    INIT_DEBUG_AMD64_TAG="init-amd64-debug-$BUILD_VERSION"
 fi
 
 # Create and push manifests
 create_and_push_manifest "$MANIFEST_LATEST_TAG" "$ARM64_TAG" "$AMD64_TAG"
 create_and_push_manifest "$MANIFEST_INIT_TAG" "$INIT_ARM64_TAG" "$INIT_AMD64_TAG"
+create_and_push_manifest "$MANIFEST_DEBUG_TAG" "$DEBUG_ARM64_TAG" "$DEBUG_AMD64_TAG"
+create_and_push_manifest "$MANIFEST_INIT_DEBUG_TAG" "$INIT_DEBUG_ARM64_TAG" "$INIT_DEBUG_AMD64_TAG"
