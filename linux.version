@@ -2,7 +2,7 @@
   {
     "linux": {
       "major-version": "2",
-      "version": "2.34.3.20260309",
+      "version": "2.34.3.20260209",
       "release-version": "2.34.3.20260209",
       "latest": "true",
       "build": "1",
@@ -20,7 +20,7 @@
   {
     "linux": {
       "major-version": "3",
-      "version": "3.2.4",
+      "version": "3.2.2",
       "release-version": "3.2.2",
       "latest": "false",
       "build": "1",
