@@ -2,7 +2,7 @@
 
 Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)**
 
-### Contents
+### Contentst
 
 - [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)
     - [AWS Distro for Fluent Bit Release Tags](#aws-distro-for-fluent-bit-release-tags)
