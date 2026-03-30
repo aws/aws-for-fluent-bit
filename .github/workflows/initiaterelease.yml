@@ -76,14 +76,14 @@ jobs:
         if: ${{ needs.GenerateConfig.result == 'failure' }}
         run: |
           echo "ERROR: Encounter error when checking for new release."
-          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionFailure --namespace FluentBitRelease --value "-1"
+          # aws cloudwatch put-metric-data --metric-name FluentBitGithubActionFailure --namespace FluentBitRelease --value "-1"
       - name: Release Kickoff Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 42 }}
         run: |
           echo "Kicking off new release."
-          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 1
+          # aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 1
       - name: No Release Scenario
         if: ${{ needs.GenerateConfig.outputs.stage_exit_code == 0 }}
         run: |
           echo "No new release needed at this time."
-          aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 0
+          # aws cloudwatch put-metric-data --metric-name FluentBitGithubActionKickoff --namespace FluentBitRelease --value 0
