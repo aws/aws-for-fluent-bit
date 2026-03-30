@@ -2,9 +2,6 @@ name: InitiateRelease
 
 on:
   workflow_dispatch:
-  schedule:
-    # Run at 6PM UTC (10AM PST) M-F
-    - cron: 0 18 * * 1-5
 
 jobs:
   GenerateConfig:
