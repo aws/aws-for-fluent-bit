@@ -60,12 +60,7 @@ compute_new_version() {
             # Fluent Bit patch bump → AWS FB patch bump
             patch=$((patch + 1))
         fi
-
-        if [[ "$major_version" == "2" ]]; then
-            echo "${major}.${minor}.${patch}.0"
-        else
-            echo "${major}.${minor}.${patch}"
-        fi
+        echo "${major}.${minor}.${patch}"
     elif [[ "$os_updated" == "true" ]]; then
         if [[ "$major_version" == "2" ]]; then
             # 2.x base-image-only → set BUILD to today's date (YYYYMMDD)
@@ -150,6 +145,11 @@ check_and_update() {
     # Only stage changes if at least one version was updated
     if [[ "$any_version_updated" = "true" ]]; then
         git add "$VERSION_FILE"
+
+        # Generate and prepend new changelog entries
+        SCRIPTS_DIR="$(dirname "${BASH_SOURCE[0]}")"
+        "${SCRIPTS_DIR}/generate_changelog_auto.sh"
+
         git status
     fi
 }
