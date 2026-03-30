@@ -20,7 +20,7 @@
   {
     "linux": {
       "major-version": "3",
-      "version": "3.2.4",
+      "version": "3.2.5",
       "release-version": "3.2.4",
       "latest": "false",
       "build": "1",
