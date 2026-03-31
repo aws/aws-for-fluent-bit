@@ -55,7 +55,7 @@ jobs:
         if: ${{ steps.stage.outputs.stage_exit_code == 42 && steps.push.outputs.push_exit_code == 0 }}
         run: |
           date=$(date '+%Y%m%d')
-          gh pr create --base mainline --head release-${date} --title "Release ${date}" --body "Dummy Release PR"
+          gh pr create --base mainline --head release-${date} --title "Release ${date}" --body "AWS Fluentbit Release Kickoff"
           echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
   MetricPublish:
     needs: GenerateConfig
