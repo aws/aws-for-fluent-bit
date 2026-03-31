@@ -11,7 +11,7 @@ on:
       - edited
 
 jobs:
-  main:
+  ValidatePRTitle:
     name: Validate PR title
     runs-on: ubuntu-slim
     permissions:
