@@ -117,14 +117,24 @@ main() {
     INIT_TAGS=("init-amd64" "init-arm64" "init-amd64-debug" "init-arm64-debug")
 
     # Get VERSION for BUILD_VERSION=2
-    VERSION_2=$(./scripts/get_linux_version.sh "2" "version")
-    echo "Pulling images for BUILD_VERSION=2 (VERSION=${VERSION_2})..."
-    pull_image_set "-${VERSION_2}" "false"
+    PUBLISH_2=$(./scripts/get_linux_version.sh "2" "publish")
+    if [ "${PUBLISH_2}" = "false" ]; then
+        echo "Publishing is disabled for BUILD_VERSION=2, skipping sync"
+    else
+        VERSION_2=$(./scripts/get_linux_version.sh "2" "version")
+        echo "Pulling images for BUILD_VERSION=2 (VERSION=${VERSION_2})..."
+        pull_image_set "-${VERSION_2}" "false"
+    fi
 
     # Get VERSION for BUILD_VERSION=3
-    VERSION_3=$(./scripts/get_linux_version.sh "3" "version")
-    echo "Pulling images for BUILD_VERSION=3 (VERSION=${VERSION_3})..."
-    pull_image_set "-${VERSION_3}" "true"
+    PUBLISH_3=$(./scripts/get_linux_version.sh "3" "publish")
+    if [ "${PUBLISH_3}" = "false" ]; then
+        echo "Publishing is disabled for BUILD_VERSION=3, skipping sync"
+    else
+        VERSION_3=$(./scripts/get_linux_version.sh "3" "version")
+        echo "Pulling images for BUILD_VERSION=3 (VERSION=${VERSION_3})..."
+        pull_image_set "-${VERSION_3}" "true"
+    fi
 
     echo "Successfully synced test repo images to local Docker"
 
