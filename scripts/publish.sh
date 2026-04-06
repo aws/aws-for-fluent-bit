@@ -154,31 +154,18 @@ publish_to_docker_hub() {
 			create_manifest_list ${1} "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
-		source_suffix=""
-		# Add image suffix for BUILD_VERSION=3
-		if [ "$BUILD_VERSION" = "3" ]; then
-			source_suffix="-3"
-
-			# Verify all images exist before proceeding
-			if ! verify_images "-3"; then
-				echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
-				# Zero exit to avoid pipeline failures until images exist
-				exit 0
-			fi
-		fi
-
 		for arch in "${ARCHITECTURES[@]}"
 		do
-			docker tag ${1}:"$arch"${source_suffix} ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$arch"-"debug"${source_suffix} ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"${source_suffix} ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:"$init"-"${arch}"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"-"debug"${source_suffix} ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} ${1}:"$init"-"${arch}"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
 		done
@@ -221,33 +208,20 @@ publish_to_public_ecr() {
 			create_manifest_list public.ecr.aws/aws-observability/aws-for-fluent-bit "stable" ${AWS_FOR_FLUENT_BIT_STABLE_VERSION}
 		fi
 	else
-		source_suffix=""
-		# Add image suffix for BUILD_VERSION=3
-		if [ "$BUILD_VERSION" = "3" ]; then
-			source_suffix="-3"
-
-			# Verify all images exist before proceeding
-			if ! verify_images "-3"; then
-				echo "BUILD_VERSION=3 images not available yet, skipping publish to avoid pipeline failure"
-				# Zero exit to avoid pipeline failures until images exist
-				exit 0
-			fi
-		fi
-
 		aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability
 
 		for arch in "${ARCHITECTURES[@]}"
 		do
-			docker tag ${1}:"$arch"${source_suffix} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$arch"-"debug"${source_suffix} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"${source_suffix} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-${AWS_FOR_FLUENT_BIT_VERSION}
 
-			docker tag ${1}:"$init"-"$arch"-"debug"${source_suffix} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
+			docker tag ${1}:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION} public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 			docker push public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-"$arch"-"debug"-${AWS_FOR_FLUENT_BIT_VERSION}
 		done
 
@@ -538,14 +512,6 @@ verify_ssm() {
 			check_parameter ${1} stable
 		fi
 	else
-		# Check if image exist before any SSM verification for BUILD_VERSION=3
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "${3}.dkr.ecr.${1}.${endpoint}/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: BUILD_VERSION=3 image not found in ECR, skipping SSM verification for region ${1}"
-				return 0
-			fi
-		fi
-
 		check_parameter ${1} ${AWS_FOR_FLUENT_BIT_VERSION}
 	fi
 }
@@ -591,41 +557,6 @@ create_manifest_list_init() {
 push_image_ecr() {
 	docker tag ${1} ${2}
     	docker push ${2}
-}
-
-# Helper function to verify images exist with optional suffix
-# Returns 0 if all images exist, 1 if any are missing
-# Usage: verify_images [suffix]
-verify_images() {
-	local suffix="${1:-}"
-	local missing_images=()
-	local test_repo="amazon/aws-for-fluent-bit-test"
-
-	for arch in "${ARCHITECTURES[@]}"
-	do
-		# Check each required image variant
-		local images_to_check=(
-			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${arch}${suffix}"
-			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${arch}-debug${suffix}"
-			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${init}-${arch}${suffix}"
-			"${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${test_repo}:${init}-${arch}-debug${suffix}"
-		)
-
-		for image in "${images_to_check[@]}"; do
-			if ! docker image inspect "$image" >/dev/null 2>&1; then
-				missing_images+=("$image")
-			fi
-		done
-	done
-
-	if [ ${#missing_images[@]} -gt 0 ]; then
-		echo "Warning: the following images are missing:"
-		printf '  %s\n' "${missing_images[@]}"
-		echo ""
-		return 1
-	fi
-
-	return 0
 }
 
 make_repo_public() {
@@ -723,24 +654,8 @@ verify_ecr() {
 
 		verify_sha $sha1_init $sha2_init
 	else
-		# Check if image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: image not found in ECR, skipping verification for region ${region}"
-				return 0
-			fi
-		fi
-
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
-
-		# Check if init image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit" "init-${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: init image not found in ECR, skipping verification for region ${region}"
-				return 0
-			fi
-		fi
 
 		docker pull ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' ${account_id}.dkr.ecr.${region}.${endpoint}/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
@@ -820,14 +735,6 @@ verify_dockerhub() {
 
 		verify_sha $sha1 $sha2
 	else
-		# Check if image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "amazon/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: image not found in DockerHub, skipping verification"
-				return 0
-			fi
-		fi
-
 		# Get the image SHA's
 		docker pull amazon/aws-for-fluent-bit:latest
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:latest)
@@ -835,14 +742,6 @@ verify_dockerhub() {
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1 $sha2
-
-		# Check if init image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "amazon/aws-for-fluent-bit" "init-${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: init image not found in DockerHub, skipping verification"
-				return 0
-			fi
-		fi
 
 		docker pull amazon/aws-for-fluent-bit:"$init"-latest
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-latest)
@@ -879,14 +778,6 @@ verify_public_ecr() {
 
 		verify_sha $sha1 $sha2
 	else
-		# Check if image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "public.ecr.aws/aws-observability/aws-for-fluent-bit" "${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: image not found in Public ECR, skipping verification"
-				return 0
-			fi
-		fi
-
 		# Get the image SHA's
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:latest)
@@ -894,14 +785,6 @@ verify_public_ecr() {
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
 
 		verify_sha $sha1 $sha2
-
-		# Check if init image exist before any verification
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if ! check_tag_exists "public.ecr.aws/aws-observability/aws-for-fluent-bit" "init-${AWS_FOR_FLUENT_BIT_VERSION}"; then
-				echo "Warning: init image not found in Public ECR, skipping verification"
-				return 0
-			fi
-		fi
 
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest
 		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest)
