@@ -6,6 +6,16 @@ phases:
       python: 3.x
   pre_build:
     commands:
+      # Short term fix: ensure ECR basic scanning is enabled for the registry
+      # TODO: Remove this once we have a long term fix
+      - |
+        current_scan_type=$(aws ecr get-registry-scanning-configuration --region ${AWS_DEFAULT_REGION} --query 'scanningConfiguration.scanType' --output text 2>/dev/null || echo "UNKNOWN")
+        if [ "$current_scan_type" != "BASIC" ]; then
+          echo "Setting ECR scanning configuration to BASIC"
+          aws ecr put-registry-scanning-configuration --scan-type BASIC --region ${AWS_DEFAULT_REGION}
+        else
+          echo "ECR scanning configuration already set to BASIC, skipping"
+        fi
       - echo Building the AWS for Fluent Bit image
       # Check BUILD_VERSION environment variable and set default if not provided
       # TODO: Remove default once codepipeline and buildspec setup is complete end to end for new builds
