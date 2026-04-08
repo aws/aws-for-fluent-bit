@@ -1,16 +1,18 @@
 # Changelog
 
 ### 2.34.3.20260407
-* Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260330.0
+* Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260406.1
 * fix: Fix image tags for dockerhub/public ecr [#1099](https://github.com/aws/aws-for-fluent-bit/pull/1099)
 * fix: Update test image sync to only pull for published images [#1098](https://github.com/aws/aws-for-fluent-bit/pull/1098)
 * enhancement: Add new autogeneration github actions [#1094](https://github.com/aws/aws-for-fluent-bit/pull/1094)
+* enhancement: temporarily check and change scanning type to BASIC before building new images [#1102](https://github.com/aws/aws-for-fluent-bit/pull/1102)
 
 ### 3.2.6
-* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260330.0
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.11.20260406.2
 * fix: Fix image tags for dockerhub/public ecr [#1099](https://github.com/aws/aws-for-fluent-bit/pull/1099)
 * fix: Update test image sync to only pull for published images [#1098](https://github.com/aws/aws-for-fluent-bit/pull/1098)
 * enhancement: Add new autogeneration github actions [#1094](https://github.com/aws/aws-for-fluent-bit/pull/1094)
+* enhancement: temporarily check and change scanning type to BASIC before building new images [#1102](https://github.com/aws/aws-for-fluent-bit/pull/1102)
 
 ### 3.2.5
 * Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.10.20260325.0
