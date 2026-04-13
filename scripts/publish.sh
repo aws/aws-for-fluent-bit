@@ -710,14 +710,56 @@ verify_ecr_image_scan() {
 
 	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$tagCount" = '1' ]; then
-		aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
-		aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
-		highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH // 0')
-		criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL // 0')
-		if [ "$highVulnerabilityCount" -gt 0 ] || [ "$criticalVulnerabilityCount" -gt 0 ]; then
-			vulnerabilityCount=$((highVulnerabilityCount + criticalVulnerabilityCount))
-			echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities (HIGH: ${highVulnerabilityCount}, CRITICAL: ${criticalVulnerabilityCount})."
-			exit 1
+		scan_type=$(aws ecr get-registry-scanning-configuration --region ${region} --query 'scanningConfiguration.scanType' --output text 2>/dev/null || echo "BASIC")
+		if [ "$scan_type" = "ENHANCED" ]; then
+			max_attempts=20
+			attempt=0
+
+			echo "Checking Inspector2 coverage for repo=${repo_uri} tag=${tag}..."
+			while [ $attempt -lt $max_attempts ]; do
+				# Note: list-coverage uses 'ecrRepositoryName' filter key
+				coverage_result=$(aws inspector2 list-coverage \
+					--filter-criteria '{"ecrRepositoryName":[{"comparison":"EQUALS","value":"'${repo_uri}'"}],"ecrImageTags":[{"comparison":"EQUALS","value":"'${tag}'"}]}' \
+					--region ${region})
+				status=$(echo "$coverage_result" | jq -r '.coveredResources[0].scanStatus.statusCode // "NOT_FOUND"')
+				if [ "$status" = "ACTIVE" ]; then
+					echo "Inspector2 scan complete for ${tag}"
+					break
+				fi
+				attempt=$((attempt + 1))
+				echo "Waiting for Inspector2 scan (status: ${status}, attempt ${attempt}/${max_attempts})..."
+				sleep 15
+			done
+			if [ $attempt -eq $max_attempts ]; then
+				echo "Error: Inspector2 scan did not complete for ${repo_uri}:${tag} after $((max_attempts * 15)) seconds"
+				exit 1
+			fi
+
+			# Continuously poll for any high/critical findings — findings may appear gradually after scan shows ACTIVE
+			echo "Waiting for findings to propagate..."
+			sleep 15
+			max_stability_attempts=10
+			stability_attempt=0
+			while [ $stability_attempt -lt $max_stability_attempts ]; do
+				findings=$(aws inspector2 list-findings --max-results 1 --filter-criteria '{"ecrImageRepositoryName":[{"comparison":"EQUALS","value":"'${repo_uri}'"}],"ecrImageTags":[{"comparison":"EQUALS","value":"'${tag}'"}],"severity":[{"comparison":"EQUALS","value":"HIGH"},{"comparison":"EQUALS","value":"CRITICAL"}]}' --region ${region})
+				vulnerability=$(echo "$findings" | jq '.findings | length')
+				if [ $vulnerability -gt 0 ]; then
+					echo "Uploaded image ${tag} has HIGH/CRITICAL vulnerabilities."
+					exit 1
+				fi
+				stability_attempt=$((stability_attempt + 1))
+				sleep 15
+			done
+		else
+			aws ecr start-image-scan --repository-name ${repo_uri} --image-id imageTag=${tag} --region ${region}
+			aws ecr wait image-scan-complete --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag}
+			highVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.HIGH // 0')
+			criticalVulnerabilityCount=$(aws ecr describe-image-scan-findings --repository-name ${repo_uri} --region ${region} --image-id imageTag=${tag} | jq '.imageScanFindings.findingSeverityCounts.CRITICAL // 0')
+			if [ "$highVulnerabilityCount" -gt 0 ] || [ "$criticalVulnerabilityCount" -gt 0 ]; then
+				vulnerabilityCount=$((highVulnerabilityCount + criticalVulnerabilityCount))
+				echo "Uploaded image ${tag} has ${vulnerabilityCount} vulnerabilities (HIGH: ${highVulnerabilityCount}, CRITICAL: ${criticalVulnerabilityCount})."
+				exit 1
+			fi
 		fi
 	fi
 }
