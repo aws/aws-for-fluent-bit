@@ -87,34 +87,18 @@ generate_entry() {
 	local commits="$3"
 	local entry_file="$4"
 
-	local version fluent_bit cw_plugin kinesis_plugin firehose_plugin al_tag
+	local version al_tag
 	version=$(get_version_info "$major_version" "version")
-	fluent_bit=$(get_version_info "$major_version" "fluent-bit")
-	cw_plugin=$(get_version_info "$major_version" "cloudwatch-plugin")
-	kinesis_plugin=$(get_version_info "$major_version" "kinesis-plugin")
-	firehose_plugin=$(get_version_info "$major_version" "firehose-plugin")
 	al_tag=$(get_version_info "$major_version" "al-tag")
-
-	local al_description
-	if [[ "$al_tag" == "2023" ]]; then
-		al_description="Minimal set of packages installed using Amazon Linux 2023 container image version: $al_version"
-	else
-		al_description="Amazon Linux $al_tag base container image version: $al_version"
-	fi
 
 	cat >>"$entry_file" <<EOF
 ### $version
-This release includes:
-* Fluent Bit [v${fluent_bit#v}](https://github.com/fluent/fluent-bit/tree/v${fluent_bit#v})
-* Amazon CloudWatch Logs for Fluent Bit ${cw_plugin#v}
-* Amazon Kinesis Streams for Fluent Bit ${kinesis_plugin#v}
-* Amazon Kinesis Firehose for Fluent Bit ${firehose_plugin#v}
-* $al_description
-
-Compared to the previous release, this release adds:
-$commits
-
+* Minimal set of packages installed using Amazon Linux $al_tag container image version: $al_version
 EOF
+	if [[ -n "$commits" ]]; then
+		echo "$commits" >>"$entry_file"
+	fi
+	echo "" >>"$entry_file"
 }
 
 prepend_to_changelog() {

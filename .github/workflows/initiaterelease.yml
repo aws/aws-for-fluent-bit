@@ -8,6 +8,7 @@ on:
 
 jobs:
   GenerateConfig:
+    if: github.repository == 'aws/aws-for-fluent-bit'
     runs-on: ubuntu-latest
     outputs:
       stage_exit_code: ${{ steps.stage.outputs.stage_exit_code }}
@@ -59,7 +60,7 @@ jobs:
           echo "pr_exit_code=$?" >> "$GITHUB_OUTPUT"
   MetricPublish:
     needs: GenerateConfig
-    if: success() || failure()
+    if: (success() || failure()) && github.repository == 'aws/aws-for-fluent-bit'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
