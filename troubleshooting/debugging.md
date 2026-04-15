@@ -747,46 +747,14 @@ Check out the FireLens example for preventing/reducing out of memory exceptions:
 
 #### Testing for real memory leaks using Valgrind
 
-If you do think the cause of your high memory usage is a bug in the code, you can optionally help us out by attempting to profile Fluent Bit for the source of the leak. To do this, use the [Valgrind](https://valgrind.org/) tool.
-
-There are some caveats when using Valgrind. Its a debugging tool, and so it significantly reduces the performance of Fluent Bit. It will consume more memory and CPU and generally be slower when debugging. Therefore, Valgrind images may not be safe to deploy to prod. 
-
-##### Option 1: Build from prod release (Easier but less robust)
-
-Use the Dockerfile below to create a new container image that will invoke your Fluent Bit version using Valgrind. Replace the "builder" image with whatever AWS for Fluent Bit release you are using, in this case, we are testing the latest image. The Dockerfile here will copy the original binary into a new image with Valgrind. Valgrind is a little bit like a mini-VM that will run the Fluent Bit binary and inspect the code at runtime. When you terminate the container, Valgrind will output diagnostic information on shutdown, with summary of memory leaks it detected. This output will allow us to determine which part of the code caused the leak. Valgrind can also be used to find the source of segmentation faults
-
-```
-FROM public.ecr.aws/aws-observability/aws-for-fluent-bit:latest as builder
-
-FROM public.ecr.aws/amazonlinux/amazonlinux@${OS_DIGEST}
-RUN yum upgrade -y \
-    && yum install -y openssl11-devel \
-          cyrus-sasl-devel \
-          pkgconfig \
-          systemd-devel \
-          zlib-devel \
-          libyaml \
-          valgrind \
-          nc && rm -fr /var/cache/yum
-
-COPY --from=builder /fluent-bit /fluent-bit
-CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf
-```
-
-##### Option 2: Debug Build (More robust)
-
-The best option, which is most likely to catch any leak or segfault is to create a fresh build of the image using the `make debug-valgrind` target. This will create a fresh build with debug mode and valgrind support enabled, which gives the highest chance that Valgrind will be able to produce useful diagnostic information about the issue.
-
-1. Check out the git tag for the version that saw the problem
-2. Make sure the `FLB_VERSION` at the top of the `Makefile` is set to the same version as the main Dockerfile for that tag.
-3. Build this dockerfile with the `make debug-valgrind` target. The image will be tagged with the `amazon/aws-for-fluent-bit:debug-valgrind` tag.
+See [docs/valgrind.md](../docs/valgrind.md) for full details on building, configuring, and reading results from the valgrind debug image.
 
 ##### Other Options: Other Debug Builds
 Several debug targets can be built via `make <target-name>`
 Here's a list of debug targets and what they do:
 - `debug` and `debug-s3`: these debug targets upload crash symbols, such as a compressed core dump, stack traces, and crashed Fluent Bit executable to an S3 bucket of your choosing. Symbols are also stored in the `/cores` directory. You can access this via a mounted volume. Stack trace is also printed out on crash. More information on how to use the debug image can be found in: [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
 - `debug-fs`: this is a light weight debug target that simply outputs the coredump crash file to the `/cores` directory which can be mounted to by a Docker volume. This image does not upload crash symbols to S3, and does not process stack traces.
-- `debug-valgrind`: this is an image that runs Fluent Bit with valrind to catch leaks and segfaults.
+- `debug-valgrind`: runs Fluent Bit under valgrind. See [docs/valgrind.md](../docs/valgrind.md) for details.
 - `init-debug` and `init-debug-s3`: same as `debug` and `debug-s3` images but with the init process
 - `init-debug-fs`: same as `debug-fs` but with the init process.
 - `main-debug-all`: builds `debug-s3`, `debug-fs`, and `debug-valgrind` efficiently without rebuilding dependencies.

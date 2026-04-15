@@ -15,14 +15,14 @@ all: release
 
 # Execute set-cache to turn docker cache back on for faster development.
 DOCKER_BUILD_FLAGS := "--no-cache"
-# Amazon Linux Tag to use for images, will use value if not set
-AL_TAG ?= "2"
-# Fluent Bit version (branch or tag) to checkout, will use value if not set 
-FLB_VERSION ?= "1.9.10"
-# Fluent Bit repository to checkout, will use value if not set
-FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
 # Build Version
-BUILD_VERSION ?= 2
+BUILD_VERSION ?= 3
+# Amazon Linux Tag to use for images, derived from linux.version if not set
+AL_TAG ?= $(shell ./scripts/get_linux_version.sh ${BUILD_VERSION} al-tag)
+# Fluent Bit version (branch or tag) to checkout, derived from linux.version if not set
+FLB_VERSION ?= $(shell ./scripts/get_linux_version.sh ${BUILD_VERSION} fluent-bit)
+# Fluent Bit repository to checkout, derived from linux.version if not set
+FLB_REPOSITORY ?= $(shell ./scripts/get_linux_version.sh ${BUILD_VERSION} flb-repository)
 # AWS for Fluent Bit Version
 AWS_FOR_FLUENT_BIT_VERSION ?= $(shell ./scripts/get_linux_version.sh ${BUILD_VERSION} version)
 # sha256 digest for the OS image

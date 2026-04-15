@@ -1,5 +1,7 @@
 ARG RUNTIME_IMAGE
 FROM ${RUNTIME_IMAGE}
 
-# Run under valgrind
-CMD valgrind --leak-check=full --error-limit=no /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf
+COPY ./scripts/valgrind_uploader.sh /usr/local/bin/valgrind_uploader.sh
+RUN chmod +x /usr/local/bin/valgrind_uploader.sh
+
+CMD ["/usr/local/bin/valgrind_uploader.sh"]

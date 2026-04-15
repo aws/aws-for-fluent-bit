@@ -369,35 +369,32 @@ AWS for Fluent Bit can be built locally using the following commands:
 
 You can customize which Amazon Linux base image version is used in the Docker builds. This is useful for testing with different Amazon Linux versions or when you need to match a specific base image version.
 
-The default value is:
-
-- `AL_TAG`: "2" (Amazon Linux 2)
+The default value is derived from `linux.version` based on `BUILD_VERSION` (default: `3`), which resolves to the corresponding `al-tag` (e.g. `2023` for Amazon Linux 2023).
 
 There are two ways to customize this value:
 
-**Method 1: Using environment variables**
+**Method 1: Using environment variables (preferred)**
 
 Set the environment variable when running the make command:
 
 ```bash
-# Use a specific Amazon Linux 2 version
-AL_TAG="2.0.20250623.0" make release
+# Use a specific Amazon Linux version
+AL_TAG="2023.7.20260401" make release
+
+# Build with Amazon Linux 2 (BUILD_VERSION=2)
+BUILD_VERSION=2 make release
 
 # For development builds
-AL_TAG="2.0.20250623.0" make dev
+AL_TAG="2023.7.20260401" make dev
 ```
 
-**Method 2: Updating the Makefile directly**
+**Method 2: Updating `linux.version` directly**
 
-You can also modify the default value in the Makefile:
+To change the default persistently, edit the `linux.version` file at the root of the repository:
 
-1. Open the Makefile in your editor
-2. Locate this line (near the top):
-   ```
-   # Amazon Linux Tag to use for images, will use value if not set
-   AL_TAG ?= "2"
-   ```
-3. Update the value as needed (e.g., change `"2"` to `"2.0.20250623.0"`)
+1. Open `linux.version` in your editor
+2. Locate the entry matching your target `major-version` (e.g. `"3"`)
+3. Update the `al-tag` field as needed
 4. Save the file and run `make release` or `make dev`
 
 The `AL_TAG` variable affects all Docker builds in the Makefile, including:
@@ -411,20 +408,20 @@ The `AL_TAG` variable affects all Docker builds in the Makefile, including:
 
 ##### Customizing Fluent Bit Version and Repository
 
-You can customize which version of Fluent Bit is built and which repository it's sourced from. The default values are:
+You can customize which version of Fluent Bit is built and which repository it's sourced from. The default values are derived from `linux.version` based on `BUILD_VERSION` (default: `3`):
 
-- `FLB_VERSION`: "1.9.10" (can be either a branch name or tag name within the repository)
-- `FLB_REPOSITORY`: "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
+- `FLB_VERSION`: Resolved from `linux.version` (e.g. `v4.2.2`; can be either a branch name or tag name within the repository)
+- `FLB_REPOSITORY`: Resolved from `linux.version` (e.g. `https://github.com/fluent/fluent-bit.git`)
 
 There are two ways to customize these values:
 
-**Method 1: Using environment variables**
+**Method 1: Using environment variables (preferred)**
 
 Set the environment variables when running the make command:
 
 ```bash
 # Build with a specific Fluent Bit version tag
-FLB_VERSION="2.0.8" make release
+FLB_VERSION="v4.3.0" make release
 
 # Build with a specific branch name
 FLB_VERSION="feature-branch" make release
@@ -432,23 +429,20 @@ FLB_VERSION="feature-branch" make release
 # Build from a different repository
 FLB_VERSION="your-branch" FLB_REPOSITORY="https://github.com/your-username/fluent-bit.git" make release
 
+# Build the v2 configuration (Fluent Bit 1.9.10 on AL2)
+BUILD_VERSION=2 make release
+
 # Combine with dev mode for faster builds with caching
 FLB_VERSION="your-branch" FLB_REPOSITORY="https://github.com/your-username/fluent-bit.git" make dev
 ```
 
-**Method 2: Updating the Makefile directly**
+**Method 2: Updating `linux.version` directly**
 
-You can also modify the default values in the Makefile:
+To change the defaults persistently, edit the `linux.version` file at the root of the repository:
 
-1. Open the Makefile in your editor
-2. Locate these lines (near the compile stage):
-   ```
-   # Fluent Bit version (branch or tag) to checkout, will use value if not set
-   FLB_VERSION ?= "1.9.10"
-   # Fluent Bit repository to checkout, will use value if not set
-   FLB_REPOSITORY ?= "https://github.com/amazon-contributing/upstream-to-fluent-bit.git"
-   ```
-3. Update the values as needed
+1. Open `linux.version` in your editor
+2. Locate the entry matching your target `major-version` (e.g. `"3"`)
+3. Update the `fluent-bit` and/or `flb-repository` fields as needed
 4. Save the file and run `make release` or `make dev`
 
 #### Local integ testing
