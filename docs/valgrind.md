@@ -51,6 +51,23 @@ The entrypoint script ([`valgrind_uploader.sh`](../scripts/valgrind_uploader.sh)
 
 If valgrind exits on its own (e.g. Fluent Bit crashes), results are uploaded immediately.
 
+### Signal handling
+
+| Signal | Behavior |
+|--------|----------|
+| `SIGTERM` / `SIGINT` | Initiates shutdown: forwards SIGTERM to valgrind, waits for exit, uploads results |
+| `SIGCONT` | Forwarded to valgrind, which delivers it to Fluent Bit. Fluent Bit handles SIGCONT by [dumping internal stats](https://docs.fluentbit.io/manual/administration/troubleshooting#dump-internals-and-signal) (input status, storage layer, chunk counts) to stdout. Useful for getting a point-in-time snapshot of Fluent Bit's internal state |
+
+To trigger a stats dump from outside the container:
+
+```bash
+# Docker
+docker kill --signal=SIGCONT <container_id>
+
+# Kubernetes
+kubectl exec -n <namespace> <pod> -- kill -CONT 1
+```
+
 ### Modes
 
 Each mode runs a different valgrind tool and produces different output files:

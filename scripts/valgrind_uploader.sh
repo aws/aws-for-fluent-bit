@@ -100,6 +100,13 @@ handle_signal() {
     CAUGHT_SIGNAL=1
 }
 
+# Forward SIGCONT to valgrind so fluent-bit dumps its internal stats.
+handle_sigcont() {
+    if [ -n "$VALGRIND_PID" ] && kill -0 "$VALGRIND_PID" 2>/dev/null; then
+        kill -CONT "$VALGRIND_PID" 2>/dev/null
+    fi
+}
+
 # Heap profiling over time. Diagnostics go to stderr (massif doesn't support --log-file).
 start_massif() {
     valgrind \
@@ -170,6 +177,7 @@ wait_for_shutdown() {
 # Entry point.
 main() {
     trap handle_signal SIGTERM SIGINT
+    trap handle_sigcont SIGCONT
 
     log "Starting in ${VALGRIND_MODE} mode (PID $$)"
 
