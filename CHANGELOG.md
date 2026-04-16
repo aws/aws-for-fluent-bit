@@ -1,5 +1,27 @@
 # Changelog
 
+### 2.34.3.20260416
+This release includes:
+* Fluent Bit [v1.9.10](https://github.com/fluent/fluent-bit/tree/v1.9.10)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Amazon Linux 2 base container image version: 2.0.20260413.0
+
+Compared to the previous release, this release adds:
+* enhancement: Rework valgrind image to offer additional options [#1108](https://github.com/aws/aws-for-fluent-bit/pull/1108)
+
+### 3.2.7
+This release includes:
+* Fluent Bit [v4.2.2](https://github.com/fluent/fluent-bit/tree/v4.2.2)
+* Amazon CloudWatch Logs for Fluent Bit 1.9.4
+* Amazon Kinesis Streams for Fluent Bit 1.10.3
+* Amazon Kinesis Firehose for Fluent Bit 1.7.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.11.20260413.0
+
+Compared to the previous release, this release adds:
+* enhancement: Rework valgrind image to offer additional options [#1108](https://github.com/aws/aws-for-fluent-bit/pull/1108)
+
 ### 2.34.3.20260407
 * Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260406.1
 * fix: Fix image tags for dockerhub/public ecr [#1099](https://github.com/aws/aws-for-fluent-bit/pull/1099)
