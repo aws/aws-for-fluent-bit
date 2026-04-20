@@ -1,26 +1,20 @@
 ARG RUNTIME_IMAGE
 FROM ${RUNTIME_IMAGE}
 
-# Only last CMD command will be executed, automatically replaces the original entrypoint
-CMD echo "AWS for Fluent Bit Container Image Version `cat /AWS_FOR_FLUENT_BIT_VERSION` - Init Debug Image with S3 Core Uploader"; \
-    if [ "$S3_BUCKET" == "" ]; then \
-        echo "Note: Please set S3_BUCKET environment variable to your crash symbol upload destination S3 bucket"; \
-    fi; \
-    if [ "$S3_KEY_PREFIX" == "issue" ]; then \
-        echo "Note: Please set S3_KEY_PREFIX environment variable to a useful identifier - e.g. company name, team name, customer name"; \
-    fi; \
-    export RUN_ID=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
-    echo "RUN_ID is set to $RUN_ID"; \
-    /init/fluent_bit_init_process; \
-    # Source the invoke script from the appropriate location
+# Run fluent_bit_init_process to generate the invoke script, extract the config path
+# it produced, then hand off to core_uploader which supervises fluent-bit directly.
+# FLB_CONF_FILE overrides the default config path in core_uploader.sh.
+CMD /init/fluent_bit_init_process; \
     if [ -f /init/invoke_fluent_bit.sh ]; then \
-        chmod +x /init/invoke_fluent_bit.sh; \
-        env RUN_ID=$RUN_ID /init/invoke_fluent_bit.sh; \
+        INVOKE_SCRIPT=/init/invoke_fluent_bit.sh; \
     elif [ -f /tmp/init/invoke_fluent_bit.sh ]; then \
-        chmod +x /tmp/init/invoke_fluent_bit.sh; \
-        env RUN_ID=$RUN_ID /tmp/init/invoke_fluent_bit.sh; \
+        INVOKE_SCRIPT=/tmp/init/invoke_fluent_bit.sh; \
     else \
         echo "Error: invoke_fluent_bit.sh not found in /init or /tmp/init"; \
         exit 1; \
     fi; \
-    /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX $RUN_ID
+    # Extract the -c <config> path that init_process wrote into the invoke script.
+    export FLB_CONF_FILE=$(grep -oP '(?<=-c )\S+' "$INVOKE_SCRIPT" | tail -1); \
+    # Extract any -R <parser> paths and reassemble them as "-R path" args for fluent-bit.
+    export FLB_EXTRA_ARGS=$(grep -oP '(?<=-R )\S+' "$INVOKE_SCRIPT" | sed 's/^/-R /' | tr '\n' ' '); \
+    exec /core_uploader.sh

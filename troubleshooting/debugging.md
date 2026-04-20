@@ -749,16 +749,16 @@ Check out the FireLens example for preventing/reducing out of memory exceptions:
 
 See [docs/valgrind.md](../docs/valgrind.md) for full details on building, configuring, and reading results from the valgrind debug image.
 
+For allocation-level heap profiling using jemalloc (built into the debug image), see [docs/heap-profiling.md](../docs/heap-profiling.md).
+
+For an overview of how the debug and init-debug images work, see [docs/debug.md](../docs/debug.md).
+
 ##### Other Options: Other Debug Builds
 Several debug targets can be built via `make <target-name>`
 Here's a list of debug targets and what they do:
-- `debug` and `debug-s3`: these debug targets upload crash symbols, such as a compressed core dump, stack traces, and crashed Fluent Bit executable to an S3 bucket of your choosing. Symbols are also stored in the `/cores` directory. You can access this via a mounted volume. Stack trace is also printed out on crash. More information on how to use the debug image can be found in: [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
-- `debug-fs`: this is a light weight debug target that simply outputs the coredump crash file to the `/cores` directory which can be mounted to by a Docker volume. This image does not upload crash symbols to S3, and does not process stack traces.
+- `debug`: uploads crash symbols (compressed core dump, stack trace, Fluent Bit executable) to S3 and stores them in `/cores`. Stack trace is also printed on crash. See [Tutorial: Debugging Fluent Bit with GDB](tutorials/remote-core-dump/README.md).
 - `debug-valgrind`: runs Fluent Bit under valgrind. See [docs/valgrind.md](../docs/valgrind.md) for details.
-- `init-debug` and `init-debug-s3`: same as `debug` and `debug-s3` images but with the init process
-- `init-debug-fs`: same as `debug-fs` but with the init process.
-- `main-debug-all`: builds `debug-s3`, `debug-fs`, and `debug-valgrind` efficiently without rebuilding dependencies.
-- `init-debug-all`: builds `init-debug-s3`, and `init-debug-fs` efficiently without rebuilding dependencies.
+- `init-debug`: same as `debug` but with the init process.
 
 ## Segfaults and crashes (SIGSEGV)
 
@@ -1245,17 +1245,6 @@ If you choose to deploy this, for the S3 upload on shutdown to work, you must:
 ```
 
 Make sure to edit the `Resource` section with your bucket name. 
-
-**RUN_ID Environment Variable**
-The RUN_ID environment variable is automatically set to a random value per each run and can be referenced in your Fluent Bit configuration file. It can be used to customize the log destination for each `aws-for-fluent-bit` execution, and help you to find the log destination when looking at a specific Fluent Bit service log. The following log line will appear before Fluent Bit is executed: `RUN_ID is set to $RUN_ID`.
-
-You can send logs to a specific RUN_ID via with a configuration such as:
-```
-[OUTPUT]
-     Name cloudwatch_logs
-     log_group_name my_unique_log_group_${RUN_ID}
-     ...
-```
 
 **Building init-debug Image**
 You can also build an `init-debug` image via

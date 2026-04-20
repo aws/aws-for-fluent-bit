@@ -97,3 +97,5 @@ s3://{S3_BUCKET}/valgrind-results/{hostname}/valgrind.log-20260415-031500
 - **memcheck**: Review `/tmp/valgrind.log` for leak summaries. Look for "definitely lost" and "possibly lost" blocks.
 - **massif**: Use `ms_print /tmp/massif.out` to visualize heap usage over time, or load into [massif-visualizer](https://github.com/KDE/massif-visualizer).
 - **dhat**: Open `/tmp/dhat.out` in the [DHAT viewer](https://valgrind.org/docs/manual/dh-manual.html#dh-manual.viewer) (bundled with valgrind source) to analyze allocation lifetimes.
+
+For allocation-level profiling using jemalloc (available in the standard debug image without valgrind overhead), see [heap-profiling.md](heap-profiling.md).

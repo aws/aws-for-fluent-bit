@@ -25,6 +25,7 @@ RUN yum upgrade -y && \
       ca-certificates \
       flex \
       bison \
+      libunwind-devel \
     && yum clean all \
     && rm -rf /var/cache/yum \
     && alternatives --install /usr/local/bin/cmake cmake /usr/bin/cmake3 20 \

@@ -330,7 +330,7 @@ aws ssm get-parameters-by-path --path /aws/service/aws-for-fluent-bit/
 
 #### Using the debug images
 
-Deploying AWS for Fluent Bit debug images can help the AWS team troubleshoot an issue. If you experience a bug, especially a [crash/SIGSEGV issue](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#caught-signal-sigsegv), then please consider deploying the debug version of the image. After a crash, the debug image can print out a stacktrace and upload a core dump to S3. See our [debugging guide](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#1-build-and-distribute-a-core-dump-s3-uploader-image) for more info on using debug images.
+Deploying AWS for Fluent Bit debug images can help the AWS team troubleshoot an issue. If you experience a bug, especially a [crash/SIGSEGV issue](https://github.com/aws/aws-for-fluent-bit/blob/mainline/troubleshooting/debugging.md#caught-signal-sigsegv), then please consider deploying the debug version of the image. See [docs/debug.md](docs/debug.md) for full details on building, configuring, and using the debug image.
 
 For debug images, we update the `debug-latest` tag and add a tag as `debug-<Version>`.
 
@@ -487,8 +487,9 @@ To run integration tests separately, execute `make integ-cloudwatch` or `make in
 - `make build-debug` - Builds debug version with debug symbols
 
 **Debug Targets:**
-- `make debug` - Builds debug images with multiple variants (S3 and EFS)
+- `make debug` - Builds debug image with crash symbol upload to S3
 - `make debug-valgrind` - Builds debug image with Valgrind for memory debugging
+- `make init-debug` - Builds debug image with the init process
 
 **Plugin Build Targets:**
 - `make linux-plugins` - Builds all AWS plugins for Linux

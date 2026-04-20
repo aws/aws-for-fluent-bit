@@ -22,61 +22,37 @@ Once you have setup the debug build of Fluent Bit on your platform, you have two
 
 ## Step 1: Debug Build of Fluent Bit
 
-Clone the AWS for Fluent Bit source code, and run `make debug` for a plain debug image, or `make init-debug` for an init debug image. The resulting images will be tagged `amazon/aws-for-fluent-bit:debug` and `amazon/aws-for-fluent-bit:init-debug`.
-
-When Fluent Bit crashes, a zipped core file, stacktrace, and the Fluent Bit executable will be output to the `/cores` directory and the files will also be uploaded to S3.
-
-There are couple of things to note about the debug target for the core file debugging use case:
-- The Fluent Bit upstream base version is specified with `FLB_VERSION` in `Makefile`
-- Fluent Bit is compiled with CMake flag `-DFLB_DEBUG=On`
-- `gdb` is installed in the final stage of the Docker build.
-- `aws` cli is installed to copy files to the S3 bucket.
-
-When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify the `FLB_VERSION` at the top of the `Makefile` to install the desired Fluent Bit base version.
-
-Once you are ready, build the debug image:
+Clone the AWS for Fluent Bit source code and build the debug image:
 
 ```
 make debug
 ```
-The resulting image will be tagged `amazon/aws-for-fluent-bit:debug`
 
-And then push this image to a container image repository such as Amazon ECR so that you can use it in your deployment in the next step.
+Or for an init debug image:
+
+```
+make init-debug
+```
+
+The resulting images will be tagged `amazon/aws-for-fluent-bit:debug-al<AL_TAG>` and `amazon/aws-for-fluent-bit:init-debug-al<AL_TAG>`. See [docs/debug.md](../../docs/debug.md) for full details on what the debug image does, its configuration, and the artifacts it produces.
+
+A few things to note about the debug build:
+- The Fluent Bit upstream base version is specified with `FLB_VERSION` in `Makefile`
+- Fluent Bit is compiled with CMake flags `-DFLB_DEBUG=On` and jemalloc heap profiling enabled
+- `gdb` is installed in the final stage of the Docker build
+- `aws` CLI is installed to copy files to the S3 bucket
+
+When you clone AWS for Fluent Bit, you will automatically get the latest Dockerfile for our latest release on the mainline branch. To create a debug build of a different version, either check out the tag for that version, or modify `FLB_VERSION` at the top of the `Makefile`.
+
+Push this image to a container image repository such as Amazon ECR so that you can use it in your deployment in the next step.
 
 #### Custom Entrypoints
-Please note that if you are customizing your aws-for-fluent-bit debug image with a custom entrypoint.sh, you need to add the following as the last line of your entrypoint.sh:
+If you are customizing the debug image with a custom `entrypoint.sh`, replace any existing `fluent-bit` invocation with a call to `core_uploader.sh` as the last line. The script launches Fluent Bit itself, waits for it to exit, and then processes and uploads crash artifacts:
 ```
-echo "AWS for Fluent Bit Container Image Version `cat /AWS_FOR_FLUENT_BIT_VERSION` - Debug Image with S3 Core Uploader"; \
-    if [ "$S3_BUCKET" == "" ]; then \
-        echo "Note: Please set S3_BUCKET environment variable to your crash symbol upload destination S3 bucket"; \
-    fi; \
-    if [ "$S3_KEY_PREFIX" == "issue" ]; then \
-        echo "Note: Please set S3_KEY_PREFIX environment variable to a useful identifier - e.g. company name, team name, customer name"; \
-    fi; \
-    export RANDOM_ID_VALUE=$(($RANDOM%99999))$(($RANDOM%99999))$(($RANDOM%99999)); \
-    echo "RANDOM_ID is set to $RANDOM_ID_VALUE"; \
-    /fluent-bit/bin/fluent-bit -c /fluent-bit/etc/fluent-bit.conf; \
-    /core_uploader.sh $S3_BUCKET $S3_KEY_PREFIX
+exec /core_uploader.sh
 ```
 
-If the following command exists in your entrypoint.sh file, remove it:
-```
-exec /fluent-bit/bin/fluent-bit -e /fluent-bit/firehose.so -e /fluent-bit/cloudwatch.so -e /fluent-bit/kinesis.so -c /fluent-bit/etc/fluent-bit.conf
-```
-
-#### Crash Symbol Description
-The following crash symbols are output by the debug image:
-
-- .core.zip: A zipped core file
-- .stacktrace: a stack trace file from the core dump
-- .executable: the Fluent Bit executable that crashed
-
-All crash files are prefixed with:
-```
-<$S3_KEY_PREFIX>_<date in format"%FT%H%M%S>_<hostname>_<RUN_ID>.core.zip
-```
-
-These files are output to the /cores directory which can be mounted to with Docker volumes, or optionally sent to an S3 bucket. See how to configure your S3 bucket in step 2.
+Configuration is via environment variables — set `S3_BUCKET` and `S3_KEY_PREFIX` on the container rather than passing them as arguments. See [Step 2](#step-2-create-an-s3-bucket-to-send-crash-symbols-to-only-needed-for-crash-uploads-to-s3) for details.
 
 
 ## Step 2: Create an S3 Bucket to send crash symbols to (Only needed for crash uploads to S3)
@@ -107,10 +83,7 @@ For the IAM role or user which is used by aws-for-fluent-bit provide access to t
 ```
 
 #### Sending crash symbols to an S3 bucket
-Set the following environment variables on your debug image to send crash symbols to your S3 bucket
-
-    a. `S3_BUCKET` => an S3 bucket that your task can upload too. 
-    b. `S3_KEY_PREFIX` => this is the key prefix in S3 for the core dump, set it to something useful like the ticket ID or a human readable string. It must be valid for an S3 key.
+Set `S3_BUCKET` and `S3_KEY_PREFIX` environment variables on the debug container. See [docs/debug.md](../../docs/debug.md#configuration) for the full variable reference.
 
 ## Step 3: Modifying your deployment to capture a core file
 
@@ -307,13 +280,13 @@ Then, you can define the volume in the task definition to be your EFS filesystem
 
 As a sanity check that you setup the EFS filesystem correctly on the Fargate task, create a file in the EFS filesystem. For example, `touch my-efs-id.txt`. Then, when you later setup your Fargate task, you can use ECS Exec to check that you can see the file in the cores directory: `ls /cores`. 
 
-It should be noted that core files are often very large (hundreds of MB) and saving a core to an EFS filesystem permanently may take time. Consequently, the AWS for Fluent Bit pre-built debug images have a 2 minute sleep before shutdown to ensure that the file transfer can complete before task shutdown. 
+It should be noted that core files are often very large (hundreds of MB) and saving a core to an EFS filesystem permanently may take time. If you need the container to wait after a crash before shutdown to allow EFS transfers to complete, set the `EFS_WAIT` environment variable (in seconds) on the debug container.
 
 #### Set initProcessEnabled and enable SYS_PTRACE capability
 
-The flag `initProcessEnabled` ensures that when Fluent Bit crashes or is killed, orphaned processes will be cleaned up gracefully. This is primarily important if you are enabling ECS Exec, as it ensures the embedded SSM Agent and shell session are cleaned up gracefully if/when you terminate Fluent Bit. 
+The flag `initProcessEnabled` ensures that when Fluent Bit crashes or is killed, orphaned processes will be cleaned up gracefully. This is primarily important if you are enabling ECS Exec, as it ensures the embedded SSM Agent and shell session are cleaned up gracefully if/when you terminate Fluent Bit.
 
-The `SYS_PTRACE` capability allows a debugging like gdb to attach to the Fluent Bit process. 
+The `SYS_PTRACE` capability allows a debugger like gdb to attach to the Fluent Bit process.
 
 Here is an example task definition JSON snippet:
 ```
@@ -330,14 +303,14 @@ Here is an example task definition JSON snippet:
 
 #### [Optional] Enable ECS Exec
 
-If you are debugging a live Fluent Bit task, this is necessary. 
+If you are debugging a live Fluent Bit task, this is necessary.
 
 We recommend following the [ECS Exec tutorial](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) in the Amazon ECS developer documentation.
 
 The tutorial explains how to:
 
-1. Grant the task role permissions for ECS Exec. 
-2. Launch a task with ECS Exec. You must enable ECS Exec in the AWS API when you launch a task in order to exec into it later. 
+1. Grant the task role permissions for ECS Exec.
+2. Launch a task with ECS Exec. You must enable ECS Exec in the AWS API when you launch a task in order to exec into it later.
 3. Exec into your task once it is running and obtain a shell session. Once you have done this you can proceed to [Step 3: Using GDB with a live Fluent Bit](#step-3-using-gdb-with-a-live-fluent-bit).
 
 #### Obtain crash symbols via S3 Bucket
@@ -424,9 +397,9 @@ And then you can use GDB to generate a core file showing the current state of ex
 generate-core-file
 ```
 
-You can also run other GDB commands. Follow the next step to understand how to read the core file. 
+You can also run other GDB commands. Follow the next step to understand how to read the core file.
 
-It should be noted that core files are often very large (hundreds of MB) and saving a core to an EFS filesystem permanently may take time. Consequently, the AWS for Fluent Bit pre-built debug images have a 2 minute sleep before shutdown to ensure that the file transfer can complete before task shutdown. 
+It should be noted that core files are often very large (hundreds of MB). If you are using EFS for persistent storage (e.g. on Fargate), set the `EFS_WAIT` environment variable (in seconds) on the debug container to give the transfer time to complete before the container exits.
 
 ## Step 4: Using GDB with a core file (crashed Fluent Bit)
 

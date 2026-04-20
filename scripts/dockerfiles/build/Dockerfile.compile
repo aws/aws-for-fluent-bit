@@ -14,6 +14,10 @@ RUN if [ "$DEBUG" = "On" ]; then \
       yum install -y valgrind-devel; \
     fi
 
+# Jemalloc profiling options; set by build-debug for heap profiling with libunwind (empty in release).
+ARG FLB_JEMALLOC_OPTIONS=""
+ARG FLB_EXTRA_LINKER_FLAGS=""
+
 # Build Fluent Bit with appropriate compiler flags based on DEBUG and RELEASE arguments
 RUN cmake \
     # always on
@@ -36,6 +40,8 @@ RUN cmake \
     -DFLB_TRACE=${DEBUG} \
     -DFLB_MTRACE=${DEBUG} \
     -DFLB_BACKTRACE=${DEBUG} \
+    -DFLB_JEMALLOC_OPTIONS="${FLB_JEMALLOC_OPTIONS}" \
+    -DCMAKE_EXE_LINKER_FLAGS="${FLB_EXTRA_LINKER_FLAGS}" \
     ..
 
 # Compile using all available processors for faster builds

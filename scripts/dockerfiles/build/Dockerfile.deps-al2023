@@ -22,6 +22,7 @@ RUN dnf upgrade -y && \
       ca-certificates \
       flex \
       bison \
+      libunwind-devel \
       arrow-glib-devel \
       parquet-glib-devel \
     && dnf clean all

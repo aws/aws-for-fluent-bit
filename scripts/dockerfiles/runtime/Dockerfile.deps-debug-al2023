@@ -13,6 +13,7 @@ RUN dnf upgrade -y && \
         libyaml \
         gdb \
         nc \
+        libunwind \
         arrow-glib-devel \
         parquet-glib-devel \
     && dnf clean all
