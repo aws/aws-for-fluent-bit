@@ -1,5 +1,10 @@
 ## AWS for Fluent Bit Docker Image
 
+> [!IMPORTANT]
+> The `2.x` AWS for Fluent Bit image is based on Amazon Linux 2 (AL2) and now only receives updates when the AL2 base image is updated.
+> Amazon Linux 2 will reach its end of life on June 30, 2026, mirroring the upstream [Amazon Linux 2](https://aws.amazon.com/amazon-linux-2/faqs/) EOL date. After this date, `2.x` image updates will stop if AL2 base image updates cease.
+> We encourage customers to migrate to the `3.x` image, which is based on Amazon Linux 2023 and includes long-term support through 2028.
+
 Welcome to AWS for Fluent Bit! Before using this Docker Image, please read this README entirely, **especially the section on [Consuming AWS for Fluent Bit versions](#consuming-aws-for-fluent-bit-versions)**
 
 ### Contents
