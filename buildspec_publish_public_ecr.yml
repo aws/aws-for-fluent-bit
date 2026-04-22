@@ -31,6 +31,11 @@ phases:
       - BUILD_VERSION=2 ./scripts/publish.sh cicd-publish public-ecr
       - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish public-ecr
 
+      # Clear locally cached images so verify pulls fresh from DockerHub.
+      # sync-test-images.sh retags ECR images as amazon/aws-for-fluent-bit:*,
+      # which contaminates docker inspect RepoDigests with ECR digests.
+      - docker image rm $(docker image ls -q amazon/aws-for-fluent-bit) 2>/dev/null || true
+
       # Nullify the temporary credentials for the assumed role to publish
       - |
         if [ "${PUBLISH_ROLE_ARN_PUBLIC_ECR}" != "" ]; then

@@ -16,6 +16,11 @@ phases:
       - BUILD_VERSION=2 ./scripts/publish.sh cicd-publish dockerhub
       - BUILD_VERSION=3 ./scripts/publish.sh cicd-publish dockerhub
 
+      # Clear locally cached images so verify pulls fresh from DockerHub.
+      # sync-test-images.sh retags ECR images as amazon/aws-for-fluent-bit:*,
+      # which contaminates docker inspect RepoDigests with ECR digests.
+      - docker image rm $(docker image ls -q amazon/aws-for-fluent-bit) 2>/dev/null || true
+
       # Pull the image from dockerhub and verify
       - BUILD_VERSION=2 ./scripts/publish.sh cicd-verify dockerhub
       - BUILD_VERSION=3 ./scripts/publish.sh cicd-verify dockerhub
