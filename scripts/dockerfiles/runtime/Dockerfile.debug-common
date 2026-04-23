@@ -12,7 +12,7 @@ RUN yum clean all \
 
 WORKDIR /var/tmp
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(arch).zip" -o "awscliv2.zip"
-RUN unzip -o awscliv2.zip
+RUN unzip -qq awscliv2.zip
 RUN ./aws/install
 RUN rm awscliv2.zip
 
