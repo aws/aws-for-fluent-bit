@@ -1,5 +1,27 @@
 # Changelog
 
+### 2.34.3.20260424
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260413.0
+* fix: Remove local image before verification [#1121](https://github.com/aws/aws-for-fluent-bit/pull/1121)
+* enhancement: Upgrade fluent-bit version to v5.0.3 for 3.x [#1119](https://github.com/aws/aws-for-fluent-bit/pull/1119)
+* fix: Update readme about 2.x and AL2 EOL [#1117](https://github.com/aws/aws-for-fluent-bit/pull/1117)
+* enhancement: rework core_uploader/debug images [#1115](https://github.com/aws/aws-for-fluent-bit/pull/1115)
+* enhancement: Add signal handling for SIGCONT/stats dump to valgrind_uploader [#1112](https://github.com/aws/aws-for-fluent-bit/pull/1112)
+* enhancement: Rework valgrind image to offer additional options [#1108](https://github.com/aws/aws-for-fluent-bit/pull/1108)
+* fix: clean up changelog entry generation and only run github actions in official repo [#1107](https://github.com/aws/aws-for-fluent-bit/pull/1107)
+* enhancement: Add vulnerability scanning for enhanced type [#1105](https://github.com/aws/aws-for-fluent-bit/pull/1105)
+
+### 3.2.7
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.11.20260413.0
+* fix: Remove local image before verification [#1121](https://github.com/aws/aws-for-fluent-bit/pull/1121)
+* enhancement: Upgrade fluent-bit version to v5.0.3 for 3.x [#1119](https://github.com/aws/aws-for-fluent-bit/pull/1119)
+* fix: Update readme about 2.x and AL2 EOL [#1117](https://github.com/aws/aws-for-fluent-bit/pull/1117)
+* enhancement: rework core_uploader/debug images [#1115](https://github.com/aws/aws-for-fluent-bit/pull/1115)
+* enhancement: Add signal handling for SIGCONT/stats dump to valgrind_uploader [#1112](https://github.com/aws/aws-for-fluent-bit/pull/1112)
+* enhancement: Rework valgrind image to offer additional options [#1108](https://github.com/aws/aws-for-fluent-bit/pull/1108)
+* fix: clean up changelog entry generation and only run github actions in official repo [#1107](https://github.com/aws/aws-for-fluent-bit/pull/1107)
+* enhancement: Add vulnerability scanning for enhanced type [#1105](https://github.com/aws/aws-for-fluent-bit/pull/1105)
+
 ### 2.34.3.20260407
 * Minimal set of packages installed using Amazon Linux 2 base container image version: 2.0.20260406.1
 * fix: Fix image tags for dockerhub/public ecr [#1099](https://github.com/aws/aws-for-fluent-bit/pull/1099)
