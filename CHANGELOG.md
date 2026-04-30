@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.34.3.20260430
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260427.1
+* fix: Make unzip use -qq to control output [#1122](https://github.com/aws/aws-for-fluent-bit/pull/1122)
+
 ### 2.34.3.20260423
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260413.0
 * Amazon CloudWatch Logs for Fluent Bit 1.9.5
