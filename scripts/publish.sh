@@ -765,10 +765,11 @@ verify_ecr_image_scan() {
 }
 
 verify_dockerhub() {
+	stable=${1}
 	docker_hub_login
 
 	# Verify the image with stable tag
-	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
+	if [ -n "$stable" ] && [ "${PUBLISH_LATEST}" = "true" ]; then
 		# Get the image SHA's
 		docker pull amazon/aws-for-fluent-bit:stable
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:stable)
@@ -807,11 +808,12 @@ verify_dockerhub() {
 }
 
 verify_public_ecr() {
+	stable=${1}
 	sleep 60
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 
 	# Verify the image with stable tag
-	if [ $# -eq 1 ] || [ "${PUBLISH_LATEST}" = "false" ]; then
+	if [ -n "$stable" ] && [ "${PUBLISH_LATEST}" = "true" ]; then
 		# Get the image SHA's
 		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:stable
 		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:stable)
@@ -1314,7 +1316,11 @@ if [ "${1}" = "cicd-verify" ]; then
 			verify_ecr ${region} ${classic_regions_account_id} true
 		done
 	elif [ "${2}" = "stable" ]; then
-		if [ "${3}" = "us-west-2" ]; then
+		if [ "${3}" = "dockerhub" ]; then
+			verify_dockerhub stable
+		elif [ "${3}" = "public-ecr" ]; then
+			verify_public_ecr stable
+		else
 			verify_dockerhub stable
 			verify_public_ecr stable
 		fi
