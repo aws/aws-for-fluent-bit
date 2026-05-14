@@ -1,5 +1,13 @@
 # Changelog
 
+### 2.34.3.20260514
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260511.1
+* enhancement: Fix long build times for AL2023 by setting nofile limit [#1135](https://github.com/aws/aws-for-fluent-bit/pull/1135)
+
+### 3.3.2
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.11.20260511.1
+* enhancement: Fix long build times for AL2023 by setting nofile limit [#1135](https://github.com/aws/aws-for-fluent-bit/pull/1135)
+
 ### 2.34.3.20260506
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260504.0
 * fix: Fix verification for stable [#1127](https://github.com/aws/aws-for-fluent-bit/pull/1127)
