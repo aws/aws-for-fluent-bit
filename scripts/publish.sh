@@ -765,7 +765,7 @@ verify_ecr_image_scan() {
 }
 
 verify_dockerhub() {
-	stable=${1}
+	stable=${1:-}
 	docker_hub_login
 
 	# Verify the image with stable tag
@@ -808,7 +808,7 @@ verify_dockerhub() {
 }
 
 verify_public_ecr() {
-	stable=${1}
+	stable=${1:-}
 	sleep 60
 	aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/aws-observability || echo "0"
 
