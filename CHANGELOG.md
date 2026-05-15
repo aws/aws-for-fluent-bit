@@ -3,12 +3,10 @@
 ### 2.34.3.20260515
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260511.1
 * fix: handle unbound variable for stable parameter in verify_public_ecr and verify_dockerhub [#1138](https://github.com/aws/aws-for-fluent-bit/pull/1138)
-* enhancement: Fix long build times for AL2023 by setting nofile limit [#1135](https://github.com/aws/aws-for-fluent-bit/pull/1135)
 
 ### 3.3.2
 * Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.11.20260511.1
 * fix: handle unbound variable for stable parameter in verify_public_ecr and verify_dockerhub [#1138](https://github.com/aws/aws-for-fluent-bit/pull/1138)
-* enhancement: Fix long build times for AL2023 by setting nofile limit [#1135](https://github.com/aws/aws-for-fluent-bit/pull/1135)
 
 ### 2.34.3.20260506
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260504.0
