@@ -778,32 +778,30 @@ verify_dockerhub() {
 
 		verify_sha $sha1 $sha2
 	else
-		# Get the image SHA's
-		docker pull amazon/aws-for-fluent-bit:latest
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:latest)
+		# Verify major version tag "3" for BUILD_VERSION=3
+		if [ "$BUILD_VERSION" = "3" ]; then
+			docker pull amazon/aws-for-fluent-bit:3
+			sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:3)
+
+			docker pull amazon/aws-for-fluent-bit:init-3
+			sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:init-3)
+		else
+			docker pull amazon/aws-for-fluent-bit:latest
+			sha1=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:latest)
+
+			docker pull amazon/aws-for-fluent-bit:"$init"-latest
+			sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-latest)
+		fi
+
+		# Get and compare the versioned image tag by SHA
 		docker pull amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
 		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
-
 		verify_sha $sha1 $sha2
 
-		docker pull amazon/aws-for-fluent-bit:"$init"-latest
-		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-latest)
+		# Get and compare the versioned init image tag by SHA
 		docker pull amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
 		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
 		verify_sha $sha1_init $sha2_init
-
-		# Verify major version tag "3" for BUILD_VERSION=3
-		if [ "$BUILD_VERSION" = "3" ]; then
-			if check_tag_exists "amazon/aws-for-fluent-bit" "3"; then
-				docker pull amazon/aws-for-fluent-bit:3
-				sha_major=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:3)
-				verify_sha $sha2 $sha_major
-
-				docker pull amazon/aws-for-fluent-bit:init-3
-				sha_major_init=$(docker inspect --format='{{index .RepoDigests 0}}' amazon/aws-for-fluent-bit:init-3)
-				verify_sha $sha2_init $sha_major_init
-			fi
-		fi
 	fi
 }
 
@@ -822,33 +820,31 @@ verify_public_ecr() {
 
 		verify_sha $sha1 $sha2
 	else
-		# Get the image SHA's
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
-		sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:latest)
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
-
-		verify_sha $sha1 $sha2
-
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest
-		sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest)
-		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
-		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
-
-		verify_sha $sha1_init $sha2_init
-
 		# Verify major version tag "3" for BUILD_VERSION=3
 		if [ "$BUILD_VERSION" = "3" ]; then
-			if check_tag_exists "public.ecr.aws/aws-observability/aws-for-fluent-bit" "3"; then
-				docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:3
-				sha_major=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:3)
-				verify_sha $sha2 $sha_major
+			docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:3
+			sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:3)
 
-				docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3
-				sha_major_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3)
-				verify_sha $sha2_init $sha_major_init
-			fi
+			docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3
+			sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:init-3)
+		else
+			docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:latest
+			sha1=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:latest)
+
+			docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest
+			sha1_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-latest)
 		fi
+
+		# Get and compare the versioned image tag by SHA
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:${AWS_FOR_FLUENT_BIT_VERSION})
+		verify_sha $sha1 $sha2
+		
+		# Get and compare the versioned init image tag by SHA
+		docker pull public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION}
+		sha2_init=$(docker inspect --format='{{index .RepoDigests 0}}' public.ecr.aws/aws-observability/aws-for-fluent-bit:"$init"-${AWS_FOR_FLUENT_BIT_VERSION})
+		verify_sha $sha1_init $sha2_init
+
 	fi
 }
 
