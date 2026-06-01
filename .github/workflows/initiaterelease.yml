@@ -3,8 +3,8 @@ name: InitiateRelease
 on:
   workflow_dispatch:
   schedule:
-    # Run at 6PM UTC (10AM PST) M-F
-    - cron: 0 18 * * 1-5
+    # Run at 6PM UTC (10AM PST) on the 15th and 28th of each month
+    - cron: 0 18 15,28 * *
 
 jobs:
   GenerateConfig:
