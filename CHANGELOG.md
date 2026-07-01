@@ -1,5 +1,13 @@
 # Changelog
 
+### 2.34.3.20260701
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260629.0
+* fix: Clean up unnecessary post kickoff github workflow [#1169](https://github.com/aws/aws-for-fluent-bit/pull/1169)
+
+### 3.4.6
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260629.0
+* fix: Clean up unnecessary post kickoff github workflow [#1169](https://github.com/aws/aws-for-fluent-bit/pull/1169)
+
 ### 2.34.3.20260629
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260622.1
 
