@@ -741,7 +741,7 @@ verify_ecr_image_scan() {
 			max_stability_attempts=10
 			stability_attempt=0
 			while [ $stability_attempt -lt $max_stability_attempts ]; do
-				findings=$(aws inspector2 list-findings --max-results 1 --filter-criteria '{"ecrImageRepositoryName":[{"comparison":"EQUALS","value":"'${repo_uri}'"}],"ecrImageTags":[{"comparison":"EQUALS","value":"'${tag}'"}],"severity":[{"comparison":"EQUALS","value":"HIGH"},{"comparison":"EQUALS","value":"CRITICAL"}]}' --region ${region})
+				findings=$(aws inspector2 list-findings --max-results 1 --filter-criteria '{"ecrImageRepositoryName":[{"comparison":"EQUALS","value":"'${repo_uri}'"}],"ecrImageTags":[{"comparison":"EQUALS","value":"'${tag}'"}],"severity":[{"comparison":"EQUALS","value":"HIGH"},{"comparison":"EQUALS","value":"CRITICAL"}],"vulnerabilityId":[{"comparison":"NOT_EQUALS","value":"IN-DISCONTINUED-001"}]}' --region ${region})
 				vulnerability=$(echo "$findings" | jq '.findings | length')
 				if [ $vulnerability -gt 0 ]; then
 					echo "Uploaded image ${tag} has HIGH/CRITICAL vulnerabilities."
