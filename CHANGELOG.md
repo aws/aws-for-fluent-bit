@@ -1,5 +1,12 @@
 # Changelog
 
+### 2.34.3.20260708
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260707.0
+* fix: Suppress AL2 EOL critical finding [#1173](https://github.com/aws/aws-for-fluent-bit/pull/1173)
+
+### 3.4.7
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260706.1
+
 ### 2.34.3.20260702
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260629.0
 
