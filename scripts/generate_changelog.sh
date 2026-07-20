@@ -60,8 +60,7 @@ get_changes_since_last_release() {
 		--limit 30 \
 		--json mergedAt,headRefName \
 		--jq '[.[]
-			| select(.headRefName | test("^release-"))
-			| select(.mergedAt != null)]
+			| select(.headRefName | test("^release-"))]
 			| sort_by(.mergedAt) | last | .mergedAt' 2>/dev/null || true)
 
 	if [ -z "$last_release_merged_at" ] || [ "$last_release_merged_at" = "null" ]; then
