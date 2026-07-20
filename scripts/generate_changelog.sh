@@ -47,14 +47,22 @@ get_version_info() {
 # Get PR titles merged since the last "Release XXXX" commit via the GitHub CLI (gh) to query merged PRs by date
 get_changes_since_last_release() {
 	local last_release_merged_at
+	# Boundary = merge time of the most-recently-merged release PR.
+	# GitHub search cannot sort by merge time (no sort:merged), and sort:updated
+	# floats stale release PRs (old branches deleted/cross-referenced long after
+	# they merged) to the top, producing a far-too-early boundary. Fetch a window
+	# of release PRs and pick the max mergedAt client-side.
 	last_release_merged_at=$(gh pr list \
 		--repo "$REPO" \
 		--state merged \
 		--base mainline \
-		--search "head:release- sort:updated-desc" \
-		--limit 1 \
-		--json mergedAt \
-		--jq '.[0].mergedAt' 2>/dev/null || true)
+		--search "head:release-" \
+		--limit 30 \
+		--json mergedAt,headRefName \
+		--jq '[.[]
+			| select(.headRefName | test("^release-"))
+			| select(.mergedAt != null)]
+			| sort_by(.mergedAt) | last | .mergedAt' 2>/dev/null || true)
 
 	if [ -z "$last_release_merged_at" ] || [ "$last_release_merged_at" = "null" ]; then
 		echo "WARNING: Could not find last release PR merge timestamp" >&2
@@ -69,7 +77,7 @@ get_changes_since_last_release() {
 		--repo "$REPO" \
 		--base mainline \
 		--state merged \
-		--search "merged:>=${last_release_merged_at}" \
+		--search "merged:>${last_release_merged_at}" \
 		--json title,number,mergedAt \
 		--jq '.[] | select(.title | test("^(stable:|Release \\d)"; "i") | not) | "* \(.title) [#\(.number)](https://github.com/'"$REPO"'/pull/\(.number))"' \
 		2>/dev/null || true)
