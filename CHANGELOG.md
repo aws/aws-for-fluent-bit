@@ -3,23 +3,6 @@
 ### 3.4.9
 * Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260710.0
 * enhancement: update fluent-bit version to 5.0.9 [#1176](https://github.com/aws/aws-for-fluent-bit/pull/1176)
-* fix: Suppress AL2 EOL critical finding [#1173](https://github.com/aws/aws-for-fluent-bit/pull/1173)
-* fix: Clean up unnecessary post kickoff github workflow [#1169](https://github.com/aws/aws-for-fluent-bit/pull/1169)
-* enhancement: update fluent-bit version to 5.0.7 [#1161](https://github.com/aws/aws-for-fluent-bit/pull/1161)
-* enhancement: Bump fluent bit version to 5.0.5 [#1151](https://github.com/aws/aws-for-fluent-bit/pull/1151)
-* fix: Fixed the verify_dockerhub and verify_public_ecr functions to use the correct reference tag when verifying BUILD_VERSION=3 releases. [#1146](https://github.com/aws/aws-for-fluent-bit/pull/1146)
-* fix: Revert "Fix long build times for AL2023 by setting nofile limit (#1135) [#1142](https://github.com/aws/aws-for-fluent-bit/pull/1142)
-* fix: handle unbound variable for stable parameter in verify_public_ecr and verify_dockerhub [#1138](https://github.com/aws/aws-for-fluent-bit/pull/1138)
-* enhancement: Fix long build times for AL2023 by setting nofile limit [#1135](https://github.com/aws/aws-for-fluent-bit/pull/1135)
-* fix: Fix verification for stable [#1127](https://github.com/aws/aws-for-fluent-bit/pull/1127)
-* fix: Make unzip use -qq to control output [#1122](https://github.com/aws/aws-for-fluent-bit/pull/1122)
-* fix: Remove local image before verification [#1121](https://github.com/aws/aws-for-fluent-bit/pull/1121)
-* enhancement: Upgrade fluent-bit version to v5.0.3 for 3.x [#1119](https://github.com/aws/aws-for-fluent-bit/pull/1119)
-* fix: Update readme about 2.x and AL2 EOL [#1117](https://github.com/aws/aws-for-fluent-bit/pull/1117)
-* enhancement: rework core_uploader/debug images [#1115](https://github.com/aws/aws-for-fluent-bit/pull/1115)
-* enhancement: Add signal handling for SIGCONT/stats dump to valgrind_uploader [#1112](https://github.com/aws/aws-for-fluent-bit/pull/1112)
-* enhancement: Rework valgrind image to offer additional options [#1108](https://github.com/aws/aws-for-fluent-bit/pull/1108)
-* fix: clean up changelog entry generation and only run github actions in official repo [#1107](https://github.com/aws/aws-for-fluent-bit/pull/1107)
 
 ### 2.34.3.20260713
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260710.0
