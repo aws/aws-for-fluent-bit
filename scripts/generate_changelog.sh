@@ -48,15 +48,17 @@ get_version_info() {
 get_changes_since_last_release() {
 	local last_release_merged_at
 	# Boundary = merge time of the most-recently-merged release PR.
-	# GitHub search cannot sort by merge time (no sort:merged), and sort:updated
-	# floats stale release PRs (old branches deleted/cross-referenced long after
-	# they merged) to the top, producing a far-too-early boundary. Fetch a window
-	# of release PRs and pick the max mergedAt client-side.
+	# GitHub search has no sort:merged, so we can't grab the latest-merged release
+	# PR directly with --limit 1 (sort:updated floats stale release PRs whose
+	# branches were deleted/cross-referenced long after merge to the top, giving a
+	# far-too-early boundary). Instead fetch a window of recent release PRs
+	# (sort:updated-desc keeps the window near the head) and pick max mergedAt
+	# client-side, which is correct regardless of GitHub's ordering within the window.
 	last_release_merged_at=$(gh pr list \
 		--repo "$REPO" \
 		--state merged \
 		--base mainline \
-		--search "head:release-" \
+		--search "head:release- sort:updated-desc" \
 		--limit 30 \
 		--json mergedAt,headRefName \
 		--jq '[.[]
