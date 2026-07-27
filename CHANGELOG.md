@@ -1,5 +1,8 @@
 # Changelog
 
+### 3.4.11
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260724.0
+
 ### 2.34.3.20260722
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260720.0
 
