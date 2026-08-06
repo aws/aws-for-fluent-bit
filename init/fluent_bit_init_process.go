@@ -431,7 +431,7 @@ func createFile(filePath string, AutoClose bool) *os.File {
 }
 
 func openFile(filePath string) *os.File {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0700)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		logrus.Errorln(err)
 		logrus.Fatalf("[FluentBit Init Process] Unable to read %s\n", filePath)
