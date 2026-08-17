@@ -14,17 +14,17 @@
       "al-tag": "2",
       "os-digest": "sha256:3ad6628ec681ddbac364a2c4ff87b81082982eb3d7f7031ced9e6268bfab6784",
       "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
-      "publish": "true"
+      "publish": "false"
     }
   },
   {
     "linux": {
       "major-version": "3",
-      "version": "3.4.13",
-      "release-version": "3.4.13",
+      "version": "3.5.0",
+      "release-version": "3.5.0",
       "latest": "false",
       "build": "1",
-      "fluent-bit": "v5.0.9",
+      "fluent-bit": "v5.1.0",
       "release-fluent-bit": "v5.1.0",
       "kinesis-plugin": "v1.10.4",
       "firehose-plugin": "v1.7.3",
