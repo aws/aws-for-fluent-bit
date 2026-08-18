@@ -2,11 +2,9 @@
 
 ### 2.34.3.20260818
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260817.0
-* Revert "Release 20260817 (#1193)" [#1195](https://github.com/aws/aws-for-fluent-bit/pull/1195)
 
 ### 3.4.14
 * Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260817.0
-* Revert "Release 20260817 (#1193)" [#1195](https://github.com/aws/aws-for-fluent-bit/pull/1195)
 
 ### 2.34.3.20260805
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260803.1
