@@ -1,5 +1,11 @@
 # Changelog
 
+### 2.34.3.20260818
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260817.0
+
+### 3.5.1
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20260817.0
+
 ### 3.5.0
 * enhancement: update fluent-bit version to 5.1.0 - [#1192](https://github.com/aws/aws-for-fluent-bit/pull/1192)
 
