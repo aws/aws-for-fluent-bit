@@ -1,0 +1,19 @@
+[SERVICE]
+    Parsers_File           /fluent-bit/parsers/parsers.conf
+    Flush                  1
+    Grace                  30
+    HTTP_Server            On
+    HTTP_Listen            127.0.0.1
+    HTTP_Port              2020
+    Health_Check           On
+    HC_Errors_Count        5
+    HC_Retry_Failure_Count 5
+    HC_Period              5
+
+[FILTER]
+    Name         parser
+    Match        *
+    Key_Name     log
+    Parser       json
+    Reserve_Data True
+    
