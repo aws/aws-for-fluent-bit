@@ -3,8 +3,9 @@
     Flush                  1
     Grace                  30
     HTTP_Server            On
-    HTTP_Listen            127.0.0.1
+    HTTP_Listen            0.0.0.0
     HTTP_Port              2020
+# https://docs.fluentbit.io/manual/administration/monitoring#health-check-for-fluent-bit
     Health_Check           On
     HC_Errors_Count        5
     HC_Retry_Failure_Count 5
