@@ -1,5 +1,8 @@
 # Changelog
 
+### 2.34.3.20260925
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260923.0
+
 ### 2.34.3.20260923
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20260918.0
 
