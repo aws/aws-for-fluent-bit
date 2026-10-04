@@ -27,6 +27,7 @@ ADD configs/output-metrics-healthcheck.conf /fluent-bit/configs/
 ADD configs/plugin-metrics-to-cloudwatch.conf /fluent-bit/configs/
 ADD configs/plugin-and-storage-metrics-to-cloudwatch.conf /fluent-bit/configs/
 ADD configs/plugin-metrics-parser.conf /fluent-bit/configs/
+ADD configs/parse-multiline-json.conf /fluent-bit/configs/
 
 # Get Fluent Bit source code
 ARG FLB_VERSION=1.9.10
