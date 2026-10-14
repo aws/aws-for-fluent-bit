@@ -708,10 +708,26 @@ verify_ecr_image_scan() {
 	repo_uri=${2}
 	tag=${3}
 
+	# Findings excluded from the ECR scan gate, with reasoning.
+	#
+	#   IN-DISCONTINUED-001  AL2 EOL lifecycle finding, not a CVE and no package fix exists.
+	#                        Inspector2 flags every AL2 image CRITICAL since AL2 EOL (2026-06-30). (PR #1173)
+	#
+	#   CVE-2026-78367       rpm macro injection (HIGH). Image is patched via AL2 Core (4.11.3-48.amzn2.0.6,
+	#                        ALAS2-2026-3984); Inspector2 false-matches the Mock2 Extra 4.14.3 advisory
+	#                        (ALAS2MOCK2-2026-002), a build-toolchain channel this image does not use.
+	SCAN_EXCLUDED_IDS=(
+		"IN-DISCONTINUED-001"
+		"CVE-2026-78367"
+	)
+
 	tagCount=$(aws ecr list-images  --repository-name ${repo_uri} --region ${region} | jq -r '.imageIds[].imageTag' | grep -c ${tag} || echo "0")
 	if [ "$tagCount" = '1' ]; then
 		scan_type=$(aws ecr get-registry-scanning-configuration --region ${region} --query 'scanningConfiguration.scanType' --output text 2>/dev/null || echo "BASIC")
 		if [ "$scan_type" = "ENHANCED" ]; then
+			# Build the vulnerabilityId NOT_EQUALS filter from SCAN_EXCLUDED_IDS
+			excluded_vuln_filter=$(printf '%s\n' "${SCAN_EXCLUDED_IDS[@]}" | jq -R . | jq -s 'map({comparison:"NOT_EQUALS",value:.})')
+
 			max_attempts=20
 			attempt=0
 
@@ -741,7 +757,15 @@ verify_ecr_image_scan() {
 			max_stability_attempts=10
 			stability_attempt=0
 			while [ $stability_attempt -lt $max_stability_attempts ]; do
-				findings=$(aws inspector2 list-findings --max-results 1 --filter-criteria '{"ecrImageRepositoryName":[{"comparison":"EQUALS","value":"'${repo_uri}'"}],"ecrImageTags":[{"comparison":"EQUALS","value":"'${tag}'"}],"severity":[{"comparison":"EQUALS","value":"HIGH"},{"comparison":"EQUALS","value":"CRITICAL"}],"vulnerabilityId":[{"comparison":"NOT_EQUALS","value":"IN-DISCONTINUED-001"}]}' --region ${region})
+				filter_criteria=$(jq -nc \
+					--arg repo "$repo_uri" \
+					--arg tag "$tag" \
+					--argjson excl "$excluded_vuln_filter" \
+					'{ecrImageRepositoryName:[{comparison:"EQUALS",value:$repo}],
+					  ecrImageTags:[{comparison:"EQUALS",value:$tag}],
+					  severity:[{comparison:"EQUALS",value:"HIGH"},{comparison:"EQUALS",value:"CRITICAL"}],
+					  vulnerabilityId:$excl}')
+				findings=$(aws inspector2 list-findings --max-results 1 --filter-criteria "$filter_criteria" --region ${region})
 				vulnerability=$(echo "$findings" | jq '.findings | length')
 				if [ $vulnerability -gt 0 ]; then
 					echo "Uploaded image ${tag} has HIGH/CRITICAL vulnerabilities."
