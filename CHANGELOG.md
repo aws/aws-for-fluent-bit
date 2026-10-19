@@ -1,5 +1,11 @@
 # Changelog
 
+### 2.34.3.20261019
+* Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20261016.0
+
+### 3.5.4
+* Minimal set of packages installed using Amazon Linux 2023 container image version: 2023.12.20261016.0
+
 ### 2.34.3.20261014
 * Minimal set of packages installed using Amazon Linux 2 container image version: 2.0.20261013.0
 * Suppress false-positive CVE-2026-78367 in ECR scan gate [#1219](https://github.com/aws/aws-for-fluent-bit/pull/1219)
