@@ -11,6 +11,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -488,7 +489,18 @@ func (msd *MockS3Downloader) Download(ctx context.Context, w io.WriterAt, input 
 
 // MockS3Client implements the S3Client interface for testing
 type MockS3Client struct {
-	LocationConstraint string // The location constraint to return (empty string for us-east-1, "EU" for eu-west-1, etc.)
+	BucketRegion       string // The region to return from HeadBucket
+	LocationConstraint string // The location constraint to return from GetBucketLocation
+	HeadBucketError    error  // If set, HeadBucket will return this error
+}
+
+func (msc *MockS3Client) HeadBucket(ctx context.Context, params *s3.HeadBucketInput, optFns ...func(*s3.Options)) (*s3.HeadBucketOutput, error) {
+	if msc.HeadBucketError != nil {
+		return nil, msc.HeadBucketError
+	}
+	return &s3.HeadBucketOutput{
+		BucketRegion: aws.String(msc.BucketRegion),
+	}, nil
 }
 
 func (msc *MockS3Client) GetBucketLocation(ctx context.Context, params *s3.GetBucketLocationInput, optFns ...func(*s3.Options)) (*s3.GetBucketLocationOutput, error) {
@@ -496,7 +508,6 @@ func (msc *MockS3Client) GetBucketLocation(ctx context.Context, params *s3.GetBu
 	if msc.LocationConstraint != "" {
 		output.LocationConstraint = types.BucketLocationConstraint(msc.LocationConstraint)
 	}
-
 	return output, nil
 }
 
@@ -508,43 +519,43 @@ func (msc *MockS3Client) Options() s3.Options {
 
 func TestParseS3ARNAndGetBucketInfo(t *testing.T) {
 	cases := []struct {
-		name               string
-		s3ARN              string
-		locationConstraint string
-		expectedBucket     string
-		expectedRegion     string
-		expectedFilePath   string
+		name             string
+		s3ARN            string
+		bucketRegion     string
+		expectedBucket   string
+		expectedRegion   string
+		expectedFilePath string
 	}{
 		{
-			name:               "Valid ARN with us-east-1 (empty constraint)",
-			s3ARN:              "arn:aws:s3:::my-bucket/path/to/file.conf",
-			locationConstraint: "",
-			expectedBucket:     "my-bucket",
-			expectedRegion:     "us-east-1",
-			expectedFilePath:   "path/to/file.conf",
+			name:             "Valid ARN with us-east-1",
+			s3ARN:            "arn:aws:s3:::my-bucket/path/to/file.conf",
+			bucketRegion:     "us-east-1",
+			expectedBucket:   "my-bucket",
+			expectedRegion:   "us-east-1",
+			expectedFilePath: "path/to/file.conf",
 		},
 		{
-			name:               "Valid ARN with eu-west-1 (EU constraint)",
-			s3ARN:              "arn:aws:s3:::eu-bucket/config/parser.conf",
-			locationConstraint: "EU",
-			expectedBucket:     "eu-bucket",
-			expectedRegion:     "eu-west-1",
-			expectedFilePath:   "config/parser.conf",
+			name:             "Valid ARN with eu-west-1",
+			s3ARN:            "arn:aws:s3:::eu-bucket/config/parser.conf",
+			bucketRegion:     "eu-west-1",
+			expectedBucket:   "eu-bucket",
+			expectedRegion:   "eu-west-1",
+			expectedFilePath: "config/parser.conf",
 		},
 		{
-			name:               "Valid ARN with us-west-2",
-			s3ARN:              "arn:aws:s3:::west-bucket/fluent-bit.conf",
-			locationConstraint: "us-west-2",
-			expectedBucket:     "west-bucket",
-			expectedRegion:     "us-west-2",
-			expectedFilePath:   "fluent-bit.conf",
+			name:             "Valid ARN with us-west-2",
+			s3ARN:            "arn:aws:s3:::west-bucket/fluent-bit.conf",
+			bucketRegion:     "us-west-2",
+			expectedBucket:   "west-bucket",
+			expectedRegion:   "us-west-2",
+			expectedFilePath: "fluent-bit.conf",
 		},
 	}
 
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			mockClient := &MockS3Client{
-				LocationConstraint: test.locationConstraint,
+				BucketRegion: test.bucketRegion,
 			}
 
 			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(test.s3ARN, mockClient)
@@ -556,6 +567,186 @@ func TestParseS3ARNAndGetBucketInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestParseS3ARNAndGetBucketInfo_ARNParsing(t *testing.T) {
+	cases := []struct {
+		name         string
+		bucketName   string
+		filePath     string
+		bucketRegion string
+	}{
+		{name: "simple bucket and file", bucketName: "my-bucket", filePath: "file.conf", bucketRegion: "us-west-2"},
+		{name: "bucket with dots", bucketName: "my.dotted.bucket", filePath: "config.conf", bucketRegion: "us-west-2"},
+		{name: "bucket with hyphens", bucketName: "my-hyphenated-bucket", filePath: "parser.conf", bucketRegion: "us-east-1"},
+		{name: "deeply nested file path", bucketName: "deep-bucket", filePath: "path/to/deeply/nested/file.conf", bucketRegion: "eu-west-1"},
+		{name: "single char bucket", bucketName: "a", filePath: "f.conf", bucketRegion: "us-west-2"},
+		{name: "long bucket name", bucketName: "this-is-a-very-long-bucket-name-for-testing", filePath: "configs/main/fluent-bit.conf", bucketRegion: "ap-southeast-1"},
+		{name: "file with multiple extensions", bucketName: "ext-bucket", filePath: "archive/config.tar.gz", bucketRegion: "us-west-2"},
+		{name: "numeric bucket name", bucketName: "123456789", filePath: "data/output.conf", bucketRegion: "us-east-2"},
+		{name: "mixed case file path", bucketName: "case-bucket", filePath: "Config/MyParser.conf", bucketRegion: "eu-central-1"},
+		{name: "file at root level", bucketName: "root-bucket", filePath: "fluent-bit.conf", bucketRegion: "ap-northeast-1"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s3ARN := "arn:aws:s3:::" + tc.bucketName + "/" + tc.filePath
+			mockClient := &MockS3Client{
+				BucketRegion: tc.bucketRegion,
+			}
+
+			gotBucket, _, gotFilePath := parseS3ARNAndGetBucketInfo(s3ARN, mockClient)
+
+			assert.Equal(t, tc.bucketName, gotBucket, "bucket name should be correctly parsed from ARN")
+			assert.Equal(t, tc.filePath, gotFilePath, "file path should be correctly parsed from ARN")
+		})
+	}
+}
+
+func TestParseS3ARNAndGetBucketInfo_RegionRetrieval(t *testing.T) {
+	standardRegions := []struct {
+		name           string
+		bucketRegion   string
+		expectedRegion string
+	}{
+		{name: "us-west-2", bucketRegion: "us-west-2", expectedRegion: "us-west-2"},
+		{name: "us-east-2", bucketRegion: "us-east-2", expectedRegion: "us-east-2"},
+		{name: "us-west-1", bucketRegion: "us-west-1", expectedRegion: "us-west-1"},
+		{name: "ap-southeast-1", bucketRegion: "ap-southeast-1", expectedRegion: "ap-southeast-1"},
+		{name: "ap-northeast-1", bucketRegion: "ap-northeast-1", expectedRegion: "ap-northeast-1"},
+		{name: "ap-south-1", bucketRegion: "ap-south-1", expectedRegion: "ap-south-1"},
+		{name: "eu-central-1", bucketRegion: "eu-central-1", expectedRegion: "eu-central-1"},
+		{name: "eu-west-2", bucketRegion: "eu-west-2", expectedRegion: "eu-west-2"},
+		{name: "sa-east-1", bucketRegion: "sa-east-1", expectedRegion: "sa-east-1"},
+		{name: "ca-central-1", bucketRegion: "ca-central-1", expectedRegion: "ca-central-1"},
+		{name: "af-south-1", bucketRegion: "af-south-1", expectedRegion: "af-south-1"},
+		{name: "me-south-1", bucketRegion: "me-south-1", expectedRegion: "me-south-1"},
+	}
+
+	for _, tc := range standardRegions {
+		t.Run(tc.name, func(t *testing.T) {
+			s3ARN := "arn:aws:s3:::test-bucket-" + tc.name + "/config/fluent-bit.conf"
+			mockClient := &MockS3Client{
+				BucketRegion: tc.bucketRegion,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(s3ARN, mockClient)
+
+			assert.Equal(t, "test-bucket-"+tc.name, bucketName, "bucket name should be parsed correctly")
+			assert.Equal(t, tc.expectedRegion, bucketRegion, "region should match")
+			assert.Equal(t, "config/fluent-bit.conf", s3FilePath, "file path should be parsed correctly")
+		})
+	}
+}
+
+func TestParseS3ARNAndGetBucketInfo_SpecialRegions(t *testing.T) {
+	cases := []struct {
+		name             string
+		s3ARN            string
+		bucketRegion     string
+		expectedBucket   string
+		expectedRegion   string
+		expectedFilePath string
+	}{
+		{
+			name:             "us-east-1 region returned directly",
+			s3ARN:            "arn:aws:s3:::east-bucket/configs/main.conf",
+			bucketRegion:     "us-east-1",
+			expectedBucket:   "east-bucket",
+			expectedRegion:   "us-east-1",
+			expectedFilePath: "configs/main.conf",
+		},
+		{
+			name:             "eu-west-1 region returned directly",
+			s3ARN:            "arn:aws:s3:::europe-bucket/parsers/custom-parser.conf",
+			bucketRegion:     "eu-west-1",
+			expectedBucket:   "europe-bucket",
+			expectedRegion:   "eu-west-1",
+			expectedFilePath: "parsers/custom-parser.conf",
+		},
+		{
+			name:             "us-east-1 with simple file path",
+			s3ARN:            "arn:aws:s3:::us-bucket/fluent-bit.conf",
+			bucketRegion:     "us-east-1",
+			expectedBucket:   "us-bucket",
+			expectedRegion:   "us-east-1",
+			expectedFilePath: "fluent-bit.conf",
+		},
+		{
+			name:             "eu-west-1 with nested file path",
+			s3ARN:            "arn:aws:s3:::eu-data-bucket/team/configs/parser.conf",
+			bucketRegion:     "eu-west-1",
+			expectedBucket:   "eu-data-bucket",
+			expectedRegion:   "eu-west-1",
+			expectedFilePath: "team/configs/parser.conf",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := &MockS3Client{
+				BucketRegion: tc.bucketRegion,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(tc.s3ARN, mockClient)
+
+			assert.Equal(t, tc.expectedBucket, bucketName, "bucket name should match")
+			assert.Equal(t, tc.expectedRegion, bucketRegion, "region should match")
+			assert.Equal(t, tc.expectedFilePath, s3FilePath, "file path should match")
+		})
+	}
+}
+
+func TestParseS3ARNAndGetBucketInfo_Fallback(t *testing.T) {
+	cases := []struct {
+		name               string
+		s3ARN              string
+		locationConstraint string
+		expectedBucket     string
+		expectedRegion     string
+		expectedFilePath   string
+	}{
+		{
+			name:               "Fallback to GetBucketLocation with us-east-1 (empty constraint)",
+			s3ARN:              "arn:aws:s3:::my-bucket/path/to/file.conf",
+			locationConstraint: "",
+			expectedBucket:     "my-bucket",
+			expectedRegion:     "us-east-1",
+			expectedFilePath:   "path/to/file.conf",
+		},
+		{
+			name:               "Fallback to GetBucketLocation with eu-west-1 (EU constraint)",
+			s3ARN:              "arn:aws:s3:::eu-bucket/config/parser.conf",
+			locationConstraint: "EU",
+			expectedBucket:     "eu-bucket",
+			expectedRegion:     "eu-west-1",
+			expectedFilePath:   "config/parser.conf",
+		},
+		{
+			name:               "Fallback to GetBucketLocation with us-west-2",
+			s3ARN:              "arn:aws:s3:::west-bucket/fluent-bit.conf",
+			locationConstraint: "us-west-2",
+			expectedBucket:     "west-bucket",
+			expectedRegion:     "us-west-2",
+			expectedFilePath:   "fluent-bit.conf",
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			mockClient := &MockS3Client{
+				HeadBucketError:    fmt.Errorf("AccessDenied"),
+				LocationConstraint: test.locationConstraint,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(test.s3ARN, mockClient)
+
+			assert.Equal(t, test.expectedBucket, bucketName)
+			assert.Equal(t, test.expectedRegion, bucketRegion)
+			assert.Equal(t, test.expectedFilePath, s3FilePath)
+		})
+	}
+}
+
 
 func createFileHelper(filePath string) *os.File {
 	file, err := os.Create(filePath)
@@ -620,3 +811,54 @@ func TestCanWriteToDir(t *testing.T) {
 		})
 	}
 }
+
+func TestParseS3ARNAndGetBucketInfo_CrossAccount(t *testing.T) {
+	cases := []struct {
+		name             string
+		s3ARN            string
+		bucketRegion     string
+		expectedBucket   string
+		expectedRegion   string
+		expectedFilePath string
+	}{
+		{
+			name:             "Cross-account bucket in us-east-1",
+			s3ARN:            "arn:aws:s3:::cross-account-bucket/config/fluent-bit.conf",
+			bucketRegion:     "us-east-1",
+			expectedBucket:   "cross-account-bucket",
+			expectedRegion:   "us-east-1",
+			expectedFilePath: "config/fluent-bit.conf",
+		},
+		{
+			name:             "Cross-account bucket in eu-west-1",
+			s3ARN:            "arn:aws:s3:::eu-shared-bucket/parsers/parser.conf",
+			bucketRegion:     "eu-west-1",
+			expectedBucket:   "eu-shared-bucket",
+			expectedRegion:   "eu-west-1",
+			expectedFilePath: "parsers/parser.conf",
+		},
+		{
+			name:             "Cross-account bucket in us-west-2",
+			s3ARN:            "arn:aws:s3:::other-account-bucket/fluent-bit.conf",
+			bucketRegion:     "us-west-2",
+			expectedBucket:   "other-account-bucket",
+			expectedRegion:   "us-west-2",
+			expectedFilePath: "fluent-bit.conf",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := &MockS3Client{
+				BucketRegion: tc.bucketRegion,
+			}
+
+			bucketName, bucketRegion, s3FilePath := parseS3ARNAndGetBucketInfo(tc.s3ARN, mockClient)
+
+			assert.Equal(t, tc.expectedBucket, bucketName)
+			assert.Equal(t, tc.expectedRegion, bucketRegion)
+			assert.Equal(t, tc.expectedFilePath, s3FilePath)
+		})
+	}
+}
+
