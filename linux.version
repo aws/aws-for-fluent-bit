@@ -2,8 +2,8 @@
   {
     "linux": {
       "major-version": "2",
-      "version": "2.34.3.20261118",
-      "release-version": "2.34.3.20261118",
+      "version": "2.34.3.20261123",
+      "release-version": "2.34.3.20261123",
       "latest": "true",
       "build": "1",
       "fluent-bit": "1.9.10",
@@ -12,7 +12,7 @@
       "firehose-plugin": "v1.7.3",
       "cloudwatch-plugin": "v1.9.5",
       "al-tag": "2",
-      "os-digest": "sha256:db44db74062150d2ca746a0f63de56eee8516c4dfd976f9ee8c84232f3f94b24",
+      "os-digest": "sha256:f1e677d4e1674fdf860331805f0af4a516c5524e3ba0a5663cee49a96df1f648",
       "flb-repository": "https://github.com/amazon-contributing/upstream-to-fluent-bit.git",
       "publish": "true"
     }
@@ -20,8 +20,8 @@
   {
     "linux": {
       "major-version": "3",
-      "version": "3.5.10",
-      "release-version": "3.5.10",
+      "version": "3.5.11",
+      "release-version": "3.5.11",
       "latest": "false",
       "build": "1",
       "fluent-bit": "v5.1.5",
@@ -30,7 +30,7 @@
       "firehose-plugin": "v1.7.3",
       "cloudwatch-plugin": "v1.9.5",
       "al-tag": "2023",
-      "os-digest": "sha256:3f018977be7a3473a0a473ed105b244b8bdec8683ecb24962f675db23017137b",
+      "os-digest": "sha256:5c38fd85b00ce8c094315d9b71f671f880052314a22bd25f1a027821bf61d9d7",
       "flb-repository": "https://github.com/fluent/fluent-bit.git",
       "publish": "true"
     }
